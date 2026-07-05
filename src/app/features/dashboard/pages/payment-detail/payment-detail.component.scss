@@ -55,24 +55,6 @@
   animation: spin 0.7s linear infinite;
 }
 
-/* ── Skeleton (initial load + async state-log fetch) ──────── */
-.sk {
-  background: var(--border);
-  border-radius: 5px;
-  animation: pd-shimmer 1.4s ease infinite;
-}
-
-@keyframes pd-shimmer {
-  0%, 100% { opacity: 1; }
-  50%      { opacity: 0.4; }
-}
-
-.sk-ic       { width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0; }
-.sk-ch-title { width: 140px; height: 13px; }
-.sk-kv-key   { width: 90px;  height: 12px; }
-.sk-kv-val   { width: 120px; height: 12px; }
-.sk-row-line { display: inline-block; width: 100%; max-width: 320px; height: 12px; }
-
 /* ── Info cards ─────────────────────────────────────────── */
 .detail-grid {
   display: grid;
@@ -105,6 +87,27 @@
       gap: 10px;
     }
   }
+
+  /* Larger provider hero — a prominent brand mark with the name stacked below. */
+  .provider-head {
+    padding: 20px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--surface-2);
+
+    app-provider-logo {
+      min-width: 0;
+    }
+
+    .right {
+      margin-left: auto;
+      display: flex;
+      gap: 10px;
+      align-self: flex-start;
+    }
+  }
 }
 
 .kv {
@@ -127,15 +130,6 @@
     font-weight: 600;
     text-align: right;
     word-break: break-word;
-  }
-
-  /* Provider card's logo — sits above the Amount/Fee rows, not squeezed into
-     the card header (which stays the same compact height as the App card's). */
-  .provider-row {
-    display: flex;
-    align-items: center;
-    padding-bottom: 4px;
-    border-bottom: 1px solid var(--border);
   }
 }
 
@@ -179,9 +173,6 @@ table.pdt {
   width: 100%;
   border-collapse: collapse;
   font-size: 13.5px;
-  /* Even, consistent columns (each column shares the width equally) instead of
-     the auto-layout spread that leaves headers unevenly spaced. */
-  table-layout: fixed;
 
   thead th {
     text-align: left;
@@ -203,10 +194,7 @@ table.pdt {
     border-bottom: 1px solid var(--border);
     color: var(--text-2);
     vertical-align: middle;
-    /* Wrap (don't clip) so the full cell data is always visible within its
-       fixed-width column — e.g. a long state-log error message. */
-    white-space: normal;
-    word-break: break-word;
+    white-space: nowrap;
 
     &.num {
       text-align: right;
@@ -219,26 +207,6 @@ table.pdt {
   tbody tr { transition: 0.12s; }
   tbody tr:hover { background: var(--surface-2); }
   tbody tr:last-child td { border-bottom: none; }
-}
-
-/* table-layout:fixed sizes columns from the header row's own width — with no
-   width set, a short header ("State", "SKU") locks its column too narrow to
-   ever show the (often much longer) body content. Give each column an
-   explicit share of the table so every row has room to render. */
-table.pdt.state-log-table {
-  thead th:nth-child(1) { width: 18%; }
-  thead th:nth-child(2) { width: 22%; }
-  thead th:nth-child(3) { width: 60%; }
-}
-
-table.pdt.invoice-items-table {
-  thead th:nth-child(1) { width: 20%; }
-  thead th:nth-child(2) { width: 14%; }
-  thead th:nth-child(3) { width: 11%; }
-  thead th:nth-child(4) { width: 9%; }
-  thead th:nth-child(5) { width: 13%; }
-  thead th:nth-child(6) { width: 9%; }
-  thead th:nth-child(7) { width: 24%; }
 }
 
 .pd-empty {
@@ -327,18 +295,6 @@ table.pdt.invoice-items-table {
   box-sizing: border-box;
 
   &:focus { border-color: var(--brand-500); box-shadow: var(--ring); }
-
-  &.invalid {
-    border-color: var(--bad);
-    &:focus { border-color: var(--bad); box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18); }
-  }
-}
-
-.err-hint {
-  display: block;
-  margin-top: 6px;
-  font-size: 12px;
-  color: var(--bad);
 }
 
 .info-body .kv { padding: 0; }

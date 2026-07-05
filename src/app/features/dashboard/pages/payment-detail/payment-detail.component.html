@@ -11,70 +11,7 @@
 }
 
 @if (loading() && !payment()) {
-  <!-- Full skeleton — every card/grid this page renders, shaped like the real content -->
-  <div class="detail-grid detail-2">
-    <div class="info-card">
-      <div class="h"><span class="sk sk-ic"></span><span class="sk sk-ch-title"></span></div>
-      <div class="kv">
-        @for (r of [1,2,3,4,5,6,7,8]; track r) {
-          <div class="row"><span class="sk sk-kv-key"></span><span class="sk sk-kv-val"></span></div>
-        }
-      </div>
-    </div>
-    <div class="info-card">
-      <div class="h"><span class="sk sk-ic"></span><span class="sk sk-ch-title"></span></div>
-      <div class="kv">
-        @for (r of [1,2,3,4,5,6]; track r) {
-          <div class="row"><span class="sk sk-kv-key"></span><span class="sk sk-kv-val"></span></div>
-        }
-      </div>
-    </div>
-  </div>
-
-  <div class="detail-grid detail-2">
-    <div class="info-card">
-      <div class="h"><span class="sk sk-ic"></span><span class="sk sk-ch-title"></span></div>
-      <div class="kv">
-        @for (r of [1,2,3]; track r) {
-          <div class="row"><span class="sk sk-kv-key"></span><span class="sk sk-kv-val"></span></div>
-        }
-      </div>
-    </div>
-    <div class="info-card">
-      <div class="h"><span class="sk sk-ic"></span><span class="sk sk-ch-title"></span></div>
-      <div class="kv">
-        @for (r of [1,2,3,4,5]; track r) {
-          <div class="row"><span class="sk sk-kv-key"></span><span class="sk sk-kv-val"></span></div>
-        }
-      </div>
-    </div>
-  </div>
-
-  <div class="datacard pd-card">
-    <div class="dc-toolbar"><span class="sk sk-ic"></span><span class="sk sk-ch-title"></span></div>
-    <div class="dc-tablewrap">
-      <table class="pdt">
-        <tbody>
-          @for (r of [1,2,3]; track r) {
-            <tr><td colspan="3"><span class="sk sk-row-line"></span></td></tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="datacard pd-card">
-    <div class="dc-toolbar"><span class="sk sk-ic"></span><span class="sk sk-ch-title"></span></div>
-    <div class="dc-tablewrap">
-      <table class="pdt">
-        <tbody>
-          @for (r of [1,2,3]; track r) {
-            <tr><td colspan="7"><span class="sk sk-row-line"></span></td></tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  </div>
+  <div class="pd-loading"><div class="spinner"></div></div>
 } @else {
   @if (payment(); as p) {
   <!-- App + Provider -->
@@ -103,19 +40,21 @@
     </div>
 
     <div class="info-card">
-      <div class="h">
-        <span class="material-symbols-outlined">payments</span> Provider
+      <div class="provider-head">
+        <app-provider-logo
+          [provider]="p.paymentProfiles?.[0]?.paymentProvider"
+          [showName]="true"
+          [size]="72"
+          [ring]="true"
+          [shadow]="true"
+          namePosition="bottom"
+        />
         <span class="right">
           @if (p.hasProviderInfo && p.canGetRawInfo) { <button class="btn btn-sm" [disabled]="busy()" (click)="openRawInfo()">Raw info</button> }
           @if (p.hasProviderInfo && p.canGetPaymentLinkInfo) { <button class="btn btn-sm" [disabled]="busy()" (click)="openLinkInfo()">Link info</button> }
         </span>
       </div>
       <div class="kv">
-        @if (p.paymentProfiles?.[0]?.paymentProvider; as prov) {
-          <div class="provider-row">
-            <app-provider-logo [provider]="prov" [showName]="true" [size]="64" />
-          </div>
-        }
         <div class="row"><span class="k">Amount</span><span class="v">{{ money(p.amount) }}</span></div>
         <div class="row"><span class="k">Captured amount</span><span class="v">{{ money(p.capturedAmount) }}</span></div>
         <div class="row"><span class="k">Net amount</span><span class="v">{{ money(p.feeBreakdown?.netAmount) }}</span></div>
@@ -161,23 +100,17 @@
       }
     </div>
     <div class="dc-tablewrap">
-      <table class="pdt state-log-table">
+      <table class="pdt">
         <thead><tr><th>State</th><th>Date</th><th>Description</th></tr></thead>
         <tbody>
-          @if (loadingStateLogs()) {
-            @for (r of [1,2,3]; track r) {
-              <tr><td colspan="3"><span class="sk sk-row-line"></span></td></tr>
-            }
-          } @else {
-            @for (log of stateLogs(); track log.paymentStateLogId) {
-              <tr>
-                <td><span class="pill plain" [ngClass]="statePill(log.paymentState)"><span class="dot"></span>{{ log.paymentState }}</span></td>
-                <td>{{ log.createdTime | date: 'MMM d, y, HH:mm' }}</td>
-                <td class="cell-sub">{{ log.lastError || '' }}</td>
-              </tr>
-            } @empty {
-              <tr><td colspan="3" class="pd-empty">No state logs.</td></tr>
-            }
+          @for (log of stateLogs(); track log.paymentStateLogId) {
+            <tr>
+              <td><span class="pill plain" [ngClass]="statePill(log.paymentState)"><span class="dot"></span>{{ log.paymentState }}</span></td>
+              <td>{{ log.createdTime | date: 'MMM d, y, HH:mm' }}</td>
+              <td class="cell-sub">{{ log.lastError || '' }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="3" class="pd-empty">No state logs.</td></tr>
           }
         </tbody>
       </table>
@@ -190,7 +123,7 @@
       <div class="dc-title"><span class="material-symbols-outlined ti">list_alt</span> Invoice items</div>
     </div>
     <div class="dc-tablewrap">
-      <table class="pdt invoice-items-table">
+      <table class="pdt">
         <thead><tr><th>Name</th><th>Category</th><th class="num">Amount</th><th class="num">Quantity</th><th>SKU</th><th class="num">Tax</th><th>Description</th></tr></thead>
         <tbody>
           @for (it of items(); track $index) {
@@ -223,17 +156,7 @@
       <div class="mb">
         <p class="confirm-text">{{ c.message }}</p>
         @if (c.needsReason) {
-          <textarea
-            class="input ta"
-            [class.invalid]="reasonTried() && !reasonText.trim()"
-            rows="3"
-            placeholder="Note… *"
-            [(ngModel)]="reasonText"
-            [ngModelOptions]="{ standalone: true }"
-          ></textarea>
-          @if (reasonTried() && !reasonText.trim()) {
-            <span class="err-hint">A description is required.</span>
-          }
+          <textarea class="input ta" rows="3" placeholder="Note…" [(ngModel)]="reasonText" [ngModelOptions]="{ standalone: true }"></textarea>
         }
       </div>
       <div class="mf">

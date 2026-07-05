@@ -46,6 +46,7 @@ import {
       [defaultPageSize]="10"
       [hasMore]="hasMore()"
       [fill]="!embedded()"
+      [fixedLayout]="true"
       [searchInToolbar]="true"
       [serverSearch]="true"
       [initialSearch]="searchCriteria"
@@ -75,7 +76,7 @@ import {
       </div>
     </app-data-grid>
 
-    <app-create-payment-link-modal #linkModal (created)="onPaymentLinkCreated()" />
+    <app-create-payment-link-modal #linkModal (created)="loadPayments()" />
 
     <app-payments-filter-modal
       #filterModal
@@ -228,12 +229,12 @@ export class PaymentsComponent implements OnInit {
   };
 
   ngOnInit(): void {
-    // No per-column widths — the DataGrid splits every column equally (equalColumns).
     const columns: GridColumn[] = [
       {
         id: "paymentId",
         header: "Payment ID",
         field: "paymentId",
+        width: "120px",
         isLink: true,
         isFilterable: true,
         linkHref: (row: any) => this.paymentUrl(row.paymentId),
@@ -244,6 +245,7 @@ export class PaymentsComponent implements OnInit {
         field: "customerId",
         type: "custom",
         customTemplate: this.customerTemplate,
+        width: "200px",
         isSortable: true,
         isFilterable: true,
       },
@@ -252,13 +254,14 @@ export class PaymentsComponent implements OnInit {
         header: "Provider",
         field: "paymentProvider",
         type: "provider",
-        iconSize: 72,
+        width: "180px",
       },
       {
         id: "amount",
         header: "Amount",
         field: "amount",
         type: "currency",
+        width: "130px",
         align: "right",
         isSortable: true,
         isFilterable: true,
@@ -268,6 +271,7 @@ export class PaymentsComponent implements OnInit {
         header: "Status",
         field: "paymentState",
         type: "status",
+        width: "145px",
         isSortable: true,
         isFilterable: true,
         badgeMap: this.stateBadgeMap,
@@ -277,17 +281,22 @@ export class PaymentsComponent implements OnInit {
         header: "Date",
         field: "createdTime",
         type: "date",
+        width: "140px",
         isSortable: true,
       },
     ];
 
     // Embedded in a customer-detail tab → drop the redundant Customer column and
     // lock the filter to that customer (no URL sync — not on the /payments route).
-    // Equal column widths are handled centrally by the DataGrid (equalColumns
-    // defaults to on).
-    this.gridColumns = this.embedded()
+    const cols = this.embedded()
       ? columns.filter((c) => c.id !== "customerId")
       : columns;
+
+    // Give every column an equal share of the width so none looks cramped
+    // (Amount/Status were squeezed next to the wider Customer/Provider columns).
+    const equalWidth = `${(100 / cols.length).toFixed(4)}%`;
+    for (const c of cols) c.width = equalWidth;
+    this.gridColumns = cols;
 
     if (this.embedded()) {
       this.filter.set({ customerId: this.customerId()! });
@@ -408,14 +417,6 @@ export class PaymentsComponent implements OnInit {
       this.loading.set(false);
       this.isFetching = false;
     }
-  }
-
-  // A new payment link is created (payment now exists server-side) — reload the
-  // grid immediately, showing the full skeleton rather than the slim refresh bar,
-  // instead of waiting for the modal's Done/close.
-  onPaymentLinkCreated(): void {
-    this.paymentData.set([]);
-    this.loadPayments();
   }
 
   onFilterApplied(f: PaymentsFilter): void {
