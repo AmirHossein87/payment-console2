@@ -144,11 +144,7 @@
   font: inherit;
   font-size: 13.5px;
   color: var(--text);
-  // Overrides .input's fixed 38px height (combined via class="input gw-trigger")
-  // so the 44px provider logo isn't clipped.
-  height: auto;
-  min-height: 38px;
-  padding: 6px 10px;
+  padding: 0 10px;
 
 
   .gw-trig-label {
@@ -324,14 +320,3 @@
 
 app-payment-link-result { align-self: stretch; }
 
-
-/* Spinning icon for the Create button while busy — matches the universal edit
-   modal's Save button (icon spins in place, text swaps to "Creating…"). */
-.spin { animation: spin 0.7s linear infinite; }
-
-/* Lock the form while the create request is in flight — no edits until the API
-   responds (the header X and footer buttons are disabled separately). */
-.mb.locked {
-  pointer-events: none;
-  opacity: 0.6;
-}

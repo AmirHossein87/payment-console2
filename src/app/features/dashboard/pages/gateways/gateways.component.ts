@@ -22,7 +22,6 @@ import { AppsClient } from "@proxy/payment-app-proxy";
 import { WorkspaceStore } from "@core/stores/workspace.store";
 import { PermissionStore } from "@core/stores/permission.store";
 import { NotificationService } from "@core/services/notification.service";
-import { TagManagerService } from "@core/services/tag-manager.service";
 import { DataGridComponent } from "@shared/components/data-grid/data-grid.component";
 import { GridColumn } from "@shared/components/data-grid/data-grid.interface";
 import { ProviderLogoComponent } from "@shared/components/provider-logo/provider-logo.component";
@@ -48,7 +47,6 @@ export class GatewaysComponent implements OnInit {
   private readonly permissionStore = inject(PermissionStore);
   private readonly notify = inject(NotificationService);
   private readonly router = inject(Router);
-  private readonly tagManager = inject(TagManagerService);
 
   /** True when the current user holds PaymentProfileWrite — controls gateway creation. */
   readonly canWrite = computed(() => this.permissionStore.hasPermission('PaymentProfileWrite'));
@@ -109,7 +107,6 @@ export class GatewaysComponent implements OnInit {
         type: "provider",
         isSortable: true,
         width: "190px",
-        iconSize: 72,
       },
       {
         id: "currency",
@@ -291,11 +288,6 @@ export class GatewaysComponent implements OnInit {
       if (created) {
         this.gateways.update((list) => [...list, created]);
       }
-      // Google Ads conversion signal — only fires when the visitor arrived via an ad click.
-      this.tagManager.trackConversion("create_gateway", {
-        app_id: appId,
-        provider: provider.provider,
-      });
       this.wizardOpen.set(false);
       this.notify.showSuccess("Gateway created successfully.");
     } catch (err: any) {

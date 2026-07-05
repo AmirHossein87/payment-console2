@@ -29,7 +29,6 @@ import {
     "[class.fill]": "fill()",
     "[class.fixed-layout]": "fixedLayout()",
     "[class.compact]": "compact()",
-    "[class.equal-cols]": "equalColumns()",
   },
 })
 export class DataGridComponent {
@@ -64,11 +63,6 @@ export class DataGridComponent {
   // Lock column widths to prevent reflow when skeleton rows are replaced by real data.
   // Requires explicit `width` on each GridColumn (or uses sensible type-based defaults).
   fixedLayout = input<boolean>(false);
-  // When true (the default), every data column is given an EQUAL width share so
-  // the grid is split into evenly-sized columns regardless of each column's
-  // `width`. Uses table-layout: fixed. Set [equalColumns]="false" to instead
-  // honor per-column widths / content sizing.
-  equalColumns = input<boolean>(true);
   // Batched server fetch: data is loaded in chunks (e.g. 100) and paginated in
   // memory; when the user reaches the last loaded page and hasMore is true, the
   // grid emits (loadMore) so the host can fetch + append the next chunk.
@@ -436,12 +430,6 @@ export class DataGridComponent {
   // Column width for <th> — in fixed-layout mode returns col.width or a type-based default;
   // in auto mode returns col.width only (undefined leaves the browser to auto-size).
   colThWidth(col: GridColumn): string | null {
-    // Equal-width mode (default): every column gets the same share so the grid is
-    // split into evenly-sized columns, ignoring per-column `width`.
-    if (this.equalColumns()) {
-      const n = this.allColumns().length || 1;
-      return `${(100 / n).toFixed(4)}%`;
-    }
     if (col.width) return col.width;
     if (!this.fixedLayout()) return null;
     if (col.isLink) return '120px';

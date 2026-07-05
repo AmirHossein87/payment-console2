@@ -90,7 +90,7 @@
                     <div class="profile-option" (click)="toggleProfile(pr.id, !isProfileChecked(pr.id))">
                       <input type="checkbox" [checked]="isProfileChecked(pr.id)" (click)="$event.stopPropagation()" />
                       @if (pr.provider) {
-                        <app-provider-logo [provider]="pr.provider" [showName]="false" [size]="44" />
+                        <app-provider-logo [provider]="pr.provider" [showName]="false" [size]="36" />
                       }
                       <span class="profile-opt-name">{{ pr.name }}</span>
                     </div>

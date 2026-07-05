@@ -82,7 +82,7 @@
                   [class.sel]="wizardProvider()?.provider === p.provider"
                   (click)="selectProvider(p)"
                 >
-                  <app-provider-logo [provider]="p" [showName]="false" [size]="72" />
+                  <app-provider-logo [provider]="p" [showName]="false" [size]="50" />
                   <span class="opt-spacer"></span>
                   @if (configuredCount(p.provider) > 0) {
                     <span class="cfg-tag">{{ configuredCount(p.provider) }} configured</span>

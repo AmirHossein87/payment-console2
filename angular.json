@@ -35,7 +35,8 @@
                 "glob": "**/*",
                 "input": "src/assets",
                 "output": "assets"
-              }
+              },
+              "src/staticwebapp.config.json"
             ],
             "styles": ["src/styles.scss"],
             "scripts": []
