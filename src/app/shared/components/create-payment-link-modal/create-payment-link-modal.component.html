@@ -5,13 +5,13 @@
         <span class="material-symbols-outlined head-ic">add_link</span>
         <h3>Create payment link</h3>
         <div class="spacer"></div>
-        <button class="icon-btn" type="button" (click)="close()">
+        <button class="icon-btn" type="button" [disabled]="busy()" (click)="close()">
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
 
       @if (!isSuccess()) {
-        <div class="mb">
+        <div class="mb" [class.locked]="busy()">
           <div class="two-col">
             <div class="field">
               <label>Amount *</label>
@@ -45,7 +45,7 @@
               <button type="button" class="input gw-trigger" [disabled]="singleGateway()"
                       (click)="$event.stopPropagation(); gwOpen = !gwOpen">
                 @if (selectedProfile(); as p) {
-                  <app-provider-logo [provider]="p.paymentProvider" [showName]="false" />
+                  <app-provider-logo [provider]="p.paymentProvider" [showName]="false" [size]="44" />
                   <span class="gw-trig-label">{{ profileLabel(p) }}</span>
                   @if (!singleGateway()) {
                     <button class="icon-btn sm" type="button"
@@ -68,7 +68,7 @@
                   @for (p of filteredGateways(); track p.paymentProfileId) {
                     <button type="button" class="gw-opt" [class.on]="paymentProfileId === p.paymentProfileId"
                             (click)="selectGateway(p.paymentProfileId!)">
-                      <app-provider-logo [provider]="p.paymentProvider" [showName]="false" />
+                      <app-provider-logo [provider]="p.paymentProvider" [showName]="false" [size]="44" />
                       <span class="gw-opt-label">{{ profileLabel(p) }}</span>
                       @if (paymentProfileId === p.paymentProfileId) {
                         <span class="material-symbols-outlined gw-sel-ic">check</span>
@@ -105,9 +105,36 @@
             @if (moreOpen()) {
               <div class="pl-acc-body">
                 <div class="field">
+                  <label>Fraud policy</label>
+                  @if (loadingPolicies()) {
+                    <div class="gw-skeleton"></div>
+                  } @else {
+                    <div class="select">
+                      <select
+                        class="input"
+                        [(ngModel)]="fraudPolicyId"
+                        [disabled]="singlePolicy() || policies().length === 0"
+                      >
+                        @if (policies().length === 0) {
+                          <option [ngValue]="null">No policies</option>
+                        }
+                        @for (pol of policies(); track pol.fraudPolicyId) {
+                          <option [ngValue]="pol.fraudPolicyId">
+                            {{ pol.fraudPolicyName }}{{ pol.isDefault ? ' (default)' : '' }}
+                          </option>
+                        }
+                      </select>
+                      <span class="material-symbols-outlined">expand_more</span>
+                    </div>
+                  }
+                </div>
+                <div class="field">
                   <label>Return URL</label>
                   <input class="input" placeholder="https://…" [(ngModel)]="returnUrl" />
                 </div>
+                <label class="checkrow">
+                  <input type="checkbox" [(ngModel)]="recurring" /> Recurring payment
+                </label>
               </div>
             }
           </div>
@@ -116,11 +143,8 @@
         <div class="mf">
           <button class="btn" type="button" [disabled]="busy()" (click)="close()">Cancel</button>
           <button class="btn btn-primary" type="button" [disabled]="busy()" (click)="create()">
-            @if (busy()) {
-              <span class="btn-spinner"></span> Creating…
-            } @else {
-              <span class="material-symbols-outlined">add_link</span> Create link
-            }
+            <span class="material-symbols-outlined" [class.spin]="busy()">add_link</span>
+            {{ busy() ? 'Creating…' : 'Create link' }}
           </button>
         </div>
       } @else {

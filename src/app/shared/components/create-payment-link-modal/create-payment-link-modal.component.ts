@@ -2,7 +2,12 @@ import { Component, signal, computed, inject, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { PaymentProfilesClient, PaymentProfile } from '@proxy/payment-app-proxy';
+import {
+  PaymentProfilesClient,
+  PaymentProfile,
+  FraudPoliciesClient,
+  FraudPolicy,
+} from '@proxy/payment-app-proxy';
 import {
   Customer,
   PaymentsClient,
@@ -26,6 +31,7 @@ import { PaymentLinkResultComponent } from '@shared/components/payment-link-resu
 })
 export class CreatePaymentLinkModalComponent {
   private readonly profilesClient = inject(PaymentProfilesClient);
+  private readonly fraudClient = inject(FraudPoliciesClient);
   private readonly paymentsClient = inject(PaymentsClient);
   private readonly workspaceStore = inject(WorkspaceStore);
   private readonly notify = inject(NotificationService);
@@ -38,8 +44,13 @@ export class CreatePaymentLinkModalComponent {
   readonly busy = signal(false);
   readonly gateways = signal<PaymentProfile[]>([]);
   readonly loadingGateways = signal(false);
+  readonly policies = signal<FraudPolicy[]>([]);
+  readonly loadingPolicies = signal(false);
   readonly createdLink = signal('');
   readonly currency = signal('');
+
+  /** Only one fraud policy → auto-picked and shown read-only. */
+  readonly singlePolicy = computed(() => this.policies().length === 1);
 
   readonly availableCurrencies = computed(() =>
     [...new Set(this.gateways().map(p => String(p.currency ?? '')).filter(c => !!c))].sort()
@@ -56,6 +67,8 @@ export class CreatePaymentLinkModalComponent {
 
   amount: number | null = null;
   returnUrl = '';
+  recurring = false;
+  fraudPolicyId: number | null = null;
   tried = false;
   gwOpen = false;
   paymentProfileId: number | null = null;
@@ -70,7 +83,34 @@ export class CreatePaymentLinkModalComponent {
       this.customerLabel = name || customer.customerId;
     }
     this.isOpen.set(true);
+    await Promise.all([this.loadGateways(), this.loadPolicies()]);
+  }
 
+  /** Loads the app's fraud policies and auto-picks when there's only one (shown
+      read-only); defaults to the default policy when there are several. */
+  private async loadPolicies(): Promise<void> {
+    const appId = this.workspaceStore.currentAppId();
+    if (!appId) return;
+    this.loadingPolicies.set(true);
+    try {
+      const list = await firstValueFrom(this.fraudClient.list(appId));
+      this.policies.set(list ?? []);
+    } catch {
+      this.policies.set([]);
+    } finally {
+      this.loadingPolicies.set(false);
+      const pols = this.policies();
+      if (pols.length === 1) {
+        this.fraudPolicyId = pols[0].fraudPolicyId;
+      } else if (pols.length > 1) {
+        this.fraudPolicyId = (pols.find((p) => p.isDefault) ?? pols[0]).fraudPolicyId;
+      }
+    }
+  }
+
+  /** Loads the app's gateways and auto-picks a single gateway / currency. Called
+      on open AND on "Create another" (reset clears the gateway list). */
+  private async loadGateways(): Promise<void> {
     const appId = this.workspaceStore.currentAppId();
     if (!appId) return;
     this.loadingGateways.set(true);
@@ -96,8 +136,8 @@ export class CreatePaymentLinkModalComponent {
   }
 
   close(): void {
+    if (this.busy()) return; // locked while the create request is in flight
     this.gwOpen = false;
-    if (this.isSuccess()) this.created.emit();
     this.isOpen.set(false);
   }
 
@@ -197,8 +237,9 @@ export class CreatePaymentLinkModalComponent {
       amount: this.amount!,
       currency: this.currency() as PaymentProviderCurrency,
       autoCapture: true,
-      registerAutoPayment: false,
+      registerAutoPayment: this.recurring,
       expirationTime,
+      fraudPolicyId: this.fraudPolicyId,
       returnUrl: this.returnUrl?.trim() || null,
       paymentProfiles: this.paymentProfileId ? [this.paymentProfileId] : null,
       customerOrder,
@@ -209,6 +250,9 @@ export class CreatePaymentLinkModalComponent {
       const payment = await firstValueFrom(this.paymentsClient.createByHostedPage(appId, req));
       this.createdLink.set(payment.redirectUrl ?? '');
       this.isSuccess.set(true);
+      // Reload the grid behind the modal right away — don't wait for the user
+      // to click Done/close, so the new payment is visible as soon as it exists.
+      this.created.emit();
     } catch (err: any) {
       const msg =
         err?.error?.message || err?.error || err?.message || 'Failed to create payment link.';
@@ -220,12 +264,18 @@ export class CreatePaymentLinkModalComponent {
 
   createAnother(): void {
     this.reset();
+    // reset() clears the gateway + policy lists — reload them.
+    this.loadGateways();
+    this.loadPolicies();
   }
 
   private reset(): void {
     this.amount = null;
     this.currency.set('');
     this.returnUrl = '';
+    this.recurring = false;
+    this.fraudPolicyId = null;
+    this.policies.set([]);
     this.tried = false;
     this.gwOpen = false;
     this.busy.set(false);

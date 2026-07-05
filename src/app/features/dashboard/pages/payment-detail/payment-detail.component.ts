@@ -55,11 +55,16 @@ export class PaymentDetailComponent implements OnInit, OnDestroy {
   readonly stateLogs = signal<PaymentStateLog[]>([]);
   readonly webhook = signal<PaymentWebhookItem | null>(null);
   readonly loading = signal<boolean>(true);
+  // State logs load via a separate call, fired after the payment itself resolves
+  // (see load()) — without its own flag, the table briefly renders its "No state
+  // logs" empty state (stateLogs() still []) before the real rows arrive.
+  readonly loadingStateLogs = signal<boolean>(true);
   readonly busy = signal<boolean>(false);
 
   readonly confirm = signal<ConfirmModel | null>(null);
   readonly info = signal<InfoModel | null>(null);
   reasonText = '';
+  readonly reasonTried = signal(false);
 
   private appId = '';
   private paymentId = 0;
@@ -113,6 +118,7 @@ export class PaymentDetailComponent implements OnInit, OnDestroy {
     this.paymentId = Number(this.route.snapshot.paramMap.get('paymentId'));
     if (!this.appId || !this.paymentId) {
       this.loading.set(false);
+      this.loadingStateLogs.set(false);
       return;
     }
     this.load();
@@ -144,14 +150,20 @@ export class PaymentDetailComponent implements OnInit, OnDestroy {
 
   async loadStateLogs(): Promise<void> {
     const appId = this.workspaceStore.currentAppId();
-    if (!appId) return;
+    if (!appId) {
+      this.loadingStateLogs.set(false);
+      return;
+    }
 
+    this.loadingStateLogs.set(true);
     try {
       const logs = await firstValueFrom(this.appClient.stateLogs(appId, this.paymentId));
       this.stateLogs.set(logs ?? []);
     } catch (err: any) {
       this.notify.showError(this.extractError(err, 'Failed to load state logs.'));
       this.stateLogs.set([]);
+    } finally {
+      this.loadingStateLogs.set(false);
     }
   }
 
@@ -235,12 +247,17 @@ export class PaymentDetailComponent implements OnInit, OnDestroy {
     needsReason = false
   ): void {
     this.reasonText = '';
+    this.reasonTried.set(false);
     this.confirm.set({ title, message, danger, needsReason, run });
   }
 
   async runConfirm(): Promise<void> {
     const c = this.confirm();
     if (!c) return;
+    if (c.needsReason && !this.reasonText.trim()) {
+      this.reasonTried.set(true);
+      return;
+    }
     await c.run(this.reasonText.trim());
   }
 

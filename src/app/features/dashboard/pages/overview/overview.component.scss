@@ -1,5 +1,15 @@
 :host {
-  display: block;
+  // Opt OUT of the global `.content > *:not(router-outlet)` utility (styles.scss),
+  // which forces every page host to `flex: 1; display: flex` so grid pages can
+  // fill height. Overview scrolls naturally and stacks many cards — under that
+  // utility its cards became shrinkable flex items, so when total content
+  // exceeded the viewport, flexbox COMPRESSED them and `.datacard{overflow:hidden}`
+  // clipped table rows (e.g. Provider performance showing only the first row at
+  // 100% zoom, all rows at 80%). `!important` is required to beat the utility's
+  // higher selector specificity.
+  display: block !important;
+  flex: 0 0 auto !important;
+  min-height: auto !important;
 }
 
 /* ── Banner ─────────────────────────────────────────────── */

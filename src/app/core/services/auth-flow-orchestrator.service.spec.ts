@@ -55,8 +55,9 @@ describe('AuthFlowOrchestratorService', () => {
     ]);
     notificationService = jasmine.createSpyObj('NotificationService', ['showError', 'showSuccess']);
     storage = jasmine.createSpyObj('StorageService', ['get', 'set', 'clear', 'remove']);
-    settingsStore = jasmine.createSpyObj('SettingsStore', ['load', 'isSupportLicenseManagement']);
+    settingsStore = jasmine.createSpyObj('SettingsStore', ['load', 'loadUserTheme', 'isSupportLicenseManagement']);
     settingsStore.load.and.resolveTo(undefined);
+    settingsStore.loadUserTheme.and.resolveTo(undefined);
     settingsStore.isSupportLicenseManagement.and.returnValue(false);
     licenseStore = jasmine.createSpyObj('LicenseStore', [
       'loadLicenses',

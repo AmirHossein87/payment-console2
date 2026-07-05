@@ -23,6 +23,7 @@ import { AuthStore } from '../stores/auth.store';
 import { NotificationService } from './notification.service';
 import { StorageService } from './storage.service';
 import { Logger } from './logger.service';
+import { TagManagerService } from './tag-manager.service';
 import { parseJwt, isTokenExpired } from '../utils/jwt.util';
 import { environment } from '@environments/environment';
 
@@ -37,7 +38,8 @@ export class FirebaseAuthService {
     private authStore: AuthStore,
     private notificationService: NotificationService,
     private storage: StorageService,
-    private router: Router
+    private router: Router,
+    private tagManager: TagManagerService
   ) {}
 
   async signInWithEmail(email: string, password: string): Promise<UserCredential> {
@@ -72,6 +74,9 @@ export class FirebaseAuthService {
     );
     this.authStore.setSession(result.accessToken.value, result.userId);
     this.startBackgroundTokenRefresh();
+    // Google Ads conversion signal — only fires when the visitor arrived via
+    // an ad click (Google + email/password). Token refresh bypasses this method.
+    this.tagManager.trackConversion('sign_in', { user_id: result.userId });
     return result;
   }
 
@@ -81,6 +86,9 @@ export class FirebaseAuthService {
     );
     this.authStore.setSession(result.accessToken.value, result.userId);
     this.startBackgroundTokenRefresh();
+    // Google Ads conversion signal — only fires when the visitor arrived via
+    // an ad click (new account provisioned via Google or email/password).
+    this.tagManager.trackConversion('sign_up', { user_id: result.userId });
     return result;
   }
 

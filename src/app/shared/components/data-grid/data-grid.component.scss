@@ -35,6 +35,17 @@
   }
 }
 
+/* Equal-width columns (default) — split the grid into evenly-sized columns. */
+:host.equal-cols {
+  table.dc {
+    table-layout: fixed;
+  }
+
+  tbody td {
+    overflow: hidden;
+  }
+}
+
 /* Fill mode — flush layout removes the card border-radius so the grid sits
    edge-to-edge inside .content.flush pages (e.g. payments). All flex/fill
    rules are now in the default :host above. */

@@ -35,7 +35,7 @@
             <div class="gw-drop">
               <button type="button" class="input gw-trigger" (click)="$event.stopPropagation(); gwOpen = !gwOpen">
                 @if (selectedProfile(); as p) {
-                  <app-provider-logo [provider]="p.paymentProvider" [showName]="false" [size]="26" />
+                  <app-provider-logo [provider]="p.paymentProvider" [showName]="false" [size]="44" />
                   <span class="gw-trig-label">{{ p.currency }}</span>
                 } @else {
                   <span class="material-symbols-outlined gw-all-ic">apps</span>
@@ -55,7 +55,7 @@
                   </button>
                   @for (p of profiles(); track p.paymentProfileId) {
                     <button type="button" class="gw-opt" [class.on]="paymentProfileId === p.paymentProfileId" (click)="selectGateway(p.paymentProfileId!)">
-                      <app-provider-logo [provider]="p.paymentProvider" [showName]="false" [size]="26" />
+                      <app-provider-logo [provider]="p.paymentProvider" [showName]="false" [size]="44" />
                       <span class="gw-opt-label">{{ p.currency }}</span>
                       @if (paymentProfileId === p.paymentProfileId) {
                         <span class="material-symbols-outlined gw-sel-ic">check</span>

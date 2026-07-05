@@ -123,6 +123,14 @@ export class OverviewComponent implements OnInit {
   // still null, flashing the sample/fake data before the API result replaced it.
   readonly loadingOverview = signal(true);
 
+  // Monotonic token for loadOverview() calls. Only the response of the most
+  // recent call is allowed to write overviewData / clear the loading flag — an
+  // earlier, slower call (e.g. the ngOnInit default range still in flight when
+  // the user clicks another range) must NOT overwrite the newer result. Without
+  // this, a stale narrower-range response could clobber the correct one, making
+  // the provider table (and every card) show fewer rows than the selected range.
+  private overviewRequestId = 0;
+
   /** provider enum key → PaymentProvider (with iconUri1/iconUri2) for logo rendering. */
   readonly providerIconMap = signal<Map<string, PaymentProvider>>(new Map());
 
@@ -349,15 +357,22 @@ export class OverviewComponent implements OnInit {
     if (!appId || !this.showAnalytics()) return;
 
     const { begin, end } = this.rangeWindow();
+    const reqId = ++this.overviewRequestId;
     this.loadingOverview.set(true);
     try {
       const view = await firstValueFrom(this.paymentsClient.getOverview(appId, begin, end));
+      // A newer load started while this one was in flight — its result is the
+      // source of truth now; discard this stale response entirely.
+      if (reqId !== this.overviewRequestId) return;
       this.overviewData.set(view ?? null);
     } catch {
+      if (reqId !== this.overviewRequestId) return;
       // Leave the sample data in place on failure.
       this.overviewData.set(null);
     } finally {
-      this.loadingOverview.set(false);
+      // Only the latest request clears the loading flag, so the skeleton stays
+      // up until the response that actually matters arrives.
+      if (reqId === this.overviewRequestId) this.loadingOverview.set(false);
     }
   }
 

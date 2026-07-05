@@ -1,10 +1,12 @@
 import { Component, inject, OnInit, OnDestroy } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { Subscription, filter } from 'rxjs';
 import { LoadingOverlayComponent } from '@shared/components/loading-overlay/loading-overlay.component';
 import { ToastContainerComponent } from '@shared/components/toast-container/toast-container.component';
 import { SettingsStore } from '@core/stores/settings.store';
 import { Logger } from '@core/services/logger.service';
+import { TagManagerService } from '@core/services/tag-manager.service';
 
 @Component({
   selector: 'app-root',
@@ -29,6 +31,9 @@ import { Logger } from '@core/services/logger.service';
 })
 export class AppComponent implements OnInit, OnDestroy {
   private readonly settingsStore = inject(SettingsStore);
+  private readonly router = inject(Router);
+  private readonly tagManager = inject(TagManagerService);
+  private tagManagerSubscription?: Subscription;
   private readonly mediaListener = (e: MediaQueryListEvent): void => {
     // Use 'tc-theme' (the user's explicit preference) so that null and 'system'
     // both allow OS changes through, but an explicit 'dark'/'light' lock ignores them.
@@ -44,6 +49,16 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     Logger.printBootBanner();
 
+    // Load Google Tag Manager — only does anything in environments where it is enabled.
+    this.tagManager.init();
+
+    // SPA page-view tracking on every route change (no-op when GTM is disabled).
+    this.tagManagerSubscription = this.router.events
+      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+      .subscribe((e) => {
+        this.tagManager.trackPageView(e.urlAfterRedirects);
+      });
+
     window
       .matchMedia('(prefers-color-scheme: dark)')
       .addEventListener('change', this.mediaListener);
@@ -52,6 +67,8 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.tagManagerSubscription?.unsubscribe();
+
     window
       .matchMedia('(prefers-color-scheme: dark)')
       .removeEventListener('change', this.mediaListener);
