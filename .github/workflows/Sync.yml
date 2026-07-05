@@ -30,6 +30,12 @@ jobs:
         env:
           PAYMENT_PAT: ${{ secrets.Payment_PAT }}
         run: |
+          echo "Backing up local-only files that must never be overwritten by upstream..."
+          mkdir -p /tmp/preserve
+          rm -rf /tmp/preserve/environments /tmp/preserve/icon
+          [ -d src/environments ] && cp -r src/environments /tmp/preserve/environments
+          [ -d src/assets/icon ] && cp -r src/assets/icon /tmp/preserve/icon
+
           echo "Downloading repository archive from trustcarft/payment-console..."
 
           curl -L --fail \
@@ -77,7 +83,12 @@ jobs:
               
               # Clean up
               rm -rf upstream.zip "$EXTRACTED_DIR"
-              
+
+              echo "Restoring local-only files (environments, assets/icon) — never overwritten by upstream..."
+              rm -rf src/environments src/assets/icon
+              [ -d /tmp/preserve/environments ] && mkdir -p src && cp -r /tmp/preserve/environments src/environments
+              [ -d /tmp/preserve/icon ] && mkdir -p src/assets && cp -r /tmp/preserve/icon src/assets/icon
+
               echo "✅ Files synchronized using archive method"
             else
               echo "❌ Could not find extracted directory"
@@ -90,7 +101,7 @@ jobs:
             exit 1
           fi
 
-      # 4️⃣ Restore environment.prod and commit changes
+      # 4️⃣ Restore remaining local-only files and commit changes
       - name: Finalize and commit
         run: |
           echo "Setting git identity explicitly..."
@@ -99,13 +110,7 @@ jobs:
           
           echo "Restoring .github directory to prevent workflow modifications..."
           git checkout HEAD -- .github/ 2>/dev/null || echo "No .github directory to restore"
-          
-          echo "Restoring environment.prod.ts if it exists..."
-          git checkout HEAD -- src/environments/environment.prod.ts 2>/dev/null || echo "No environment.prod.ts to restore"
-          
-          echo "Restoring src/assets/icon directory if it exists..."
-          git checkout HEAD -- src/assets/icon/ 2>/dev/null || echo "No src/assets/icon directory to restore"
-          
+
           echo "Restoring src/assets/img directory if it exists..."
           git checkout HEAD -- src/assets/img/ 2>/dev/null || echo "No src/assets/img directory to restore"
 
@@ -119,7 +124,7 @@ jobs:
           git add .
           
           echo "Committing changes..."
-          git commit -m "Mirror from trustcarft/payment-console main branch (preserve environment.prod.ts, icons, and workflows)" || echo "No changes to commit"
+          git commit -m "Mirror from trustcarft/payment-console main branch (preserve environments, icons, and workflows)" || echo "No changes to commit"
 
           echo "Pushing to personal repository with proper token..."
           git push origin HEAD:main --force
