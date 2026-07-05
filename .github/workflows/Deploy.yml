@@ -45,18 +45,18 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
 
-      # 4️⃣ Deploy build output directly to /opt/console2
-      - name: Deploy to /opt/console2
+      # 4️⃣ Deploy build output directly to DEPLOY_PATH
+      - name: Deploy to server
         run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
             ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
-            "sudo mkdir -p /opt/console2 && sudo chown -R ${{ secrets.DEPLOY_USER }}:${{ secrets.DEPLOY_USER }} /opt/console2"
+            "sudo mkdir -p ${{ secrets.DEPLOY_PATH }} && sudo chown -R ${{ secrets.DEPLOY_USER }}:${{ secrets.DEPLOY_USER }} ${{ secrets.DEPLOY_PATH }}"
 
           # Copy only the contents of www/, not the folder itself
           rsync -avzr --delete \
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
             www/ \
-            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/opt/console2/
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/
 
       # 5️⃣ Restart Caddy Service
       - name: Restart Caddy Service
