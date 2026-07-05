@@ -1,0 +1,363 @@
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+  p  { color: var(--text-2); font-size: 13.5px; margin-top: 3px; }
+}
+
+.with-icon { display: flex; align-items: center; gap: 9px; }
+.cell-mono  { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 12.5px; }
+
+.auto-pay-ic {
+  font-size: 18px;
+  &.supported   { color: var(--ok); }
+  &.unsupported { color: var(--text-3); }
+}
+
+// ── Modal shell ──────────────────────────────────────────────────────────────
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  animation: fade 0.2s ease;
+}
+
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  width: 500px;
+  max-width: calc(100vw - 32px);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  animation: pop 0.2s ease;
+
+  &.tall { max-height: 90vh; }
+}
+
+@keyframes pop {
+  from { transform: scale(0.96); opacity: 0.6; }
+  to   { transform: none; opacity: 1; }
+}
+
+.mh {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+
+  .brand-ic { color: var(--brand-600); font-size: 20px; }
+  h3 { font-size: 15px; font-weight: 700; }
+  .spacer { flex: 1; }
+}
+
+.mb {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mf {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+
+  .spacer { flex: 1; }
+}
+
+// ── Step indicator (matches prototype .gw-steps) ─────────────────────────────
+
+.gw-steps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
+.s {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  .n {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    border: 1.5px solid var(--border-strong);
+    background: var(--surface);
+    transition: 0.15s;
+  }
+
+  &.active {
+    color: var(--text);
+    .n { background: var(--brand-500); border-color: var(--brand-500); color: #fff; }
+  }
+
+  &.done {
+    color: var(--ok);
+    .n { background: var(--ok); border-color: var(--ok); color: #fff; }
+  }
+}
+
+.sep {
+  flex: 1;
+  height: 1.5px;
+  background: var(--border);
+  min-width: 14px;
+}
+
+// ── Provider list (Step 1) ───────────────────────────────────────────────────
+
+.gw-prov {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.opt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 13px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+
+  &:hover { border-color: var(--brand-500); }
+
+  &.sel {
+    border-color: var(--brand-500);
+    background: var(--brand-weak, rgba(99, 91, 255, 0.06));
+  }
+
+  .nm {
+    font-weight: 600;
+    flex: 1;
+    font-size: 13.5px;
+    color: var(--text);
+  }
+
+  .opt-spacer { flex: 1; }
+
+  .ex {
+    font-size: 11.5px;
+    color: var(--text-3);
+    font-weight: 600;
+  }
+
+  .sel-check {
+    font-size: 18px;
+    color: var(--brand-500);
+    flex-shrink: 0;
+  }
+}
+
+.cfg-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ok);
+  background: rgba(34, 197, 94, 0.1);
+  border-radius: var(--r-pill);
+  padding: 2px 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+// ── Skeleton rows (Step 1 loading) ───────────────────────────────────────────
+
+.sk {
+  display: block;
+  background: var(--border);
+  border-radius: 6px;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+.sk-opt {
+  cursor: default;
+  pointer-events: none;
+  gap: 12px;
+  min-height: 48px;
+}
+
+.sk-prov-badge { width: 72px; height: 72px; border-radius: 16px; flex-shrink: 0; }
+.sk-prov-name  { height: 13px; width: 120px; border-radius: 5px; }
+.sk-prov-cur   { height: 11px; width: 70px; border-radius: 4px; margin-left: auto; }
+
+// ── Form fields (Steps 2 & 3) ────────────────────────────────────────────────
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+
+  label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-2);
+  }
+
+  .req { color: var(--bad); }
+}
+
+.step-hint {
+  font-size: 13px;
+  color: var(--text-2);
+  margin: 0;
+}
+
+.fee-row {
+  display: flex;
+  gap: 14px;
+}
+
+.input.err { border-color: var(--bad) !important; }
+.select select.err { border-color: var(--bad) !important; }
+
+.input {
+  width: 100%;
+  height: 38px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  padding: 0 12px;
+  font-family: var(--font);
+  font-size: 13.5px;
+  color: var(--text);
+  outline: none;
+  transition: 0.15s;
+  box-sizing: border-box;
+
+  &:focus { border-color: var(--brand-500); box-shadow: var(--ring); }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+.select {
+  position: relative;
+
+  select {
+    appearance: none;
+    width: 100%;
+    height: 38px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    padding: 0 34px 0 12px;
+    font-family: var(--font);
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    outline: none;
+    transition: 0.15s;
+
+    &:focus { border-color: var(--brand-500); box-shadow: var(--ring); }
+    &:disabled { opacity: 0.6; cursor: not-allowed; }
+  }
+
+  .material-symbols-outlined {
+    position: absolute;
+    right: 9px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--text-3);
+    font-size: 20px;
+  }
+}
+
+// ── Review (Step 4) ──────────────────────────────────────────────────────────
+
+.kv-review {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.rv-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border);
+
+  &:last-child { border-bottom: none; }
+}
+
+.rv-k {
+  font-size: 12.5px;
+  color: var(--text-2);
+  font-weight: 500;
+  flex-shrink: 0;
+  min-width: 100px;
+}
+
+.rv-v {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text);
+  text-align: right;
+}
+
+// ── Misc ─────────────────────────────────────────────────────────────────────
+
+.empty-msg {
+  color: var(--text-3);
+  font-size: 13.5px;
+  text-align: center;
+  padding: 24px 0;
+}
+
+.wizard-err {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--bad);
+  font-size: 12.5px;
+  font-weight: 600;
+
+  .material-symbols-outlined { font-size: 17px; }
+}
+
+.spin { animation: spin 0.7s linear infinite; }
+
+@keyframes spin { to { transform: rotate(360deg); } }

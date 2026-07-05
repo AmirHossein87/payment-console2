@@ -1,0 +1,22 @@
+@if (isOpen()) {
+  <div class="overlay">
+    <div class="modal">
+      <div class="mh">
+        <span class="material-symbols-outlined head-ic">link</span>
+        <h3>{{ title() }}</h3>
+        <div class="spacer"></div>
+        <button class="icon-btn" type="button" (click)="close()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="mb">
+        <app-payment-link-result [url]="url()" />
+      </div>
+
+      <div class="mf">
+        <button class="btn btn-primary" type="button" (click)="close()">Close</button>
+      </div>
+    </div>
+  </div>
+}

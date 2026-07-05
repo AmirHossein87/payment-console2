@@ -1,0 +1,121 @@
+@if (customer(); as c) {
+  <div class="detail-grid">
+    <div class="info-card">
+      <div class="h">
+        <span class="material-symbols-outlined">person</span> Customer info
+      </div>
+      <div class="kv">
+        <div class="row">
+          <span class="k">Customer ID</span>
+          <span class="v cell-mono">{{ c.customerId }}</span>
+        </div>
+        <div class="row editable-row" (click)="editFirstName()">
+          <span class="k">First name</span>
+          <span class="v">{{ c.firstName || '—' }}</span>
+          <span class="edit-hint material-symbols-outlined">edit</span>
+        </div>
+        <div class="row editable-row" (click)="editLastName()">
+          <span class="k">Last name</span>
+          <span class="v">{{ c.lastName || '—' }}</span>
+          <span class="edit-hint material-symbols-outlined">edit</span>
+        </div>
+        <div class="row editable-row" (click)="editEmail()">
+          <span class="k">Email</span>
+          <span class="v">{{ c.email || '—' }}</span>
+          <span class="edit-hint material-symbols-outlined">edit</span>
+        </div>
+        <div class="row editable-row" (click)="editMobile()">
+          <span class="k">Mobile</span>
+          <span class="v cell-mono">{{ c.mobileNumber || '—' }}</span>
+          <span class="edit-hint material-symbols-outlined">edit</span>
+        </div>
+        <div class="row">
+          <span class="k">Status</span>
+          <span class="v">
+            <span class="pill plain" [ngClass]="c.isBlocked ? 'bad' : 'ok'">
+              <span class="dot"></span>{{ c.isBlocked ? 'Blocked' : 'Active' }}
+            </span>
+          </span>
+        </div>
+        <div class="row">
+          <span class="k">Created</span>
+          <span class="v">{{ c.createdTime | date: 'MMM d, y, HH:mm' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="h">
+        <span class="material-symbols-outlined">shield</span> Policy &amp; settings
+      </div>
+      <div class="kv">
+        <div class="row">
+          <span class="k">Fraud policy ID</span>
+          <span class="v cell-mono">{{ c.fraudPolicyId || '' }}</span>
+        </div>
+        <div class="row">
+          <span class="k">Last policy check</span>
+          <span class="v">{{
+            c.lastAffectedCheckPolicyTime ? (c.lastAffectedCheckPolicyTime | date: 'MMM d, y, HH:mm') : '—'
+          }}</span>
+        </div>
+        <div class="row">
+          <span class="k">Balance check</span>
+          <span class="v">
+            @if (c.isCheckAccountBalanceActivated) {
+              <span class="pill plain ok"><span class="dot"></span>Enabled</span>
+            } @else {
+              <span class="pill plain muted"><span class="dot"></span>Disabled</span>
+            }
+          </span>
+        </div>
+        @if (c.payPalAcceptedEmail) {
+          <div class="row">
+            <span class="k">PayPal email</span>
+            <span class="v">{{ c.payPalAcceptedEmail }}</span>
+          </div>
+        }
+        @if (c.isCheckAccountBalanceActivated) {
+          <div class="row">
+            <span class="k">Provider raw info</span>
+            <span class="v">
+              <button
+                class="btn btn-sm"
+                [disabled]="loadingRaw()"
+                (click)="showProviderRawInfo()"
+              >
+                <span class="material-symbols-outlined" [class.spin]="loadingRaw()">database</span>
+                {{ loadingRaw() ? 'Loading…' : 'View' }}
+              </button>
+            </span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+} @else {
+  <div class="cd-empty-page"><p>Customer not found.</p></div>
+}
+
+@if (showRaw()) {
+  <div class="overlay" (click)="closeRaw()">
+    <div class="raw-modal" (click)="$event.stopPropagation()">
+      <div class="raw-mh">
+        <span class="material-symbols-outlined">database</span>
+        <h3>Provider raw info</h3>
+        <div class="spacer"></div>
+        <button class="icon-btn" (click)="closeRaw()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="raw-body">
+        <pre>{{ rawJson() }}</pre>
+      </div>
+      <div class="raw-mf">
+        <button class="btn btn-primary" (click)="closeRaw()">Close</button>
+      </div>
+    </div>
+  </div>
+}
+
+<app-universal-edit-modal #editor />

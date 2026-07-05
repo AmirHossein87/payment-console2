@@ -1,0 +1,89 @@
+<div class="grant-access-container">
+  <div class="card-wrapper">
+    @if (accessStatus === 'pending') {
+      <div class="grant-access-card">
+        <div class="card-content">
+          <h1 class="card-title">
+            <span class="material-symbols-outlined title-icon">key</span>
+            Access Request
+          </h1>
+
+          <p class="description">
+            @if (domainName) {
+              <strong>{{ appName }}</strong> is requesting access to your account.
+            } @else {
+              An application is requesting access to your account.
+            }
+            Please review the details below before granting access.
+          </p>
+
+          <div class="permissions-box">
+            @if (domainName) {
+              <div>
+                <span class="font-semibold">Domain Name: </span>
+                <span class="text-muted">{{ domainName }}</span>
+              </div>
+            }
+            <div>
+              <span class="font-semibold block mb-1">
+                Requested Permissions:
+              </span>
+              <ul class="permissions-list">
+                @for (permission of permissions; track permission) {
+                  <li>{{ permission }}</li>
+                }
+              </ul>
+            </div>
+          </div>
+
+          <p class="warning-text">
+            <span class="material-symbols-outlined warning-icon">warning</span>
+            Only grant access if you trust this application. You can revoke access
+            at any time in your account settings.
+          </p>
+
+          <div class="actions">
+            <button class="btn-outline" type="button" (click)="denyAccess()">
+              Deny Access
+            </button>
+            <button class="btn-primary grant-button" type="button" (click)="grantAccess()">
+              Grant Access
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (accessStatus === 'granted') {
+      <div class="grant-access-card text-center">
+        <div class="card-content">
+          <span class="material-symbols-outlined status-icon status-success">
+            check_circle
+          </span>
+          <h2 class="status-title">Access Granted!</h2>
+          <p class="status-description">
+            You have successfully granted access to {{ appName }}.
+          </p>
+          <p class="status-description">Redirecting...</p>
+        </div>
+      </div>
+    }
+
+    @if (accessStatus === 'denied') {
+      <div class="grant-access-card text-center">
+        <div class="card-content">
+          <span class="material-symbols-outlined status-icon status-error">
+            cancel
+          </span>
+          <h2 class="status-title">Access Denied</h2>
+          <p class="status-description">
+            You have denied access for {{ appName }}.
+          </p>
+          <button class="btn-link back-button" type="button" (click)="reset()">
+            Back to Sign In
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,360 @@
+// ── Skeleton ────────────────────────────────────────────────────────────────
+
+.gd-skeleton {
+  .sk-head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .sk-prov-badge {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+  }
+  .sk-title-area {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .sk-title { width: 180px; height: 18px; border-radius: 6px; }
+  .sk-sub   { width: 130px; height: 13px; border-radius: 5px; }
+  .sk-grid  {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .sk-card {
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .sk-card-h { height: 14px; width: 100px; border-radius: 5px; }
+  .sk-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sk-line {
+    height: 12px;
+    border-radius: 5px;
+    &.md { width: 90px; }
+    &.lg { width: 130px; }
+  }
+}
+
+.sk {
+  background: var(--border);
+  border-radius: 5px;
+  animation: shimmer 1.4s ease infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
+// Skeleton pieces reused outside .gd-skeleton
+.sk-ic       { width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0; }
+.sk-ch-title { width: 140px; height: 13px; }
+.sk-kv-key   { width: 90px;  height: 12px; }
+.sk-kv-val   { width: 150px; height: 12px; }
+
+// ── Not found ───────────────────────────────────────────────────────────────
+
+.not-found {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 60px 20px;
+  text-align: center;
+
+  .material-symbols-outlined {
+    font-size: 48px;
+    color: var(--text-3);
+  }
+
+  h3 { font-size: 17px; font-weight: 700; }
+
+  p { color: var(--text-2); font-size: 13.5px; }
+}
+
+// ── Page head ───────────────────────────────────────────────────────────────
+
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.head-main {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.head-ccy {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  color: var(--text);
+  line-height: 1;
+}
+
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+// ── Pill badges ──────────────────────────────────────────────────────────────
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  &.pill-ok  { background: rgba(34,197,94,0.12); color: var(--ok);  .dot { background: var(--ok); } }
+  &.pill-bad { background: rgba(239,68,68,0.12);  color: var(--bad); .dot { background: var(--bad); } }
+}
+
+// ── Detail grid ──────────────────────────────────────────────────────────────
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  @media (max-width: 820px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ── Info card ────────────────────────────────────────────────────────────────
+
+.info-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+
+  .material-symbols-outlined {
+    font-size: 17px;
+    color: var(--brand-600);
+  }
+}
+
+.kv-list {
+  padding: 6px 0;
+}
+
+.kv-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 18px;
+  min-height: 44px;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+.kv-key {
+  font-size: 12.5px;
+  color: var(--text-2);
+  font-weight: 500;
+  flex-shrink: 0;
+  min-width: 140px;
+}
+
+.kv-val {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text);
+
+  &.mono { font-family: monospace; font-size: 13px; }
+}
+
+.kv-val-edit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.auto-ic {
+  font-size: 17px;
+  &.ok  { color: var(--ok); }
+  &.off { color: var(--text-3); }
+}
+
+.kv-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+.fee-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 10px 18px;
+  font-size: 12px;
+  color: var(--text-3);
+
+  .material-symbols-outlined { font-size: 15px; margin-top: 1px; }
+}
+
+// ── Fee section ──────────────────────────────────────────────────────────────
+
+.fee-section {
+  padding: 14px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fee-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  .material-symbols-outlined { font-size: 15px; color: var(--brand-600); }
+}
+
+.fee-boxes {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fee-box {
+  flex: 1;
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 14px 14px 12px;
+  background: var(--surface-2, rgba(0,0,0,0.02));
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.fee-box-edit {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.fee-box-val {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--text);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  line-height: 1;
+}
+
+.fee-box-lbl {
+  font-size: 11.5px;
+  color: var(--text-3);
+  font-weight: 500;
+}
+
+.fee-plus {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
+// ── API key card ─────────────────────────────────────────────────────────────
+
+.cred-masked {
+  letter-spacing: 0.5px;
+}
+
+.cell-sub {
+  color: var(--text-3);
+  font-size: 12.5px;
+}
+
+.empty-cfg {
+  padding: 20px 18px;
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+.cred-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 18px 14px;
+  font-size: 12px;
+  color: var(--warn, #f59e0b);
+
+  .material-symbols-outlined { font-size: 15px; margin-top: 1px; }
+}
+
+// ── Icon button (small) ───────────────────────────────────────────────────────
+
+.icon-btn.sm {
+  width: 28px;
+  height: 28px;
+
+  .material-symbols-outlined { font-size: 16px; }
+}
+
+// ── Spin ─────────────────────────────────────────────────────────────────────
+
+.spin {
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

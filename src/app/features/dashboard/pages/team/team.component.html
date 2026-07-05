@@ -1,0 +1,227 @@
+<app-data-grid
+  title="Members"
+  titleIcon="badge"
+  [data]="rows()"
+  [columns]="gridColumns"
+  [loading]="loading()"
+  [defaultPageSize]="10"
+  [fill]="true"
+  [searchInToolbar]="true"
+  (refreshRequested)="loadTeam()"
+>
+  @if (canWrite()) {
+    <div toolbar-actions style="display: contents">
+      <button class="btn btn-sm" (click)="openAddBot()">
+        <span class="material-symbols-outlined">smart_toy</span>
+        New bot
+      </button>
+      <button class="btn btn-sm btn-primary" (click)="openAddMember()">
+        <span class="material-symbols-outlined">person_add</span>
+        New member
+      </button>
+    </div>
+  }
+</app-data-grid>
+
+<!-- Member cell template -->
+<ng-template #memberTemplate let-row="row">
+  <div class="with-icon">
+    @if (row.isBot) {
+      <div class="avi" style="background:linear-gradient(135deg,#64748b,#475569)">
+        <span class="material-symbols-outlined" style="font-size:16px">smart_toy</span>
+      </div>
+    } @else {
+      <div class="avi" [style.background]="avatarGrad(row.email)">{{ initials(row) }}</div>
+    }
+    <span class="cell-strong">{{ row.displayName }}</span>
+  </div>
+</ng-template>
+
+<!-- Role cell template -->
+<ng-template #roleTemplate let-row="row">
+  <span class="pill" [ngClass]="rolePillClass(row.roleName)">
+    <span class="dot"></span>{{ row.roleName }}
+  </span>
+</ng-template>
+
+<!-- Status cell template -->
+<ng-template #statusTemplate let-row="row">
+  @if (row.isDisabled) {
+    <span class="pill plain bad"><span class="dot"></span>Inactive</span>
+  } @else {
+    <span class="pill plain ok"><span class="dot"></span>Active</span>
+  }
+</ng-template>
+
+<!-- Actions cell template -->
+<ng-template #actionsTemplate let-row="row">
+  <div class="row-actions">
+    @if (canWrite()) {
+      @if (!row.isBot && !row.isOwner) {
+        <button class="row-btn" (click)="openEditRole(row)" title="Change role">
+          <span class="material-symbols-outlined">edit</span>
+        </button>
+      }
+      @if (!row.isOwner) {
+        <button class="row-btn del" (click)="askDelete(row)" title="Remove">
+          <span class="material-symbols-outlined">delete</span>
+        </button>
+      }
+    }
+  </div>
+</ng-template>
+
+<!-- Universal Edit Modal for role change -->
+<app-universal-edit-modal #editModal />
+
+<!-- Add Member Modal -->
+@if (addMemberOpen()) {
+  <div class="overlay open" (click)="closeAddMember()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="mh">
+        <span class="material-symbols-outlined brand-ic">person_add</span>
+        <h3>Add new member</h3>
+        <div class="spacer"></div>
+        <button class="icon-btn" (click)="closeAddMember()" [disabled]="addMemberSaving()" title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="mb">
+        <div class="field">
+          <label>Email *</label>
+          <input
+            class="input"
+            [class.invalid]="addMemberTried && !addMemberEmail.trim()"
+            type="email"
+            [(ngModel)]="addMemberEmail"
+            placeholder="name@example.com"
+            [disabled]="addMemberSaving()"
+          />
+          @if (addMemberTried && !addMemberEmail.trim()) {
+            <span class="err-hint">Email is required.</span>
+          }
+        </div>
+        <div class="field">
+          <label>Role *</label>
+          <div class="sel-wrap">
+            <select [(ngModel)]="addMemberRoleId" [disabled]="addMemberSaving()">
+              @for (r of roles(); track r.roleId) {
+                @if (r.roleName.toLowerCase() !== 'bot') {
+                  <option [value]="r.roleId">{{ r.roleName }}</option>
+                }
+              }
+            </select>
+            <span class="material-symbols-outlined">expand_more</span>
+          </div>
+          @if (addMemberTried && !addMemberRoleId) {
+            <span class="err-hint">Role is required.</span>
+          }
+        </div>
+      </div>
+      <div class="mf">
+        <div class="spacer"></div>
+        <button class="btn" (click)="closeAddMember()" [disabled]="addMemberSaving()">Cancel</button>
+        <button class="btn btn-primary" (click)="confirmAddMember()" [disabled]="addMemberSaving()">
+          <span class="material-symbols-outlined" [class.spin]="addMemberSaving()">person_add</span>
+          {{ addMemberSaving() ? 'Adding…' : 'Add member' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Add Bot Modal -->
+@if (addBotOpen()) {
+  <div class="overlay open" (click)="closeAddBot()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      @if (!botToken()) {
+        <div class="mh">
+          <span class="material-symbols-outlined brand-ic">smart_toy</span>
+          <h3>Add new bot</h3>
+          <div class="spacer"></div>
+          <button class="icon-btn" (click)="closeAddBot()" [disabled]="addBotSaving()" title="Close">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="mb">
+          <div class="field">
+            <label>Bot name *</label>
+            <input
+              class="input"
+              [class.invalid]="addBotTried && !addBotName.trim()"
+              [(ngModel)]="addBotName"
+              placeholder="e.g. Reporting Bot"
+              [disabled]="addBotSaving()"
+            />
+            @if (addBotTried && !addBotName.trim()) {
+              <span class="err-hint">Bot name is required.</span>
+            }
+          </div>
+        </div>
+        <div class="mf">
+          <div class="spacer"></div>
+          <button class="btn" (click)="closeAddBot()" [disabled]="addBotSaving()">Cancel</button>
+          <button class="btn btn-primary" (click)="confirmAddBot()" [disabled]="addBotSaving()">
+            <span class="material-symbols-outlined" [class.spin]="addBotSaving()">smart_toy</span>
+            {{ addBotSaving() ? 'Creating…' : 'Create bot' }}
+          </button>
+        </div>
+      } @else {
+        <div class="mh">
+          <span class="material-symbols-outlined ok-ic">check_circle</span>
+          <h3>Bot created</h3>
+          <div class="spacer"></div>
+          <button class="icon-btn" (click)="closeAddBot()" title="Close">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="mb">
+          <p class="token-msg">Copy this API token now — it won't be shown again.</p>
+          <div class="field">
+            <label>API Token</label>
+            <div class="token-row">
+              <code class="token-val">{{ botToken() }}</code>
+              <button class="icon-btn" (click)="copyBotToken()" title="Copy token">
+                <span class="material-symbols-outlined">content_copy</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="mf">
+          <div class="spacer"></div>
+          <button class="btn btn-primary" (click)="closeAddBot()">Done</button>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- Delete Confirm Modal -->
+@if (confirmDeleteRow(); as dr) {
+  <div class="overlay open" (click)="cancelDelete()">
+    <div class="modal sm" (click)="$event.stopPropagation()">
+      <div class="mh">
+        <span class="material-symbols-outlined warn-ic">warning</span>
+        <h3>{{ dr.isBot ? 'Remove bot' : 'Remove member' }}</h3>
+        <div class="spacer"></div>
+        <button class="icon-btn" (click)="cancelDelete()" [disabled]="deleting()" title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="mb">
+        <p class="conf-msg">
+          Remove <strong>{{ dr.displayName || dr.email }}</strong> from this workspace?
+          They will lose access immediately.
+        </p>
+      </div>
+      <div class="mf">
+        <div class="spacer"></div>
+        <button class="btn" (click)="cancelDelete()" [disabled]="deleting()">Cancel</button>
+        <button class="btn btn-danger" (click)="doDelete()" [disabled]="deleting()">
+          <span class="material-symbols-outlined" [class.spin]="deleting()">delete</span>
+          {{ deleting() ? 'Removing…' : 'Remove' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

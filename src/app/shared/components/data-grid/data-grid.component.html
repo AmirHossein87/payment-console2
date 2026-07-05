@@ -1,0 +1,517 @@
+<div class="datacard">
+  <!-- Toolbar Section -->
+  <div class="dc-toolbar">
+    <div class="search" *ngIf="searchInToolbar()">
+      <span class="material-symbols-outlined">search</span>
+      <input
+        type="text"
+        [value]="globalSearch()"
+        (input)="onSearchInput($event)"
+        placeholder="Search by any field..."
+      />
+    </div>
+    <div class="dc-title" *ngIf="!searchInToolbar()">
+      <span class="material-symbols-outlined" *ngIf="titleIcon()" style="color:var(--brand-600);font-size:20px">{{ titleIcon() }}</span>
+      {{ title() }}
+      <span class="count" *ngIf="showCount()">{{ totalRecordsCount() }}</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="dc-actions">
+      <ng-container *ngIf="!hideDefaultActions()">
+        <button class="btn btn-sm" (click)="onRefresh()" [disabled]="loading()">
+          <span class="material-symbols-outlined" [class.spin]="loading()">refresh</span>
+          Refresh
+        </button>
+        <button class="btn btn-sm" (click)="onExport()" [disabled]="loading() || data().length === 0">
+          <span class="material-symbols-outlined">download</span>
+          Export
+        </button>
+      </ng-container>
+      <!-- Custom Projected Actions -->
+      <ng-container *ngIf="actionsTemplate(); else defaultProjection">
+        <ng-container *ngTemplateOutlet="actionsTemplate()"></ng-container>
+      </ng-container>
+      <ng-template #defaultProjection>
+        <ng-content select="[toolbar-actions]"></ng-content>
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- Slim refresh indicator: sits outside the table so it never shifts rows -->
+  <div class="refresh-bar" *ngIf="loading() && displayedData().length > 0 && !showSkeleton()">
+    <div class="refresh-bar-fill"></div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="dc-filters" *ngIf="!hideFilters() && !searchInToolbar()">
+    <!-- Global Search -->
+    <div class="search">
+      <span class="material-symbols-outlined">search</span>
+      <input
+        type="text"
+        [value]="globalSearch()"
+        (input)="onSearchInput($event)"
+        placeholder="Search by any field..."
+      />
+    </div>
+
+    <!-- Quick Dropdown Filters (custom premium styling) -->
+    <ng-container *ngFor="let col of filterableDropdownColumns()">
+      <div class="custom-select-wrap">
+        <button
+          class="custom-select-btn"
+          [class.active]="activeDropdown() === col.field"
+          (click)="toggleDropdown(col.field, $event)"
+        >
+          <span>{{ getSelectedLabel(col) }}</span>
+          <span class="material-symbols-outlined">expand_more</span>
+        </button>
+
+        <div
+          class="custom-select-dropdown"
+          *ngIf="activeDropdown() === col.field"
+          (click)="$event.stopPropagation()"
+        >
+          <div
+            class="custom-select-option"
+            [class.selected]="!columnFilterValues()[col.field]"
+            (click)="selectOption(col.field, '')"
+          >
+            All {{ col.header.toLowerCase() }}
+          </div>
+          <div
+            class="custom-select-option"
+            *ngFor="let opt of getColumnFilterOptions(col)"
+            [class.selected]="isOptionSelected(col.field, opt.value)"
+            (click)="selectOption(col.field, opt.value)"
+          >
+            {{ opt.label }}
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Date Range Picker -->
+    <app-date-range-picker
+      *ngIf="hasDateColumn()"
+      [from]="dateRangeFrom()"
+      [to]="dateRangeTo()"
+      (rangeChange)="onDateRangeChange($event)"
+    ></app-date-range-picker>
+
+    <!-- Advanced Filter Popover button -->
+    <div class="adv-filter-dropdown" *ngIf="!hideBuiltInFilters()">
+      <button class="btn btn-sm" (click)="toggleAdvancedFilterPanel()">
+        <span class="material-symbols-outlined">filter_alt</span>
+        Advanced Filter
+      </button>
+
+      <!-- Advanced Filter Rules Panel -->
+      <div class="adv-filter-panel" *ngIf="advancedFilterPanelOpen()">
+        <h4>Custom Rules Builder</h4>
+
+        <div class="rules-list">
+          <div
+            class="empty"
+            *ngIf="advancedRules().length === 0"
+            style="padding: 15px 0"
+          >
+            <p style="font-size: 12.5px; color: var(--text-3)">
+              No custom rules defined yet.
+            </p>
+          </div>
+
+          <div
+            class="rule-row"
+            *ngFor="let rule of advancedRules(); let idx = index"
+          >
+            <!-- Select Column -->
+            <select
+              class="field-select"
+              [value]="rule.field"
+              (change)="updateRuleField(idx, $event)"
+            >
+              <option *ngFor="let col of allColumns()" [value]="col.field">
+                {{ col.header }}
+              </option>
+            </select>
+
+            <!-- Select Operator -->
+            <select
+              class="op-select"
+              [value]="rule.operator"
+              (change)="updateRuleOperator(idx, $event)"
+            >
+              <option value="contains">Contains</option>
+              <option value="notContains">Not Contains</option>
+              <option value="equals">Equals</option>
+              <option value="greaterThan">Greater Than</option>
+              <option value="lessThan">Less Than</option>
+              <option value="between">Between</option>
+              <option *ngIf="isDateColumnField(rule.field)" value="before">
+                Before
+              </option>
+              <option *ngIf="isDateColumnField(rule.field)" value="after">
+                After
+              </option>
+            </select>
+
+            <!-- Value Inputs -->
+            <ng-container [ngSwitch]="rule.operator">
+              <!-- Between Bounds -->
+              <div class="val-between" *ngSwitchCase="'between'">
+                <input
+                  [type]="getFieldInputType(rule.field)"
+                  class="val-input"
+                  [value]="rule.value || ''"
+                  (input)="updateRuleValue(idx, $event)"
+                  placeholder="Min"
+                />
+                <span style="color: var(--text-3); font-size: 11px">-</span>
+                <input
+                  [type]="getFieldInputType(rule.field)"
+                  class="val-input"
+                  [value]="rule.value2 || ''"
+                  (input)="updateRuleValue2(idx, $event)"
+                  placeholder="Max"
+                />
+              </div>
+
+              <!-- General value input -->
+              <input
+                *ngSwitchDefault
+                [type]="getFieldInputType(rule.field)"
+                class="val-input"
+                [value]="rule.value || ''"
+                (input)="updateRuleValue(idx, $event)"
+                placeholder="Value..."
+              />
+            </ng-container>
+
+            <!-- Remove Button -->
+            <button
+              class="delete-rule-btn"
+              (click)="removeAdvancedRule(rule.id)"
+            >
+              <span class="material-symbols-outlined">delete</span>
+            </button>
+          </div>
+        </div>
+
+        <button class="add-rule-btn" (click)="addAdvancedRule()">
+          <span class="material-symbols-outlined">add</span> Add Rule
+        </button>
+
+        <div class="panel-actions">
+          <button class="btn btn-sm" (click)="clearAdvancedRules()">
+            Clear All
+          </button>
+          <button
+            class="btn btn-sm btn-primary"
+            (click)="applyAdvancedFilters()"
+          >
+            Apply Rules
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active Filter Chips Section -->
+  <div class="dc-chips" *ngIf="activeChipsCount() > 0">
+    <span class="lbl">Active filters:</span>
+
+    <!-- Global search chip -->
+    <div class="chip" *ngIf="globalSearch()">
+      Search: "{{ globalSearch() }}"
+      <span class="x" (click)="clearGlobalSearch()"
+        ><span class="material-symbols-outlined">close</span></span
+      >
+    </div>
+
+    <!-- Quick filter chips -->
+    <ng-container *ngFor="let entry of columnFilterValues() | keyvalue">
+      <div class="chip" *ngIf="entry.value">
+        {{ getColumnHeader(entry.key) }}: "{{
+          getFilterLabel(entry.key, entry.value)
+        }}"
+        <span class="x" (click)="clearQuickFilter(entry.key)"
+          ><span class="material-symbols-outlined">close</span></span
+        >
+      </div>
+    </ng-container>
+
+    <!-- Date range chips -->
+    <div class="chip" *ngIf="dateRangeFrom() || dateRangeTo()">
+      Date:
+      {{ dateRangeFrom() ? (dateRangeFrom() | date: "mediumDate") : "..." }} to
+      {{ dateRangeTo() ? (dateRangeTo() | date: "mediumDate") : "..." }}
+      <span class="x" (click)="clearDateRange()"
+        ><span class="material-symbols-outlined">close</span></span
+      >
+    </div>
+
+    <!-- Individual advanced rule chips — one per applied rule -->
+    <div class="chip" *ngFor="let rule of appliedAdvancedRules()">
+      {{ formatRuleChipLabel(rule) }}
+      <span class="x" (click)="removeAppliedRule(rule.id)"
+        ><span class="material-symbols-outlined">close</span></span
+      >
+    </div>
+
+    <span class="chip-clear" (click)="clearAllFilters()"
+      >Clear all filters</span
+    >
+  </div>
+
+  <!-- Data Grid Matrix Viewport -->
+  <div class="dc-tablewrap">
+    <table class="dc">
+      <thead>
+        <tr>
+          <!-- Row Selection Header Cell -->
+          <th class="select-col" *ngIf="selectionMode() !== 'none'">
+            <input
+              *ngIf="selectionMode() === 'multiple'"
+              type="checkbox"
+              [checked]="isAllSelected()"
+              [indeterminate]="isSomeSelected()"
+              (change)="toggleAllRows($event)"
+            />
+          </th>
+
+          <!-- Columns Header Cells -->
+          <th
+            *ngFor="let col of allColumns()"
+            [style.width]="colThWidth(col)"
+            [class.num]="col.align === 'right'"
+          >
+            <div class="th-content">
+              <span>{{ col.header }}</span>
+            </div>
+          </th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <!-- Skeleton loading rows -->
+        <ng-container *ngIf="showSkeleton()">
+          <tr
+            class="skeleton-row"
+            *ngFor="let r of [].constructor(skeletonRowCount()); let i = index"
+          >
+            <td
+              *ngFor="let col of allColumns(); let ci = index"
+              [class.num]="col.align === 'right'"
+            >
+              <div
+                class="sk-line"
+                [class.sk-w-70]="ci % 2 === 0"
+                [class.sk-w-40]="ci % 2 !== 0"
+              ></div>
+            </td>
+          </tr>
+        </ng-container>
+
+        <!-- Table Empty State -->
+        <tr *ngIf="!loading() && displayedData().length === 0">
+          <td [attr.colspan]="totalColumnsCount()">
+            <div class="empty">
+              <span class="material-symbols-outlined">search_off</span>
+              <h3>No matching records found</h3>
+              <p>
+                Try adjustments to your search terms, date ranges, or rule query
+                criteria.
+              </p>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Data Rows -->
+        <ng-container *ngIf="!showSkeleton()">
+        <tr
+          *ngFor="
+            let row of displayedData();
+            let rowIdx = index;
+            trackBy: trackByRowId
+          "
+          [class.selected-row]="isRowSelected(row)"
+        >
+          <!-- Row Selection Cell -->
+          <td
+            class="select-col"
+            *ngIf="selectionMode() !== 'none'"
+            data-label="Select"
+          >
+            <input
+              *ngIf="selectionMode() === 'multiple'"
+              type="checkbox"
+              [checked]="isRowSelected(row)"
+              (change)="toggleRowSelection(row, $event)"
+            />
+            <input
+              *ngIf="selectionMode() === 'single'"
+              type="radio"
+              [checked]="isRowSelected(row)"
+              (change)="toggleRowSelection(row, $event)"
+              name="grid-radio-select"
+            />
+          </td>
+
+          <!-- Data Cells -->
+          <td
+            *ngFor="let col of allColumns()"
+            [attr.data-label]="col.header"
+            [class.num]="col.align === 'right'"
+          >
+            <!-- Hyperlink field (set GridColumn.isLink) -->
+            <ng-container *ngIf="col.isLink; else cellSwitch">
+              <!-- Real <a> when a href builder is supplied: native Ctrl/Cmd/middle-click
+                   opens a new tab; plain left-click navigates in the current tab. -->
+              <a
+                *ngIf="col.linkHref; else plainLink"
+                class="idlink cell-mono"
+                [href]="col.linkHref(row)"
+                (click)="onLinkClick(col, row, $event)"
+                >{{ formatCellText(row, col) }}</a
+              >
+              <ng-template #plainLink>
+                <span class="idlink cell-mono" (click)="onLinkClick(col, row)">{{
+                  formatCellText(row, col)
+                }}</span>
+              </ng-template>
+            </ng-container>
+
+            <ng-template #cellSwitch>
+            <ng-container [ngSwitch]="col.type || 'text'">
+              <!-- Custom template render -->
+              <ng-container *ngSwitchCase="'custom'">
+                <ng-container
+                  *ngTemplateOutlet="
+                    col.customTemplate!;
+                    context: {
+                      $implicit: getCellValue(row, col.field),
+                      row: row,
+                    }
+                  "
+                ></ng-container>
+              </ng-container>
+
+              <!-- Badge color pill -->
+              <span
+                *ngSwitchCase="'badge'"
+                class="pill"
+                [ngClass]="getBadgeClass(getCellValue(row, col.field), col)"
+              >
+                {{ getCellValue(row, col.field) }}
+              </span>
+
+              <!-- Status Dot indicator -->
+              <span
+                *ngSwitchCase="'status'"
+                class="pill plain"
+                [ngClass]="getBadgeClass(getCellValue(row, col.field), col)"
+              >
+                <span class="dot"></span>
+                {{ formatCellText(row, col) }}
+              </span>
+
+              <!-- Provider logo only (no name) in grid cells -->
+              <app-provider-logo
+                *ngSwitchCase="'provider'"
+                [provider]="getCellValue(row, col.field)"
+                [showName]="false"
+                [size]="col.iconSize || 52"
+              ></app-provider-logo>
+
+              <!-- Icon display -->
+              <span *ngSwitchCase="'icon'" class="material-symbols-outlined">
+                {{ getCellValue(row, col.field) || "info" }}
+              </span>
+
+              <!-- Date display -->
+              <span *ngSwitchCase="'date'">
+                {{ getCellValue(row, col.field) | date: "MMM d, HH:mm" }}
+              </span>
+
+              <!-- Tabular Currency display -->
+              <span *ngSwitchCase="'currency'" class="cell-strong">
+                {{ formatCurrency(getCellValue(row, col.field), row) }}
+              </span>
+
+              <!-- Text fallback -->
+              <span *ngSwitchDefault>
+                {{ formatCellText(row, col) }}
+              </span>
+            </ng-container>
+            </ng-template>
+          </td>
+        </tr>
+        </ng-container>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer Pagination Section -->
+  <div class="dc-foot" *ngIf="pagination()">
+    <div class="spacer"></div>
+
+    <!-- Range offsets summary -->
+    <div class="range">
+      {{ rowRangeText() }}
+    </div>
+
+    <!-- Navigation pager buttons -->
+    <div class="pager">
+      <!-- First page -->
+      <button
+        class="pg"
+        [class.disabled]="pageIndex() === 0"
+        (click)="setPage(0)"
+        title="First page"
+      >
+        <span class="material-symbols-outlined">first_page</span>
+      </button>
+
+      <!-- Previous page -->
+      <button
+        class="pg"
+        [class.disabled]="pageIndex() === 0"
+        (click)="setPage(pageIndex() - 1)"
+        title="Previous page"
+      >
+        <span class="material-symbols-outlined">chevron_left</span>
+      </button>
+
+      <!-- Page Numbers array -->
+      <button
+        *ngFor="let pgNum of visiblePageNumbers()"
+        class="pg"
+        [class.active]="pgNum === pageIndex()"
+        (click)="setPage(pgNum)"
+      >
+        {{ pgNum + 1 }}
+      </button>
+
+      <!-- Next page -->
+      <button
+        class="pg"
+        [class.disabled]="pageIndex() >= lastPageIndex() && !hasMore()"
+        (click)="setPage(pageIndex() + 1)"
+        title="Next page"
+      >
+        <span class="material-symbols-outlined">chevron_right</span>
+      </button>
+
+      <!-- Last page (disabled in batched mode — the true last page is unknown) -->
+      <button
+        class="pg"
+        [class.disabled]="pageIndex() >= lastPageIndex() || hasMore()"
+        (click)="setPage(lastPageIndex())"
+        title="Last page"
+      >
+        <span class="material-symbols-outlined">last_page</span>
+      </button>
+    </div>
+  </div>
+</div>

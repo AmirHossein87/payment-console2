@@ -1,0 +1,281 @@
+<app-create-payment-link-modal #linkModal />
+
+@if (showAnalytics()) {
+  <!-- COMPLETED / COMPLETED-EXPIRED — live analytics overview (sample data) -->
+  @if (state() === 'completed-expired') {
+    <div class="banner warn expired-strip">
+      <div>
+        <h1>License expired — renew to keep processing</h1>
+        <p>Your data is still visible below. Renew your license to continue creating gateways and processing payments.</p>
+      </div>
+      <button class="btn" (click)="go('billing')"><span class="material-symbols-outlined">refresh</span> Renew License</button>
+    </div>
+  }
+
+  <div class="page-head ov-head">
+    <div><h1>Overview</h1></div>
+    <div class="ov-filter-row">
+      <div class="seg">
+        @for (r of ranges; track r.key) {
+          <button [class.active]="ovRange() === r.key" [disabled]="loadingOverview()" (click)="setRange(r.key)">{{ r.label }}</button>
+        }
+      </div>
+      <app-date-range-picker
+        [from]="customFrom()"
+        [to]="customTo()"
+        [disabled]="loadingOverview()"
+        (rangeChange)="onDateRangeChange($event)"
+      />
+    </div>
+  </div>
+
+  @if (loadingOverview()) {
+    <!-- Skeleton while the selected range's data loads -->
+    <div class="ov-skeleton" aria-hidden="true">
+      <div class="kpi-strip">
+        @for (i of [1, 2, 3, 4]; track i) {
+          <div class="ov-sk-card sk-kpi">
+            <span class="sk w45"></span>
+            <span class="sk big"></span>
+            <span class="sk w30"></span>
+          </div>
+        }
+      </div>
+      <div class="grid-2 ov-mid">
+        <div class="ov-sk-card sk-panel"><span class="sk chart"></span></div>
+        <div class="ov-sk-card sk-panel is-donut"><span class="sk donut"></span></div>
+      </div>
+      <div class="ov-sk-card sk-tablecard">
+        @for (i of [1, 2, 3, 4, 5]; track i) {
+          <span class="sk row"></span>
+        }
+      </div>
+    </div>
+  } @else {
+
+  <!-- KPI strip -->
+  <div class="kpi-strip">
+    @for (k of kpiCards(); track k.key) {
+      <div class="kpi" [style.--c]="'var(' + k.c + ')'">
+        <div class="kl"><span class="material-symbols-outlined">{{ k.icon }}</span>{{ k.label }}</div>
+        <div class="kv">{{ k.v }}</div>
+        <div class="ksub">{{ k.sub }}</div>
+        <div class="krow">
+          <span class="delta" [ngClass]="k.delta.cls"><span class="material-symbols-outlined">{{ k.delta.icon }}</span>{{ k.delta.text }}</span>
+          <div class="spark">
+            @for (s of k.spark; track $index) {
+              <i [class.hot]="s.hot" [style.height.%]="s.h"></i>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- volume over time + payment lifecycle -->
+  <div class="grid-2 ov-mid">
+    <div class="panel">
+      <h3>Volume over time</h3><div class="sub">Captured vs. declined transactions per day</div>
+      <div class="tbars">
+        @for (b of volBars(); track $index) {
+          <div class="tb">
+            <div class="tip">{{ b.label }} · {{ b.cap }} captured · {{ b.rej }} declined</div>
+            <div class="stack" [style.height.%]="b.stackH">
+              <div class="seg-cap" [style.height.%]="b.capPct"></div>
+              <div class="seg-rej" [style.height.%]="b.rejPct"></div>
+            </div>
+            <span class="tl">{{ b.label }}</span>
+          </div>
+        }
+      </div>
+      <div class="legend">
+        <div class="lg"><span class="sw" style="background:var(--brand-500)"></span> Captured</div>
+        <div class="lg"><span class="sw" style="background:var(--bad)"></span> Declined</div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Payment lifecycle</h3><div class="sub">Distribution by state</div>
+      <div class="donut-wrap">
+        <div class="donut" [style.background]="donut().gradient">
+          <div class="hole"><div class="dt">{{ donut().total | number }}</div><div class="dl">payments</div></div>
+        </div>
+        <div class="donut-legend">
+          @for (e of donut().legend; track e.key) {
+            <div class="dli"><span class="sw" [style.background]="'var(--' + e.color + ')'"></span><span class="nm">{{ e.label }}</span><span class="ct">{{ e.v | number }}</span></div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- per-provider performance -->
+  <div class="datacard ov-card">
+    <div class="dc-toolbar">
+      <div class="dc-title"><span class="material-symbols-outlined" style="color:var(--brand-600)">hub</span> Provider performance</div>
+      <div class="spacer"></div>
+      <span class="cell-sub">Approval rate &amp; fees compared across gateways</span>
+    </div>
+    <div class="dc-tablewrap">
+      <table class="dc">
+        <thead><tr><th>Provider</th><th class="num">Transactions</th><th class="num">Total volume</th><th class="num">Fees</th><th>Approval rate</th><th>Share of volume</th></tr></thead>
+        <tbody>
+          @for (p of providerRows(); track p.name) {
+            <tr>
+              <td><app-provider-logo [provider]="p.paymentProvider || { name: p.name }" [showName]="true" [size]="52" /></td>
+              <td class="num">{{ p.tx | number }}</td>
+              <td class="num">{{ p.gross }}</td>
+              <td class="num">{{ p.fee }}</td>
+              <td><div class="minibar"><div class="track"><div class="fill" [ngClass]="p.ac" [style.width.%]="p.appr"></div></div><span class="apr-tag" [ngClass]="p.ac">{{ p.appr }}%</span></div></td>
+              <td><div class="minibar"><div class="track"><div class="fill" [style.width.%]="p.share"></div></div><span class="pct">{{ p.share }}%</span></div></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- money by currency (each row is a single currency — no FX) -->
+  <div class="datacard ov-card">
+    <div class="dc-toolbar">
+      <div class="dc-title"><span class="material-symbols-outlined" style="color:var(--brand-600)">payments</span> Money by currency</div>
+      <div class="spacer"></div>
+      <span class="cell-sub">Amounts are never converted across currencies</span>
+    </div>
+    <div class="dc-tablewrap">
+      <table class="dc">
+        <thead><tr><th>Currency</th><th class="num">Payments</th><th class="num">Volume</th><th class="num">Fees</th><th class="num">Fraud protected</th></tr></thead>
+        <tbody>
+          @for (c of ov().currencies; track c[0]) {
+            <tr>
+              <td class="cell-strong">{{ c[0] }}</td>
+              <td class="num">{{ c[2] | number }}</td>
+              <td class="num">{{ c[1] }}</td>
+              <td class="num">{{ c[3] }}</td>
+              <td class="num">{{ c[4] }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- declined + fraud detection -->
+  <div class="grid-2">
+    <div class="panel">
+      <h3>Declined transactions</h3><div class="sub">Rejected by fraud rules &amp; providers, by currency</div>
+      <div class="dc-tablewrap">
+        <table class="dc">
+          <thead><tr><th>Currency</th><th class="num">Count</th><th class="num">Amount</th></tr></thead>
+          <tbody>
+            @for (r of ov().rejected; track r[0]) {
+              <tr><td class="cell-strong">{{ r[0] }}</td><td class="num">{{ r[1] | number }}</td><td class="num">{{ r[2] }}</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="fhead">
+        <div>
+          <h3 class="fh3"><span class="material-symbols-outlined" style="color:var(--bad)">shield</span> Fraud detection</h3>
+          <div class="sub nomb">Transactions your fraud policies stopped before they reached a provider</div>
+        </div>
+      </div>
+      <div class="fstats two">
+        <div class="fstat"><div class="fv">{{ ov().fraud.blocked | number }}</div><div class="fl"><span class="material-symbols-outlined" style="color:var(--bad)">block</span> Payments blocked</div></div>
+        <div class="fstat"><div class="fv">{{ ov().fraud.customersBlocked | number }}</div><div class="fl"><span class="material-symbols-outlined" style="color:var(--warn)">person_off</span> Customers blocked</div></div>
+      </div>
+    </div>
+  </div>
+  }
+
+} @else if (state() === 'expired') {
+  <!-- EXPIRED (not yet set up) — renew prompt only; access is NOT blocked. -->
+  <div class="banner warn">
+    <h1>License expired. Renew access to continue</h1>
+    <p>Renew your license to keep creating gateways, processing payments, and using admin actions without interruption.</p>
+  </div>
+  <div class="license-card">
+    <div class="ai"><span class="material-symbols-outlined">warning</span></div>
+    <div class="lt">
+      <h3>License Expired <span class="pill bad"><span class="dot"></span>RENEWAL REQUIRED</span></h3>
+      <p>Renew your license to restore full gateway management, payment processing, and policy changes.</p>
+    </div>
+    <div class="license-actions">
+      <button class="btn btn-primary" (click)="go('billing')"><span class="material-symbols-outlined">refresh</span> Renew License</button>
+      <button class="btn" (click)="go('billing')"><span class="material-symbols-outlined">description</span> Open Billing</button>
+    </div>
+  </div>
+
+} @else if (state() === 'gateway') {
+  <!-- GATEWAY CONNECTED — gateway done, setup still incomplete, no payment yet -->
+  <div class="banner">
+    <h1>Gateway connected. Next, create your first payment</h1>
+    <p>Your merchant account is ready to start accepting payments. Create your first payment to complete the setup flow.</p>
+  </div>
+  <div class="setup-wrap">
+    <div class="gs-card">
+      <div class="gh"><span class="material-symbols-outlined">rocket_launch</span> Getting Started</div>
+      <div class="gsub">Complete these mandatory steps to activate your account.</div>
+      <div class="stepper">
+        <div class="step completed">
+          <div class="step-icon"><span class="material-symbols-outlined" style="font-size:18px">check</span></div>
+          <div class="sc"><h3>Account Verified</h3><p>Identity confirmed &amp; email validated.</p></div>
+        </div>
+        <div class="step completed">
+          <div class="step-icon"><span class="material-symbols-outlined" style="font-size:18px">check</span></div>
+          <div class="sc"><h3 class="ok-title">Gateway Created <span class="minibadge done">COMPLETED</span></h3><p>Your first gateway is connected and ready to process payments.</p></div>
+        </div>
+        <div class="step active">
+          <div class="step-icon"><div class="inner"></div></div>
+          <div class="sc">
+            <h3>Create First Test Payment <span class="minibadge req">REQUIRED</span></h3>
+            <p>Create a payment now to verify the full merchant journey.</p>
+            <span class="step-link" (click)="linkModal.open()"><span class="material-symbols-outlined" style="font-size:18px">open_in_new</span> Create your first payment</span>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary gs-cta" (click)="linkModal.open()">
+        <span class="material-symbols-outlined">payments</span> Create First Payment
+      </button>
+    </div>
+  </div>
+
+} @else {
+  <!-- SETUP — active, setup not completed, no gateway yet -->
+  <div class="banner">
+    <h1>Welcome to your Payment Control Center</h1>
+    <p>Manage gateways, process payments, and monitor transactions — all from one place.</p>
+  </div>
+  <div class="setup-wrap">
+    <div class="gs-card">
+      <div class="gh"><span class="material-symbols-outlined">rocket_launch</span> Getting Started</div>
+      <div class="gsub">Complete these mandatory steps to activate your account.</div>
+      <div class="stepper">
+        <div class="step completed">
+          <div class="step-icon"><span class="material-symbols-outlined" style="font-size:18px">check</span></div>
+          <div class="sc"><h3>Account Verified</h3><p>Identity confirmed &amp; email validated.</p></div>
+        </div>
+        <div class="step active">
+          <div class="step-icon"><div class="inner"></div></div>
+          <div class="sc">
+            <h3>Add Gateway <span class="minibadge req">REQUIRED</span></h3>
+            <p>Connect Stripe, PayPal, Revolut, or your custom gateway.</p>
+            <span class="step-link" (click)="go('gateways')"><span class="material-symbols-outlined" style="font-size:18px">add_circle</span> Create your first gateway</span>
+          </div>
+        </div>
+        <div class="step pending">
+          <div class="step-icon"><span class="material-symbols-outlined" style="font-size:16px">lock</span></div>
+          <div class="sc">
+            <h3>Create First Test Payment <span class="minibadge req">REQUIRED</span></h3>
+            <p>Run a test transaction to verify your gateway.</p>
+            <span class="step-link disabled"><span class="material-symbols-outlined" style="font-size:18px">open_in_new</span> Go to payment page</span>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary gs-cta" (click)="go('gateways')">
+        <span class="material-symbols-outlined">bolt</span> Go to Gateway Setup
+      </button>
+    </div>
+  </div>
+}

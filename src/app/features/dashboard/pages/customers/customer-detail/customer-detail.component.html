@@ -1,0 +1,62 @@
+@if (loading()) {
+  <div class="cd-loading"><div class="spinner"></div></div>
+} @else {
+  <!-- Customer header -->
+  <div class="cd-header">
+    <div class="cd-identity">
+      <div class="avi" [style.background]="avatarGradient()">{{ initials() }}</div>
+      <div class="cd-name">
+        <h1>{{ fullName() }}</h1>
+        @if (customerSubtitle()) {
+          <p class="cd-sub">{{ customerSubtitle() }}</p>
+        }
+      </div>
+    </div>
+    @if (customer(); as c) {
+      <span class="pill plain" [ngClass]="c.isBlocked ? 'bad' : 'ok'">
+        <span class="dot"></span>{{ c.isBlocked ? 'Blocked' : 'Active' }}
+      </span>
+    }
+  </div>
+
+  <!-- Tab bar -->
+  <div class="cd-tabs">
+    <button [class.active]="activeTab() === 'profile'" (click)="setTab('profile')">
+      <span class="material-symbols-outlined">person</span> Info
+    </button>
+    <button [class.active]="activeTab() === 'methods'" (click)="setTab('methods')">
+      <span class="material-symbols-outlined">credit_card</span> Payment methods
+    </button>
+    <button [class.active]="activeTab() === 'payments'" (click)="setTab('payments')">
+      <span class="material-symbols-outlined">payment</span> Payments
+    </button>
+    <button [class.active]="activeTab() === 'fraud'" (click)="setTab('fraud')">
+      <span class="material-symbols-outlined">gavel</span> Policies
+    </button>
+  </div>
+
+  <!-- Active tab (lazy-mounted on selection; re-fetches on each entry like payment-admin) -->
+  @if (activeTab() === 'profile') {
+    <app-customer-profile-tab
+      [customer]="customer()"
+      [appId]="appId"
+      [customerId]="customerId"
+      (customerChanged)="onCustomerChanged($event)"
+    />
+  } @else if (activeTab() === 'methods') {
+    <app-customer-methods-tab [appId]="appId" [customerId]="customerId" />
+  } @else if (activeTab() === 'payments') {
+    <app-customer-payments-tab
+      [customer]="customer()"
+      [appId]="appId"
+      [customerId]="customerId"
+    />
+  } @else if (activeTab() === 'fraud') {
+    <app-customer-fraud-tab
+      [customer]="customer()"
+      [appId]="appId"
+      [customerId]="customerId"
+      (customerChanged)="onCustomerChanged($event)"
+    />
+  }
+}

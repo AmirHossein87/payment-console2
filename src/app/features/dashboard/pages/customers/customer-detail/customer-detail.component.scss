@@ -1,0 +1,78 @@
+:host { display: block; }
+
+/* ── Header ────────────────────────────────────────────── */
+.cd-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.cd-identity {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.cd-name {
+  h1 {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  .cd-sub {
+    color: var(--text-2);
+    font-size: 13px;
+    margin-top: 2px;
+  }
+}
+
+/* ── Tabs ──────────────────────────────────────────────── */
+.cd-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  margin-bottom: 20px;
+  width: fit-content;
+  flex-wrap: wrap;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: var(--r-sm);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-2);
+    cursor: pointer;
+    background: none;
+    border: none;
+    transition: 0.12s;
+    white-space: nowrap;
+
+    .material-symbols-outlined { font-size: 17px; }
+
+    &:hover {
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    &.active {
+      background: var(--surface);
+      color: var(--text);
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+  }
+}
+
+@media (max-width: 700px) {
+  .cd-tabs button { padding: 7px 10px; font-size: 12px; }
+}

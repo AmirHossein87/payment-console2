@@ -1,0 +1,128 @@
+@if (isOpen()) {
+  <div class="overlay open">
+    <div class="modal">
+      <div class="mh">
+        @if (config()?.icon) {
+          <span class="material-symbols-outlined brand-ic">{{ config()?.icon }}</span>
+        } @else {
+          <span class="material-symbols-outlined brand-ic">edit</span>
+        }
+        <h3>{{ config()?.title || "Edit" }}</h3>
+        <div class="spacer"></div>
+        <button class="icon-btn" (click)="close()" [disabled]="saving()" title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      @if (config(); as cfg) {
+        <div class="mb">
+          <!-- Notice banner -->
+          @if (cfg.notice) {
+            <div class="notice" [ngClass]="'notice-' + cfg.notice.type">
+              <span class="material-symbols-outlined">
+                {{ cfg.notice.type === 'danger' ? 'error' : cfg.notice.type === 'warning' ? 'warning' : 'info' }}
+              </span>
+              <span>{{ cfg.notice.message }}</span>
+            </div>
+          }
+
+          <!-- Boolean / switch -->
+          @if (cfg.type === 'boolean') {
+            <div class="field">
+              <label>{{ cfg.label }}</label>
+              <div class="bool-row">
+                <span class="bool-state" [class.on]="localBool()">
+                  {{ localBool() ? "Active" : "Inactive" }}
+                </span>
+                <div class="switch" [class.on]="localBool()" (click)="onBoolChange(!localBool())">
+                  <span class="knob"></span>
+                </div>
+              </div>
+              @if (cfg.helper) {
+                <p class="helper" [ngClass]="cfg.helperClass || ''">{{ cfg.helper }}</p>
+              }
+            </div>
+          }
+
+          <!-- Select -->
+          @if (cfg.type === 'select') {
+            <div class="field">
+              <label>{{ cfg.label }}</label>
+              <div class="select">
+                <select
+                  [value]="localValue()"
+                  (change)="onSelectChange($any($event.target).value)"
+                  [disabled]="saving()"
+                  [class.err]="fieldInvalid()"
+                >
+                  @for (opt of cfg.options || []; track opt.value) {
+                    <option [value]="opt.value" [selected]="opt.value === localValue()">
+                      {{ opt.label }}
+                    </option>
+                  }
+                </select>
+                <span class="material-symbols-outlined">expand_more</span>
+              </div>
+              @if (cfg.helper) {
+                <p class="helper" [ngClass]="cfg.helperClass || ''">{{ cfg.helper }}</p>
+              }
+            </div>
+          }
+
+          <!-- Textarea -->
+          @if (cfg.type === 'textarea') {
+            <div class="field">
+              <label>{{ cfg.label }}</label>
+              <textarea
+                class="input textarea"
+                [class.err]="fieldInvalid()"
+                [value]="localValue() || ''"
+                (input)="onInputChange($any($event.target).value)"
+                [placeholder]="cfg.placeholder || ''"
+                [disabled]="saving()"
+                rows="4"
+              ></textarea>
+              @if (cfg.helper) {
+                <p class="helper" [ngClass]="cfg.helperClass || ''">{{ cfg.helper }}</p>
+              }
+            </div>
+          }
+
+          <!-- Text / Number / Password -->
+          @if (cfg.type === 'text' || cfg.type === 'number' || cfg.type === 'password') {
+            <div class="field">
+              <label>{{ cfg.label }}</label>
+              <input
+                class="input"
+                [class.err]="fieldInvalid()"
+                [type]="cfg.type === 'password' ? 'password' : cfg.type === 'number' ? 'number' : 'text'"
+                [value]="localValue() ?? ''"
+                (input)="onInputChange($any($event.target).value)"
+                [placeholder]="cfg.placeholder || ''"
+                [disabled]="saving()"
+              />
+              @if (cfg.helper) {
+                <p class="helper" [ngClass]="cfg.helperClass || ''">{{ cfg.helper }}</p>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <div class="mf">
+        @if (errorMsg()) {
+          <span class="err">
+            <span class="material-symbols-outlined">error</span>
+            {{ errorMsg() }}
+          </span>
+        }
+        <div class="spacer"></div>
+        <button class="btn" (click)="close()" [disabled]="saving()">Cancel</button>
+        <button class="btn btn-primary" (click)="save()" [disabled]="saving()">
+          <span class="material-symbols-outlined" [class.spin]="saving()">save</span>
+          {{ saving() ? "Saving…" : "Save changes" }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,27 @@
+<aside class="sidebar" [class.open]="sidebarOpen()">
+  <div class="brand">
+    <div class="logo has-img">
+      <img src="assets/icon/logo__app.png" [alt]="brand()" />
+    </div>
+  </div>
+
+  @for (group of navGroups(); track group.label) {
+    <div class="nav-label">{{ group.label }}</div>
+    @for (item of group.items; track item.route) {
+      <a
+        class="nav-item"
+        [routerLink]="item.route"
+        routerLinkActive="active"
+        (click)="closeSidebar()"
+      >
+        <span class="material-symbols-outlined">{{ item.icon }}</span>
+        {{ item.label }}
+        @if (item.badge) {
+          <span class="badge">{{ item.badge }}</span>
+        }
+      </a>
+    }
+  }
+
+  <div class="spacer"></div>
+</aside>

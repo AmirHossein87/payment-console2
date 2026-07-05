@@ -1,0 +1,34 @@
+@if (!settingsStore.isLoaded() || settingsStore.activeLogoUri() || settingsStore.hasBrand()) {
+  <div class="brand">
+    @if (settingsStore.isLoaded()) {
+      @if (settingsStore.activeLogoUri()) {
+        <div class="brand-icon no-bg">
+          <img [src]="settingsStore.activeLogoUri()" alt="Logo" class="logo-img" />
+        </div>
+      }
+      @if (settingsStore.hasBrand()) {
+        <span class="nm">{{ settingsStore.appName() }}</span>
+      }
+    } @else {
+      <div class="brand-icon-skeleton"></div>
+      <div class="brand-name-skeleton"></div>
+    }
+  </div>
+}
+
+<div class="verify-icon" aria-hidden="true">
+  <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+    <path d="m3 7 9 6 9-6"></path>
+  </svg>
+</div>
+
+<h1>Check your email</h1>
+<p class="subtitle">
+  We've sent a password reset link to your email address.
+  Open it and click the link to set a new password.
+</p>
+
+<p class="toggle-text">
+  <a class="link" routerLink="/auth/signin" queryParamsHandling="preserve">Back to sign in</a>
+</p>

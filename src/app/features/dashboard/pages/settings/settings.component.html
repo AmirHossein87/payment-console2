@@ -1,0 +1,240 @@
+<div class="page-head">
+  <div>
+    <h1>Settings</h1>
+  </div>
+</div>
+
+@if (loading()) {
+  <!-- Skeleton: mirrors the tab bar + pencil-edit form-card layout while settings load -->
+  <div class="set-skeleton" aria-hidden="true">
+    <div class="sk-tabs">
+      <span class="sk sk-tab"></span>
+      <span class="sk sk-tab"></span>
+      <span class="sk sk-tab"></span>
+    </div>
+    <div class="sk-card">
+      <div class="sk-card-h"><span class="sk sk-title"></span></div>
+      @for (r of [1, 2, 3, 4]; track r) {
+        <div class="sk-row">
+          <span class="sk sk-label"></span>
+          <div class="sk-row-right">
+            <span class="sk sk-value"></span>
+            <span class="sk sk-icon-btn"></span>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+} @else {
+
+  <!-- Tab navigation -->
+  <div class="seg tabs">
+    <button [class.active]="activeTab() === 'general'" (click)="setTab('general')">General</button>
+    @if (isSupportCustomizeCheckout()) {
+      <button [class.active]="activeTab() === 'checkout'" (click)="setTab('checkout')">Checkout</button>
+    }
+    <button [class.active]="activeTab() === 'personalize'" (click)="setTab('personalize')">Personalization</button>
+  </div>
+
+  <!-- ── GENERAL (each field edited via the pencil modal) ── -->
+  @if (activeTab() === 'general') {
+    <div class="set-pane">
+      <div class="form-card">
+        <div class="form-row">
+          <div class="lab">Default fraud policy</div>
+          <div class="val-edit">
+            <span class="val">{{ fraudPolicyName() }}</span>
+            <button class="icon-btn" type="button" title="Edit" (click)="editFraudPolicy()">
+              <span class="material-symbols-outlined">edit</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="lab">Webhook URL</div>
+          <div class="val-edit">
+            <span class="val mono">{{ webhookUrl }}</span>
+            <button class="icon-btn" type="button" title="Edit" (click)="editWebhookUrl()">
+              <span class="material-symbols-outlined">edit</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="lab">Auth scheme</div>
+          <div class="val-edit">
+            <span class="val">{{ webhookScheme }}</span>
+            <button class="icon-btn" type="button" title="Edit" (click)="editWebhookScheme()">
+              <span class="material-symbols-outlined">edit</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="lab">Auth parameter</div>
+          <div class="val-edit">
+            <span class="val">{{ webhookParam }}</span>
+            <button class="icon-btn" type="button" title="Edit" (click)="editWebhookParam()">
+              <span class="material-symbols-outlined">edit</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── CHECKOUT ────────────────────────────────────── -->
+  @if (activeTab() === 'checkout') {
+    <div class="set-pane">
+      <div class="co-head">
+        <div>
+          <h3>Your checkout, your brand</h3>
+          <p>Edit anything below — the preview <b>is</b> your live checkout page.</p>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-sm" [disabled]="!hasCheckoutChanges || saving()" (click)="resetCheckout()">Reset</button>
+          <button class="btn btn-primary btn-sm" [disabled]="!hasCheckoutChanges || saving()" (click)="saveCheckout()">
+            @if (saving()) {
+              <span class="btn-spinner"></span>
+            } @else {
+              <span class="material-symbols-outlined">check</span>
+            }
+            Save
+          </button>
+        </div>
+      </div>
+
+      <div class="browser-frame">
+        <!-- Browser chrome / address bar -->
+        <div class="browser-chrome">
+          <div class="wc">
+            <span class="c red"></span>
+            <span class="c yellow"></span>
+            <span class="c green"></span>
+          </div>
+          <div class="addr">
+            <span class="material-symbols-outlined" style="font-size:15px;color:var(--ok)">lock</span>
+            <input [(ngModel)]="domain" placeholder="checkout.yourdomain.com" />
+            <span class="addr-cog material-symbols-outlined" title="DNS &amp; CNAME settings"
+                  (click)="dnsOpen.set(true)">settings</span>
+          </div>
+        </div>
+
+        <!-- Browser body (live editable preview) -->
+        <div class="browser-view">
+          <!-- Logo upload -->
+          <div class="co-logo" (click)="triggerLogoUpload()" title="Upload your logo">
+            <input #logoFileInput type="file" accept="image/*" hidden (change)="onLogoFileSelected($event)" />
+            @if (uploadingLogo()) {
+              <span class="material-symbols-outlined spin" style="font-size:24px;color:var(--text-3)">progress_activity</span>
+            } @else if (previewUrl || logoUrl) {
+              <img [src]="previewUrl ?? logoUrl!" alt="logo" />
+            } @else {
+              <span class="material-symbols-outlined ph">storefront</span>
+            }
+            <div class="ov">
+              <span class="material-symbols-outlined">cloud_upload</span>
+            </div>
+          </div>
+
+          <input class="co-name" maxlength="45" placeholder="Your store name" [(ngModel)]="storeName" />
+
+          <textarea class="co-edit co-slogan1" rows="1" maxlength="40"
+                    placeholder="Add a headline…" [(ngModel)]="slogan1"
+                    (input)="autoGrow($any($event.target))"></textarea>
+
+          <textarea class="co-edit co-slogan2" rows="1" maxlength="90"
+                    placeholder="Add a short supporting line…" [(ngModel)]="slogan2"
+                    (input)="autoGrow($any($event.target))"></textarea>
+
+          <div class="co-total">
+            <span>Order Total:</span>
+            <h3>USD 1.00</h3>
+            @if (isSandbox) {
+              <span class="env-badge"><span class="dot"></span>Sandbox</span>
+            }
+          </div>
+
+          <div class="co-divider"><span>Select Payment Method</span></div>
+
+          <div class="co-footer">
+            <button class="btn co-pay primary" disabled>One-Time Payment</button>
+            <button class="btn co-pay" disabled>Recurring Payment</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── PERSONALIZATION ────────────────────────────── -->
+  @if (activeTab() === 'personalize') {
+    <div class="set-pane">
+      <div class="form-card">
+        <div class="h">Personalization</div>
+
+        <div class="form-row">
+          <div class="lab">Theme</div>
+          <div class="val-edit">
+            <span class="val">{{ themeLabel() }}</span>
+            <button class="icon-btn" type="button" title="Edit theme" (click)="editTheme()">
+              <span class="material-symbols-outlined">edit</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="lab">Time zone</div>
+          <div class="val-edit">
+            <span class="val">{{ timezone }}</span>
+            <button class="icon-btn" type="button" title="Edit time zone" (click)="editTimezone()">
+              <span class="material-symbols-outlined">edit</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+}
+
+<!-- ── DNS modal ──────────────────────────────────── -->
+@if (dnsOpen()) {
+  <div class="overlay">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="mh">
+        <span class="material-symbols-outlined brand-ic">dns</span>
+        <h3>Custom domain DNS</h3>
+        <div class="spacer"></div>
+        <button class="icon-btn" type="button" (click)="dnsOpen.set(false)">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="mb">
+        <p class="dns-info">
+          Point a CNAME record from your subdomain to the address below, then enter your domain in the address bar of the checkout preview.
+        </p>
+        <div class="dns-table">
+          <div class="dns-row head">
+            <span>Type</span>
+            <span>Value</span>
+          </div>
+          <div class="dns-row">
+            <span class="dns-type">CNAME</span>
+            <span class="dns-val">{{ targetCName || '—' }}</span>
+          </div>
+        </div>
+        <button class="btn btn-sm" (click)="copyCName()">
+          <span class="material-symbols-outlined">content_copy</span> Copy CNAME
+        </button>
+        @if (canRemoveDomain) {
+          <button class="btn btn-sm btn-danger" (click)="removeDomain()">
+            <span class="material-symbols-outlined">link_off</span> Remove custom domain
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Single-field editor (pencil) used by the General tab -->
+<app-universal-edit-modal #editor />

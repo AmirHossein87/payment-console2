@@ -1,0 +1,77 @@
+@if (isOpen()) {
+  <div class="overlay">
+    <div class="modal">
+      @if (mode() === 'search') {
+        <div class="mh">
+          <span class="material-symbols-outlined head-ic">search</span>
+          <h3>Select customer</h3>
+          <div class="spacer"></div>
+          <button class="icon-btn" type="button" (click)="close()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="search-bar">
+          <span class="material-symbols-outlined">search</span>
+          <input type="text" placeholder="Search by name, email or ID…"
+                 [value]="query" (input)="onSearchInput($event)" />
+        </div>
+
+        <div class="mb results">
+          @if (searching()) {
+            <div class="cust-skeleton">
+              <div class="sk-row"></div><div class="sk-row"></div><div class="sk-row"></div>
+            </div>
+          } @else if (results().length === 0) {
+            <div class="empty">No customers found.</div>
+          } @else {
+            @for (c of results(); track c.customerId) {
+              <button class="cust-row" type="button" (click)="pick(c)">
+                <span class="avi">{{ initials(c) }}</span>
+                <span class="cust-info">
+                  <span class="cust-name">{{ displayName(c) }}</span>
+                  <span class="cust-sub">{{ c.email || c.customerId }}</span>
+                </span>
+                <span class="material-symbols-outlined pick-ic">chevron_right</span>
+              </button>
+            }
+          }
+        </div>
+
+        <div class="mf">
+          <button class="btn btn-primary" type="button" (click)="showCreate()">
+            <span class="material-symbols-outlined">person_add</span> New customer
+          </button>
+        </div>
+      } @else {
+        <div class="mh">
+          <button class="icon-btn" type="button" (click)="backToSearch()">
+            <span class="material-symbols-outlined">arrow_back</span>
+          </button>
+          <h3>New customer</h3>
+          <div class="spacer"></div>
+          <button class="icon-btn" type="button" (click)="close()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="mb form">
+          <div class="field"><label>Customer ID *</label><input class="input" [class.invalid]="idInvalid" placeholder="e.g. cus_acme_01" [(ngModel)]="ncId" /></div>
+          <div class="two-col">
+            <div class="field"><label>First name</label><input class="input" [(ngModel)]="ncFirst" /></div>
+            <div class="field"><label>Last name</label><input class="input" [(ngModel)]="ncLast" /></div>
+          </div>
+          <div class="field"><label>Email *</label><input class="input" [class.invalid]="emailInvalid" type="email" placeholder="name@example.com" [(ngModel)]="ncEmail" /></div>
+          <div class="field"><label>Mobile</label><input class="input" inputmode="numeric" placeholder="optional" [(ngModel)]="ncMobile" /></div>
+        </div>
+
+        <div class="mf">
+          <button class="btn" type="button" [disabled]="creating()" (click)="backToSearch()">Cancel</button>
+          <button class="btn btn-primary" type="button" [disabled]="creating()" (click)="create()">
+            @if (creating()) { <span class="btn-spinner"></span> Creating… } @else { Create }
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}

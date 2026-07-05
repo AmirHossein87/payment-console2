@@ -1,0 +1,337 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  animation: fade 0.2s ease;
+}
+
+.modal {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  width: 480px;
+  max-width: calc(100vw - 32px);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  animation: pop 0.2s ease;
+}
+
+@keyframes pop {
+  from { transform: scale(0.96); opacity: 0.6; }
+  to { transform: none; opacity: 1; }
+}
+
+.mh {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+
+  h3 { font-size: 15px; font-weight: 700; }
+  .spacer { flex: 1; }
+  .head-ic { color: var(--brand-600); }
+}
+
+.mb {
+  flex: 1;
+  overflow: visible;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.mf {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.two-col {
+  display: flex;
+  gap: 12px;
+
+  .cur { width: 130px; flex-shrink: 0; }
+  .field:first-child { flex: 1; }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+
+  label { font-size: 12.5px; font-weight: 600; color: var(--text-2); }
+}
+
+.input {
+  width: 100%;
+  height: 38px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  padding: 0 12px;
+  font-family: var(--font);
+  font-size: 13.5px;
+  color: var(--text);
+  outline: none;
+  box-sizing: border-box;
+
+  &:focus {
+    border-color: var(--brand-500);
+    box-shadow: var(--ring);
+  }
+
+  &.invalid {
+    border-color: var(--bad);
+    &:focus { border-color: var(--bad); box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18); }
+  }
+}
+
+.select {
+  position: relative;
+
+  select {
+    appearance: none;
+    padding-right: 34px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+
+  .material-symbols-outlined {
+    position: absolute;
+    right: 9px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--text-3);
+    font-size: 20px;
+  }
+}
+
+/* ── Gateway skeleton ──────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.gw-skeleton {
+  height: 38px;
+  border-radius: var(--r-sm);
+  background-image: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3, #e2e8f0) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.3s infinite linear;
+}
+
+/* ── Gateway dropdown ──────────────────────────────────── */
+.gw-drop { position: relative; }
+
+.gw-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--text);
+  // Overrides .input's fixed 38px height (combined via class="input gw-trigger")
+  // so the 44px provider logo isn't clipped.
+  height: auto;
+  min-height: 38px;
+  padding: 6px 10px;
+
+
+  .gw-trig-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &.placeholder { color: var(--text-3); }
+  }
+
+  .gw-caret { color: var(--text-3); font-size: 20px; margin-left: auto; flex-shrink: 0; }
+  .gw-all-ic { color: var(--text-2); font-size: 20px; flex-shrink: 0; }
+}
+
+.gw-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  background: transparent;
+}
+
+.gw-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  box-shadow: var(--sh-lg);
+  z-index: 100;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.gw-opt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  border-radius: var(--r-xs);
+  text-align: left;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--text);
+  cursor: pointer;
+  transition: 0.12s;
+
+  &:hover { background: var(--surface-2); }
+  &.on { background: var(--brand-weak); color: var(--brand-600); }
+
+  .gw-opt-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gw-sel-ic { color: var(--brand-600); font-size: 18px; margin-left: auto; flex-shrink: 0; }
+}
+
+.gw-no-data {
+  padding: 10px 12px;
+  color: var(--text-3);
+  font-size: 12.5px;
+}
+
+/* ── Customer picker field ─────────────────────────────── */
+.cust-field {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  padding: 0 8px 0 12px;
+  height: 38px;
+  cursor: pointer;
+  transition: 0.15s;
+
+  &:hover { border-color: var(--text-3); }
+
+  &.invalid { border-color: var(--bad); }
+
+  > .material-symbols-outlined { color: var(--text-3); font-size: 20px; flex-shrink: 0; }
+
+  .cust-val {
+    flex: 1;
+    font-size: 13.5px;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &.placeholder { color: var(--text-3); }
+  }
+
+  .icon-btn.sm { width: 28px; height: 28px; flex-shrink: 0;
+    .material-symbols-outlined { font-size: 17px; }
+  }
+}
+
+/* ── More options accordion ────────────────────────────── */
+.pl-acc {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+
+  .pl-acc-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 13px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text);
+
+    .material-symbols-outlined {
+      transition: 0.2s;
+      color: var(--text-3);
+      font-size: 20px;
+    }
+  }
+
+  &.open .pl-acc-head .material-symbols-outlined {
+    transform: rotate(180deg);
+  }
+
+  .pl-acc-body {
+    padding: 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border-top: 1px solid var(--border);
+  }
+}
+
+.checkrow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13.5px;
+  cursor: pointer;
+  padding: 5px 0;
+
+  input {
+    width: 17px;
+    height: 17px;
+    accent-color: var(--brand-500);
+  }
+}
+
+/* ── Success state ──────────────────────────────────────── */
+.mb.success {
+  text-align: center;
+  align-items: center;
+}
+
+.ok-ic {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: var(--ok-weak);
+  color: var(--ok);
+  display: grid;
+  place-items: center;
+
+  .material-symbols-outlined { font-size: 30px; }
+}
+
+.s-title { font-size: 16px; font-weight: 700; }
+.s-sub { color: var(--text-2); font-size: 13px; }
+
+app-payment-link-result { align-self: stretch; }
+
+
+/* Spinning icon for the Create button while busy — matches the universal edit
+   modal's Save button (icon spins in place, text swaps to "Creating…"). */
+.spin { animation: spin 0.7s linear infinite; }
+
+/* Lock the form while the create request is in flight — no edits until the API
+   responds (the header X and footer buttons are disabled separately). */
+.mb.locked {
+  pointer-events: none;
+  opacity: 0.6;
+}

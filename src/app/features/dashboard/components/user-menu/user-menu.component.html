@@ -1,0 +1,44 @@
+<div class="user-wrap">
+  @if (!authResolved()) {
+    <div class="user sk-user" aria-hidden="true">
+      <div class="av sk"></div>
+      <div class="nm-sk sk"></div>
+      <div class="chevron-sk sk"></div>
+    </div>
+  } @else {
+    <div class="user" (click)="toggle(); $event.stopPropagation()">
+      <div class="av">
+        @if (userPhoto()) {
+          <img class="av-img" [src]="userPhoto()!" [alt]="userName()" referrerpolicy="no-referrer" />
+        } @else {
+          {{ userInitials() }}
+        }
+      </div>
+      <div class="nm">{{ userName() }}</div>
+      <span class="material-symbols-outlined chevron">expand_more</span>
+    </div>
+  }
+
+  @if (isOpen()) {
+    <div class="user-menu">
+      <div class="uhead">
+        <div class="n">{{ userName() }}</div>
+        <div class="e">{{ fbUser()?.email || activeApp()?.appId || '' }}</div>
+      </div>
+      <div class="sep"></div>
+      @for (item of menuItems(); track item.label) {
+        @if (item.route) {
+          <a class="mi" [href]="item.route" (click)="onItemClick(item, $event)">
+            <span class="material-symbols-outlined">{{ item.icon }}</span>
+            {{ item.label }}
+          </a>
+        } @else {
+          <div class="mi" (click)="onItemClick(item)">
+            <span class="material-symbols-outlined">{{ item.icon }}</span>
+            {{ item.label }}
+          </div>
+        }
+      }
+    </div>
+  }
+</div>

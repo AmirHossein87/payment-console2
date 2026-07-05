@@ -1,0 +1,302 @@
+@if (payment(); as p) {
+  <div class="pd-actions">
+    @if (p.canCaptured) { <button class="btn btn-success" [disabled]="busy()" (click)="askCapture()"><span class="material-symbols-outlined">check</span> Capture</button> }
+    @if (p.canUnhold) { <button class="btn btn-success" [disabled]="busy()" (click)="askUnhold()"><span class="material-symbols-outlined">lock_open</span> Unhold</button> }
+    @if (p.canCancel) { <button class="btn" [disabled]="busy()" (click)="askCancel()"><span class="material-symbols-outlined">block</span> Cancel</button> }
+    @if (p.canRefund) { <button class="btn btn-danger" [disabled]="busy()" (click)="askRefund()"><span class="material-symbols-outlined">undo</span> Refund</button> }
+    @if (p.canMarkAsDispute) { <button class="btn btn-danger" [disabled]="busy()" (click)="askMarkDispute()"><span class="material-symbols-outlined">gavel</span> Mark as dispute</button> }
+    @if (p.canMarkAsRefund) { <button class="btn" [disabled]="busy()" (click)="askMarkRefund()"><span class="material-symbols-outlined">currency_exchange</span> Mark as refund</button> }
+    @if (p.canRecheck) { <button class="btn btn-warn" [disabled]="busy()" (click)="askRecheck()"><span class="material-symbols-outlined">sync</span> Recheck</button> }
+  </div>
+}
+
+@if (loading() && !payment()) {
+  <!-- Full skeleton — every card/grid this page renders, shaped like the real content -->
+  <div class="detail-grid detail-2">
+    <div class="info-card">
+      <div class="h"><span class="sk sk-ic"></span><span class="sk sk-ch-title"></span></div>
+      <div class="kv">
+        @for (r of [1,2,3,4,5,6,7,8]; track r) {
+          <div class="row"><span class="sk sk-kv-key"></span><span class="sk sk-kv-val"></span></div>
+        }
+      </div>
+    </div>
+    <div class="info-card">
+      <div class="h"><span class="sk sk-ic"></span><span class="sk sk-ch-title"></span></div>
+      <div class="kv">
+        @for (r of [1,2,3,4,5,6]; track r) {
+          <div class="row"><span class="sk sk-kv-key"></span><span class="sk sk-kv-val"></span></div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="detail-grid detail-2">
+    <div class="info-card">
+      <div class="h"><span class="sk sk-ic"></span><span class="sk sk-ch-title"></span></div>
+      <div class="kv">
+        @for (r of [1,2,3]; track r) {
+          <div class="row"><span class="sk sk-kv-key"></span><span class="sk sk-kv-val"></span></div>
+        }
+      </div>
+    </div>
+    <div class="info-card">
+      <div class="h"><span class="sk sk-ic"></span><span class="sk sk-ch-title"></span></div>
+      <div class="kv">
+        @for (r of [1,2,3,4,5]; track r) {
+          <div class="row"><span class="sk sk-kv-key"></span><span class="sk sk-kv-val"></span></div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="datacard pd-card">
+    <div class="dc-toolbar"><span class="sk sk-ic"></span><span class="sk sk-ch-title"></span></div>
+    <div class="dc-tablewrap">
+      <table class="pdt">
+        <tbody>
+          @for (r of [1,2,3]; track r) {
+            <tr><td colspan="3"><span class="sk sk-row-line"></span></td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="datacard pd-card">
+    <div class="dc-toolbar"><span class="sk sk-ic"></span><span class="sk sk-ch-title"></span></div>
+    <div class="dc-tablewrap">
+      <table class="pdt">
+        <tbody>
+          @for (r of [1,2,3]; track r) {
+            <tr><td colspan="7"><span class="sk sk-row-line"></span></td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+} @else {
+  @if (payment(); as p) {
+  <!-- App + Provider -->
+  <div class="detail-grid detail-2">
+    <div class="info-card">
+      <div class="h">
+        <span class="material-symbols-outlined">smartphone</span> App
+        @if (p.redirectUrl) {
+          <span class="right">
+            <button class="btn btn-sm" (click)="payLinkModal.open(p.redirectUrl, 'Payment link')">
+              <span class="material-symbols-outlined">link</span> Pay link
+            </button>
+          </span>
+        }
+      </div>
+      <div class="kv">
+        <div class="row"><span class="k">Payment ID</span><span class="v cell-mono">{{ p.paymentId }}</span></div>
+        <div class="row"><span class="k">Reference ID</span><span class="v cell-mono">{{ p.referenceId || '' }}</span></div>
+        <div class="row"><span class="k">Webhook sent</span><span class="v">{{ webhook()?.sentTime ? (webhook()!.sentTime | date: 'MMM d, y, HH:mm') : '' }}</span></div>
+        <div class="row"><span class="k">Customer ID</span><span class="v cell-mono">@if (p.customerOrder?.customer?.customerId || p.customerId; as cid) {<a class="idlink" [href]="customerUrl(cid)" target="_blank" rel="noopener">{{ cid }}</a>}</span></div>
+        <div class="row"><span class="k">Customer</span><span class="v">{{ customerName() || '' }}</span></div>
+        <div class="row"><span class="k">Payer IP</span><span class="v cell-mono">{{ p.payerIp || '' }}</span></div>
+        <div class="row"><span class="k">Auto pay</span><span class="v">{{ p.autoPayment || '' }}</span></div>
+        <div class="row"><span class="k">State</span><span class="v"><span class="pill plain" [ngClass]="statePill(p.paymentState)"><span class="dot"></span>{{ p.paymentState }}</span></span></div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="h">
+        <span class="material-symbols-outlined">payments</span> Provider
+        <span class="right">
+          @if (p.hasProviderInfo && p.canGetRawInfo) { <button class="btn btn-sm" [disabled]="busy()" (click)="openRawInfo()">Raw info</button> }
+          @if (p.hasProviderInfo && p.canGetPaymentLinkInfo) { <button class="btn btn-sm" [disabled]="busy()" (click)="openLinkInfo()">Link info</button> }
+        </span>
+      </div>
+      <div class="kv">
+        @if (p.paymentProfiles?.[0]?.paymentProvider; as prov) {
+          <div class="provider-row">
+            <app-provider-logo [provider]="prov" [showName]="true" [size]="64" />
+          </div>
+        }
+        <div class="row"><span class="k">Amount</span><span class="v">{{ money(p.amount) }}</span></div>
+        <div class="row"><span class="k">Captured amount</span><span class="v">{{ money(p.capturedAmount) }}</span></div>
+        <div class="row"><span class="k">Net amount</span><span class="v">{{ money(p.feeBreakdown?.netAmount) }}</span></div>
+        <div class="row"><span class="k">Provider fee</span><span class="v">{{ money(p.feeBreakdown?.providerFee) }}</span></div>
+        <div class="row"><span class="k">Currency</span><span class="v">{{ p.currency }}</span></div>
+        <div class="row"><span class="k">Card holder</span><span class="v">{{ customerName() || '' }}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Policy + Fee -->
+  <div class="detail-grid detail-2">
+    <div class="info-card">
+      <div class="h"><span class="material-symbols-outlined">shield</span> Policy</div>
+      <div class="kv">
+        <div class="row"><span class="k">Policy name</span><span class="v">{{ p.fraudPolicyName || '' }}</span></div>
+        <div class="row"><span class="k">Fraud status</span><span class="v">{{ p.fraudStatus || '' }}</span></div>
+        <div class="row"><span class="k">Message</span><span class="v">{{ p.firewallError || '' }}</span></div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="h"><span class="material-symbols-outlined">percent</span> Fee</div>
+      <div class="kv">
+        <div class="row"><span class="k">App fee</span><span class="v">{{ money(p.feeBreakdown?.appFee) }}</span></div>
+        <div class="row"><span class="k">Provider fee</span><span class="v">{{ money(p.feeBreakdown?.providerFee) }}</span></div>
+        <div class="row"><span class="k">Payment amount</span><span class="v">{{ money(p.feeBreakdown?.totalAmount ?? p.amount) }}</span></div>
+        <div class="row"><span class="k">Captured amount</span><span class="v">{{ money(p.capturedAmount) }}</span></div>
+        <div class="row"><span class="k">Net amount</span><span class="v">{{ money(p.feeBreakdown?.netAmount) }}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- State log -->
+  <div class="datacard pd-card">
+    <div class="dc-toolbar">
+      <div class="dc-title"><span class="material-symbols-outlined ti">history</span> State log</div>
+      <div class="spacer"></div>
+      @if (p.canGetLogDetails) {
+        <button class="btn btn-sm" [disabled]="busy()" (click)="openLogDetails()">
+          <span class="material-symbols-outlined">description</span> Log details
+        </button>
+      }
+    </div>
+    <div class="dc-tablewrap">
+      <table class="pdt state-log-table">
+        <thead><tr><th>State</th><th>Date</th><th>Description</th></tr></thead>
+        <tbody>
+          @if (loadingStateLogs()) {
+            @for (r of [1,2,3]; track r) {
+              <tr><td colspan="3"><span class="sk sk-row-line"></span></td></tr>
+            }
+          } @else {
+            @for (log of stateLogs(); track log.paymentStateLogId) {
+              <tr>
+                <td><span class="pill plain" [ngClass]="statePill(log.paymentState)"><span class="dot"></span>{{ log.paymentState }}</span></td>
+                <td>{{ log.createdTime | date: 'MMM d, y, HH:mm' }}</td>
+                <td class="cell-sub">{{ log.lastError || '' }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="3" class="pd-empty">No state logs.</td></tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Invoice items -->
+  <div class="datacard pd-card">
+    <div class="dc-toolbar">
+      <div class="dc-title"><span class="material-symbols-outlined ti">list_alt</span> Invoice items</div>
+    </div>
+    <div class="dc-tablewrap">
+      <table class="pdt invoice-items-table">
+        <thead><tr><th>Name</th><th>Category</th><th class="num">Amount</th><th class="num">Quantity</th><th>SKU</th><th class="num">Tax</th><th>Description</th></tr></thead>
+        <tbody>
+          @for (it of items(); track $index) {
+            <tr>
+              <td class="cell-strong">{{ it.name }}</td>
+              <td>{{ it.category }}</td>
+              <td class="num">{{ money(it.amount) }}</td>
+              <td class="num">{{ it.quantity }}</td>
+              <td class="cell-mono">{{ it.sku || '' }}</td>
+              <td class="num">{{ money(it.tax) }}</td>
+              <td class="cell-sub">{{ it.description || '' }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="7" class="pd-empty">No invoice items.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+  } @else {
+    <div class="pd-loading"><p>Payment not found.</p></div>
+  }
+}
+
+<!-- Confirm / reason modal -->
+@if (confirm(); as c) {
+  <div class="overlay">
+    <div class="modal sm">
+      <div class="mh"><h3>{{ c.title }}</h3><div class="spacer"></div><button class="icon-btn" (click)="closeConfirm()"><span class="material-symbols-outlined">close</span></button></div>
+      <div class="mb">
+        <p class="confirm-text">{{ c.message }}</p>
+        @if (c.needsReason) {
+          <textarea
+            class="input ta"
+            [class.invalid]="reasonTried() && !reasonText.trim()"
+            rows="3"
+            placeholder="Note… *"
+            [(ngModel)]="reasonText"
+            [ngModelOptions]="{ standalone: true }"
+          ></textarea>
+          @if (reasonTried() && !reasonText.trim()) {
+            <span class="err-hint">A description is required.</span>
+          }
+        }
+      </div>
+      <div class="mf">
+        <button class="btn" [disabled]="busy()" (click)="closeConfirm()">Close</button>
+        <button class="btn" [class.btn-danger]="c.danger" [class.btn-primary]="!c.danger" [disabled]="busy()" (click)="runConfirm()">
+          @if (busy()) { <span class="btn-spinner"></span> Processing… } @else { Confirm }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Info modal (raw info / link info / log details) -->
+@if (info(); as m) {
+  <div class="overlay">
+    <div class="modal">
+      <div class="mh"><h3>{{ m.title }}</h3><div class="spacer"></div>@if (!m.loading) {<button class="icon-btn" (click)="closeInfo()"><span class="material-symbols-outlined">close</span></button>}</div>
+      <div class="mb info-body">
+        @if (m.loading) {
+          <div class="modal-skeleton">
+            <div class="sk-row"></div>
+            <div class="sk-row"></div>
+            <div class="sk-row short"></div>
+            <div class="sk-row"></div>
+            <div class="sk-row short"></div>
+          </div>
+        } @else {
+          @switch (m.mode) {
+            @case ('json') {
+              <pre class="json">{{ m.json }}</pre>
+            }
+            @case ('link') {
+              <div class="kv">
+                <div class="row"><span class="k">Order URL</span><span class="v"><a class="idlink" [href]="m.link?.orderUrl" target="_blank">{{ m.link?.orderUrl }}</a></span></div>
+                <div class="row"><span class="k">{{ m.link?.orderField }}</span><span class="v cell-mono">{{ m.link?.orderValue }}</span></div>
+              </div>
+            }
+            @case ('logs') {
+              <table class="pdt">
+                <thead><tr><th>Method</th><th>Gateway</th><th>Date</th><th>Message</th></tr></thead>
+                <tbody>
+                  @for (l of m.logs; track $index) {
+                    <tr>
+                      <td class="cell-strong">{{ l.method }}</td>
+                      <td>{{ l.paymentGateway || '' }}</td>
+                      <td>{{ l.createdTime ? (l.createdTime | date: 'MMM d, HH:mm') : '' }}</td>
+                      <td class="cell-sub"><pre class="json sm">{{ stringify(l.error || l.message) }}</pre></td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="4" class="pd-empty">No log entries.</td></tr>
+                  }
+                </tbody>
+              </table>
+            }
+          }
+        }
+      </div>
+      @if (!m.loading) {
+        <div class="mf"><button class="btn btn-primary" (click)="closeInfo()">Done</button></div>
+      }
+    </div>
+  </div>
+}
+
+<!-- Pay link modal (opened from the App card "Pay link" button) -->
+<app-payment-link-modal #payLinkModal />

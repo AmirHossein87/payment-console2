@@ -1,0 +1,1832 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Payment Admin — UI Redesign Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
+<style>
+/* ============================================================
+   DESIGN TOKENS — single source of truth. Swap → whole app reskins.
+   Brand = Ionic blue. Dark navy sidebar. Comfortable density.
+   ============================================================ */
+:root{
+  --brand-500:#3880ff; --brand-600:#2f6fe6; --brand-700:#1f5bd0;
+  --brand-weak:#eaf2ff; --brand-weak-2:#d4e5ff;
+  --ok:#16a34a; --ok-weak:#dcfce7;
+  --warn:#d97706; --warn-weak:#fef3c7;
+  --bad:#dc2626; --bad-weak:#fee2e2;
+  --info:#2563eb; --info-weak:#dbeafe;
+  --muted-pill:#475569; --muted-pill-weak:#f1f5f9;
+  --violet:#7c3aed; --violet-weak:#ede9fe;
+  /* payment-state colors (from your variables.scss) */
+  --st-captured:#19bb77; --st-fail:#e93e63; --st-progress:#5a99d8;
+  --st-disputed:#92959a; --st-hold:#e0a800; --st-created:#64748b; --st-refund:#7c3aed;
+  --app-bg:#f5f6f8; --surface:#fff; --surface-2:#fafbfc;
+  --border:#e6e8ee; --border-strong:#d4d8e0;
+  --text:#0f172a; --text-2:#475569; --text-3:#94a3b8;
+  --sidebar-bg:#0f1729; --sidebar-text:#aeb6c7; --sidebar-text-active:#fff;
+  --sidebar-active:#1e293b; --sidebar-brand:#fff;
+  --r-xs:6px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-pill:999px;
+  --sh-sm:0 1px 2px rgba(16,24,40,.05); --sh-md:0 4px 12px rgba(16,24,40,.08); --sh-lg:0 12px 32px rgba(16,24,40,.12);
+  --ring:0 0 0 3px var(--brand-weak-2);
+  --sidebar-w:248px; --topbar-h:60px;
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+[data-theme="dark"]{
+  --app-bg:#0b1120; --surface:#111827; --surface-2:#0f1626;
+  --border:#1f2937; --border-strong:#334155;
+  --text:#f1f5f9; --text-2:#94a3b8; --text-3:#64748b;
+  --sidebar-bg:#080d18; --sidebar-active:#1e293b;
+  --brand-weak:#0c1f47; --brand-weak-2:#16336b;
+  --ok-weak:#052e16; --warn-weak:#451a03; --bad-weak:#450a0a; --info-weak:#172554;
+  --muted-pill-weak:#1e293b; --muted-pill:#cbd5e1; --violet-weak:#2e1065;
+  --sh-sm:0 1px 2px rgba(0,0,0,.4); --sh-md:0 4px 12px rgba(0,0,0,.45); --sh-lg:0 12px 32px rgba(0,0,0,.55);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--font);background:var(--app-bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.material-symbols-outlined{font-size:20px;line-height:1;vertical-align:middle;user-select:none}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--brand-weak-2)}
+
+/* shell */
+.app{display:grid;grid-template-columns:var(--sidebar-w) 1fr;height:100vh}
+.sidebar{background:var(--sidebar-bg);color:var(--sidebar-text);display:flex;flex-direction:column;padding:14px 12px;gap:4px;overflow-y:auto}
+.brand{display:flex;align-items:center;gap:10px;padding:8px 10px 16px}
+.brand .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--brand-500),#5260ff);display:grid;place-items:center;color:#fff;font-weight:700;box-shadow:var(--sh-md)}
+.brand .name{color:var(--sidebar-brand);font-weight:700;font-size:15px}
+.brand .name small{display:block;font-weight:400;font-size:11px;color:var(--sidebar-text)}
+.nav-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;color:#64748b;padding:14px 12px 6px;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:var(--r-sm);color:var(--sidebar-text);font-weight:500;cursor:pointer;transition:.15s;font-size:13.5px}
+.nav-item:hover{background:rgba(255,255,255,.05);color:#fff}
+.nav-item.active{background:var(--sidebar-active);color:var(--sidebar-text-active)}
+.nav-item.active .material-symbols-outlined{color:var(--brand-500);font-variation-settings:'FILL' 1}
+.nav-item .material-symbols-outlined{font-size:20px;color:#64748b}
+.nav-item .badge{margin-left:auto;background:var(--brand-500);color:#fff;font-size:10.5px;font-weight:600;padding:1px 7px;border-radius:var(--r-pill)}
+.sidebar .spacer{flex:1}
+.app-switch{margin-top:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:var(--r-sm);padding:10px 12px;display:flex;align-items:center;gap:10px;cursor:pointer}
+.app-switch .ic{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#16a34a,#0891b2);display:grid;place-items:center;color:#fff;font-size:13px;font-weight:700}
+.app-switch .t{font-size:12.5px;color:#fff;font-weight:600;line-height:1.2}
+.app-switch .t small{display:block;color:var(--sidebar-text);font-weight:400;font-size:11px}
+.app-switch .material-symbols-outlined{margin-left:auto;color:#64748b;font-size:18px}
+.main{display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.topbar{height:var(--topbar-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 22px;flex-shrink:0}
+.crumbs{display:flex;align-items:center;gap:7px;color:var(--text-3);font-size:13px}
+.crumbs b{color:var(--text);font-weight:600}.crumbs .material-symbols-outlined{font-size:16px}
+.env-badge{display:inline-flex;align-items:center;gap:6px;background:var(--warn-weak);color:var(--warn);font-weight:600;font-size:12px;padding:4px 10px;border-radius:var(--r-pill)}
+.env-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--warn)}
+.topbar .spacer{flex:1}
+.icon-btn{width:38px;height:38px;border-radius:var(--r-sm);border:1px solid transparent;background:transparent;display:grid;place-items:center;cursor:pointer;color:var(--text-2);transition:.15s}
+.icon-btn:hover{background:var(--surface-2);border-color:var(--border);color:var(--text)}
+.user{display:flex;align-items:center;gap:10px;padding:4px 4px 4px 10px;border-radius:var(--r-pill);cursor:pointer;border:1px solid var(--border)}
+.user:hover{background:var(--surface-2)}
+.user .av{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#ef4444);display:grid;place-items:center;color:#fff;font-weight:600;font-size:12px}
+.user .nm{font-size:13px;font-weight:600;line-height:1.1}.user .nm small{display:block;color:var(--text-3);font-weight:400;font-size:11px}
+.user-wrap{position:relative}
+.user-menu{position:absolute;top:calc(100% + 8px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--sh-lg);min-width:210px;padding:6px;display:none;z-index:45}
+.user-menu.open{display:block;animation:fade .15s ease}
+.user-menu .uhead{padding:8px 11px}
+.user-menu .uhead .n{font-weight:700;font-size:13.5px}
+.user-menu .uhead .e{font-size:12px;color:var(--text-3)}
+.user-menu .sep{height:1px;background:var(--border);margin:6px 4px}
+.user-menu .mi{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:var(--r-sm);font-size:13.5px;font-weight:500;color:var(--text-2);cursor:pointer}
+.user-menu .mi:hover{background:var(--surface-2);color:var(--text)}
+.user-menu .mi .material-symbols-outlined{font-size:19px;color:var(--text-3)}
+.license-pick{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2);font-weight:600;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-sm);padding:7px 11px;cursor:pointer;position:relative}
+.license-pick b{color:var(--text)}
+.license-pick:hover{border-color:var(--text-3)}
+.license-pick>.material-symbols-outlined{font-size:18px;color:var(--text-3)}
+.license-menu{position:absolute;top:calc(100% + 8px);left:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--sh-lg);min-width:240px;padding:6px;display:none;z-index:45;cursor:default}
+.license-menu.open{display:block;animation:fade .15s ease}
+.license-menu .mi{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:var(--r-sm);font-size:13px;font-weight:500;color:var(--text-2);cursor:pointer}
+.license-menu .mi:hover{background:var(--surface-2);color:var(--text)}
+.license-menu .mi.sel{color:var(--brand-600);font-weight:700}
+.license-menu .mi .material-symbols-outlined{font-size:18px;color:var(--text-3)}
+.env-toggle{display:inline-flex;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-pill);padding:3px;gap:2px}
+.env-toggle button{border:none;background:transparent;font-family:var(--font);font-size:12px;font-weight:700;color:var(--text-3);padding:5px 14px;border-radius:var(--r-pill);cursor:pointer}
+.env-toggle button.active[data-env="sandbox"]{background:var(--warn);color:#fff}
+.env-toggle button.active[data-env="live"]{background:var(--ok);color:#fff}
+.content{flex:1;overflow-y:auto;padding:24px 26px}
+.page{display:none;animation:fade .25s ease}.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px;gap:16px;flex-wrap:wrap}
+.page-head h1{font-size:22px;font-weight:700;letter-spacing:-.3px}
+.page-head p{color:var(--text-2);font-size:13.5px;margin-top:3px}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 15px;border-radius:var(--r-sm);font-family:var(--font);font-size:13.5px;font-weight:600;cursor:pointer;border:1px solid var(--border-strong);background:var(--surface);color:var(--text);transition:.15s;white-space:nowrap}
+.btn:hover{background:var(--surface-2);border-color:var(--text-3)}
+.btn .material-symbols-outlined{font-size:19px}
+.btn-primary{background:var(--brand-500);border-color:var(--brand-500);color:#fff;box-shadow:var(--sh-sm)}
+.btn-primary:hover{background:var(--brand-600);border-color:var(--brand-600)}
+.btn-danger{background:var(--bad);border-color:var(--bad);color:#fff}
+.btn-danger:hover{filter:brightness(.93)}
+.btn-sm{height:32px;padding:0 11px;font-size:12.5px}
+
+/* ★ REUSABLE BASE GRID+FILTER COMPONENT ★ */
+.datacard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--sh-sm);overflow:hidden}
+.dc-toolbar{display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--border)}
+.dc-title{font-size:15px;font-weight:700;display:flex;align-items:center;gap:9px}
+.dc-title .count{font-size:12px;font-weight:600;color:var(--text-2);background:var(--surface-2);border:1px solid var(--border);padding:1px 9px;border-radius:var(--r-pill)}
+.dc-toolbar .spacer{flex:1}
+.dc-filters{display:flex;align-items:center;gap:10px;padding:14px 18px;flex-wrap:wrap;border-bottom:1px solid var(--border);background:var(--surface-2)}
+.search{position:relative;flex:1;min-width:220px;max-width:360px}
+.search .material-symbols-outlined{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-3);font-size:20px;pointer-events:none}
+.search input{width:100%;height:38px;border:1px solid var(--border-strong);border-radius:var(--r-sm);background:var(--surface);padding:0 12px 0 38px;font-family:var(--font);font-size:13.5px;color:var(--text);outline:none;transition:.15s}
+.search input::placeholder{color:var(--text-3)}
+.search input:focus{border-color:var(--brand-500);box-shadow:var(--ring)}
+.select{position:relative}
+.select select{appearance:none;height:38px;border:1px solid var(--border-strong);border-radius:var(--r-sm);background:var(--surface);padding:0 34px 0 12px;font-family:var(--font);font-size:13px;font-weight:500;color:var(--text);cursor:pointer;outline:none}
+.select select:focus{border-color:var(--brand-500);box-shadow:var(--ring)}
+.select .material-symbols-outlined{position:absolute;right:9px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-3);font-size:20px}
+.date-filter{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--text-2)}
+.date-filter .input{min-width:0;font-size:12.5px}
+.dc-chips{display:flex;align-items:center;gap:8px;padding:11px 18px;flex-wrap:wrap;border-bottom:1px solid var(--border)}
+.dc-chips:empty{display:none}
+.dc-chips .lbl{font-size:12px;color:var(--text-3);font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--brand-weak);color:var(--brand-600);border:1px solid var(--brand-weak-2);font-size:12px;font-weight:600;padding:4px 6px 4px 10px;border-radius:var(--r-pill)}
+.chip .x{display:grid;place-items:center;width:17px;height:17px;border-radius:50%;cursor:pointer}
+.chip .x:hover{background:var(--brand-weak-2)}.chip .x .material-symbols-outlined{font-size:14px}
+.chip-clear{font-size:12px;font-weight:600;color:var(--text-2);cursor:pointer;padding:4px 8px;border-radius:var(--r-sm)}
+.chip-clear:hover{background:var(--surface-2);color:var(--text)}
+.dc-tablewrap{overflow-x:auto}
+table.dc{width:100%;border-collapse:collapse;font-size:13.5px}
+table.dc thead th{text-align:left;font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text-3);padding:11px 18px;background:var(--surface-2);border-bottom:1px solid var(--border);white-space:nowrap}
+table.dc thead th.num{text-align:right}
+table.dc tbody td{padding:13px 18px;border-bottom:1px solid var(--border);color:var(--text-2);vertical-align:middle;white-space:nowrap}
+table.dc tbody tr:last-child td{border-bottom:none}
+table.dc tbody tr{transition:.12s}table.dc tbody tr:hover{background:var(--surface-2)}
+table.dc td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:var(--text)}
+.cell-strong{color:var(--text);font-weight:600}
+.cell-mono{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:12.5px;color:var(--text)}
+.cell-sub{color:var(--text-3);font-size:12px}
+.idlink{color:var(--brand-600);font-weight:600;cursor:pointer}.idlink:hover{text-decoration:underline}
+.with-icon{display:flex;align-items:center;gap:9px}
+.prov{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;position:relative;overflow:hidden}
+.prov img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#fff;padding:13%}
+.prov.stripe{background:#635bff}.prov.paypal{background:#003087}.prov.adyen{background:#0abf53}.prov.revolut{background:#0a0a0a}.prov.authnet{background:#e21836}
+.avi{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:600;color:#fff;flex-shrink:0}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:var(--r-pill);line-height:1.6}
+.pill .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.ok{background:var(--ok-weak);color:var(--ok)}.pill.warn{background:var(--warn-weak);color:var(--warn)}
+.pill.bad{background:var(--bad-weak);color:var(--bad)}.pill.info{background:var(--info-weak);color:var(--info)}
+.pill.muted{background:var(--muted-pill-weak);color:var(--muted-pill)}.pill.violet{background:var(--violet-weak);color:var(--violet)}
+.pill.plain{background:transparent;padding:0}.pill.plain.muted{color:var(--text-3)}
+.badge-default{display:inline-flex;align-items:center;gap:5px;background:#31844d;color:#fff;font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:var(--r-sm)}
+.row-actions{display:flex;gap:4px;justify-content:flex-end}
+.row-actions .icon-btn{width:30px;height:30px}.row-actions .icon-btn .material-symbols-outlined{font-size:18px}
+.dc-foot{display:flex;align-items:center;gap:14px;padding:13px 18px;border-top:1px solid var(--border);background:var(--surface-2)}
+.dc-foot .rows{display:flex;align-items:center;gap:8px;color:var(--text-2);font-size:13px}
+.dc-foot .spacer{flex:1}.dc-foot .range{color:var(--text-2);font-size:13px}
+.pager{display:flex;align-items:center;gap:4px}
+.pager .pg{min-width:32px;height:32px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface);display:grid;place-items:center;cursor:pointer;font-size:13px;font-weight:600;color:var(--text-2)}
+.pager .pg:hover{border-color:var(--text-3);color:var(--text)}
+.pager .pg.active{background:var(--brand-500);border-color:var(--brand-500);color:#fff}
+.pager .pg.disabled{opacity:.4;pointer-events:none}
+.empty{padding:52px 20px;text-align:center;color:var(--text-3)}
+.empty .material-symbols-outlined{font-size:46px;color:var(--border-strong)}
+.empty h3{color:var(--text);font-size:15px;margin:10px 0 4px}
+
+/* overview */
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:3px;gap:2px}
+.seg button{border:none;background:transparent;font-family:var(--font);font-size:13px;font-weight:600;color:var(--text-2);padding:7px 14px;border-radius:6px;cursor:pointer}
+.seg button.active{background:var(--brand-500);color:#fff;box-shadow:var(--sh-sm)}
+.stategrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--sh-sm);padding:15px 16px;position:relative;overflow:hidden}
+.stcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c)}
+.stcard .lab{font-size:12.5px;color:var(--text-2);font-weight:600;display:flex;align-items:center;gap:7px}
+.stcard .lab .d{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.stcard .val{font-size:23px;font-weight:700;letter-spacing:-.5px;margin-top:8px}
+.stcard .sub{font-size:11.5px;color:var(--text-3);margin-top:2px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--sh-sm);padding:18px}
+.panel h3{font-size:14px;font-weight:700;margin-bottom:2px}
+.panel .sub{color:var(--text-3);font-size:12.5px;margin-bottom:16px}
+.bars{display:flex;align-items:flex-end;gap:14px;height:170px;padding-top:10px}
+.bars .b{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end}
+.bars .b .bar{width:100%;border-radius:7px 7px 0 0;background:linear-gradient(180deg,var(--brand-500),var(--brand-700));transition:.3s}
+.bars .b .bl{font-size:11px;color:var(--text-3);font-weight:600}
+.curcards{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.curcard{border:1px solid var(--border);border-radius:var(--r-sm);padding:13px 14px;background:var(--surface-2)}
+.curcard .c{font-size:12px;color:var(--text-3);font-weight:600}
+.curcard .a{font-size:18px;font-weight:700;margin-top:4px}
+.curcard .n{font-size:11.5px;color:var(--text-3);margin-top:1px}
+
+/* detail */
+.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px}
+.detail-grid.detail-2{grid-template-columns:1fr 1fr}
+.kv .v .idlink{cursor:pointer}
+.info-card .h .right{margin-left:auto;display:flex;gap:6px}
+.info-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--sh-sm);overflow:hidden}
+.info-card .h{padding:13px 18px;border-bottom:1px solid var(--border);font-weight:700;font-size:13.5px;display:flex;align-items:center;gap:8px;background:var(--surface-2)}
+.info-card .h .material-symbols-outlined{font-size:19px;color:var(--text-3)}
+.kv{padding:14px 18px;display:flex;flex-direction:column;gap:13px}
+.kv .row{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.kv .k{color:var(--text-3);font-size:12.5px;font-weight:500}
+.kv .v{color:var(--text);font-size:13px;font-weight:600;text-align:right}
+
+/* form */
+.form-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--sh-sm);max-width:680px}
+.form-card .h{padding:16px 20px;border-bottom:1px solid var(--border);font-weight:700}
+.form-row{padding:16px 20px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center}
+.form-row:last-child{border-bottom:none}
+.form-row .lab{font-weight:600;font-size:13.5px}.form-row .lab small{display:block;color:var(--text-3);font-weight:400;margin-top:2px}
+.input{height:38px;border:1px solid var(--border-strong);border-radius:var(--r-sm);background:var(--surface);padding:0 12px;font-family:var(--font);font-size:13.5px;color:var(--text);outline:none;min-width:220px}
+.input:focus{border-color:var(--brand-500);box-shadow:var(--ring)}
+.switch{width:42px;height:24px;border-radius:var(--r-pill);background:var(--border-strong);position:relative;cursor:pointer;transition:.2s;flex-shrink:0}
+.switch.on{background:var(--brand-500)}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s;box-shadow:var(--sh-sm)}
+.switch.on::after{left:20px}
+.seg.tabs button.active{background:var(--surface);color:var(--text)}
+.seg.tabs{background:var(--surface-2);margin-bottom:20px}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center;z-index:50}
+.overlay.open{display:flex;animation:fade .2s ease}
+.overlay.drawer{justify-content:flex-end}
+.modal{background:var(--surface);border-radius:var(--r-lg);width:440px;max-width:calc(100vw - 32px);display:flex;flex-direction:column;box-shadow:var(--sh-lg);animation:pop .2s ease}
+.overlay.drawer .modal{height:100vh;border-radius:0;width:420px;animation:slide .25s ease}
+@keyframes pop{from{transform:scale(.96);opacity:.6}to{transform:none;opacity:1}}
+@keyframes slide{from{transform:translateX(30px);opacity:.6}to{transform:none;opacity:1}}
+.modal .mh{display:flex;align-items:center;gap:10px;padding:18px 20px;border-bottom:1px solid var(--border)}
+.modal .mh h3{font-size:15px;font-weight:700}.modal .mh .spacer{flex:1}
+.modal .mb{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:18px}
+.modal .mf{padding:16px 20px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+.field{display:flex;flex-direction:column;gap:7px}
+.field label{font-size:12.5px;font-weight:600;color:var(--text-2)}
+.field .input,.field .select,.field .select select{width:100%}
+.field .input{min-width:0}
+.confirm-text{padding:4px 0;color:var(--text-2);font-size:13.5px}
+
+/* toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#0f172a;color:#fff;padding:11px 18px;border-radius:var(--r-pill);font-size:13px;font-weight:600;box-shadow:var(--sh-lg);opacity:0;pointer-events:none;transition:.25s;z-index:60;display:flex;align-items:center;gap:8px}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast .material-symbols-outlined{font-size:18px;color:#4ade80}
+.spinner{width:34px;height:34px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--brand-500);animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.env-loading-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--sh-lg);padding:26px 34px;display:flex;flex-direction:column;align-items:center;gap:14px}
+
+/* ============================================================
+   FRAUD POLICY EDITOR (comprehensive object)
+   ============================================================ */
+.sec-body{padding:16px 18px}
+.kv-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 28px}
+.kv-item{display:flex;flex-direction:column;gap:2px}
+.kv-item .k{font-size:12px;color:var(--text-3);font-weight:600}
+.kv-item .v{font-size:13.5px;color:var(--text);font-weight:600}
+.rulecards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.rulecard{border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden;background:var(--surface-2)}
+.rulecard .rh{display:flex;align-items:center;justify-content:space-between;padding:7px 8px 7px 12px;border-bottom:1px solid var(--border);background:var(--surface);font-weight:700;font-size:12.5px}
+.rulecard .rh .icon-btn{width:26px;height:26px}.rulecard .rh .icon-btn .material-symbols-outlined{font-size:16px}
+.rulecard .rb{padding:11px 12px;display:flex;flex-direction:column;gap:8px;font-size:12.5px}
+.rulecard .rb .li{display:flex;justify-content:space-between;gap:10px}
+.rulecard .rb .k{color:var(--text-3)}
+.rulecard .rb .v{color:var(--text);font-weight:600;text-align:right}
+.linkish{color:var(--brand-600);cursor:pointer;font-weight:600;display:inline-flex;align-items:center}
+.sec-empty{padding:20px;text-align:center;color:var(--text-3);font-size:13px}
+.checkrow{display:flex;align-items:center;gap:9px;font-size:13.5px;cursor:pointer;padding:5px 0}
+.checkrow input{width:17px;height:17px;accent-color:var(--brand-500)}
+.modal.tall{max-height:88vh}
+.cs-item{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:var(--r-sm);cursor:pointer}
+.cs-item:hover{background:var(--surface-2)}
+.pl-more{border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;background:var(--surface-2)}
+.pl-more summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--text-2);list-style:none}
+.pl-more summary::-webkit-details-marker{display:none}
+.pl-more .field{margin-top:12px}
+.pl-more label.checkrow{margin-top:10px}
+.gw-box{border:1px solid var(--border-strong);border-radius:var(--r-sm);padding:6px 12px;max-height:140px;overflow-y:auto}
+.prov.braintree{background:#2d2a6e}
+.gw-steps{display:flex;align-items:center;gap:8px;padding:14px 20px;border-bottom:1px solid var(--border);font-size:12.5px;font-weight:600;color:var(--text-3)}
+.gw-steps .s{display:flex;align-items:center;gap:7px}
+.gw-steps .s .n{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:11px;border:1.5px solid var(--border-strong);background:var(--surface)}
+.gw-steps .s.active{color:var(--text)}
+.gw-steps .s.active .n{background:var(--brand-500);border-color:var(--brand-500);color:#fff}
+.gw-steps .s.done .n{background:var(--ok);border-color:var(--ok);color:#fff}
+.gw-steps .sep{flex:1;height:1.5px;background:var(--border);min-width:14px}
+.gw-prov{display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto;padding-right:4px}
+.gw-prov .opt{display:flex;align-items:center;gap:12px;padding:11px 13px;border:1px solid var(--border-strong);border-radius:var(--r-sm);cursor:pointer;transition:.12s}
+.gw-prov .opt:hover{border-color:var(--brand-500)}
+.gw-prov .opt.sel{border-color:var(--brand-500);background:var(--brand-weak)}
+.gw-prov .opt.disabled{opacity:.5;cursor:not-allowed}
+.gw-prov .opt .nm{font-weight:600;flex:1}
+.gw-prov .opt .ex{font-size:11px;color:var(--text-3);font-weight:600}
+.cd-pane{animation:fade .2s ease}
+
+/* ============================================================
+   CHECKOUT BRANDING (Settings → Checkout) — live mockup
+   ============================================================ */
+.co-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:18px;max-width:560px;flex-wrap:wrap}
+.co-head h3{font-size:15px;font-weight:700}
+.co-head p{color:var(--text-2);font-size:13px;margin-top:2px}
+.browser-frame{max-width:560px;border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--sh-lg);background:var(--surface)}
+.browser-chrome{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--surface-2);border-bottom:1px solid var(--border)}
+.browser-chrome .wc{display:flex;gap:6px}
+.browser-chrome .wc .c{width:11px;height:11px;border-radius:50%}
+.wc .red{background:#ff5f57}.wc .yellow{background:#febc2e}.wc .green{background:#28c840}
+.addr{flex:1;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r-pill);padding:6px 12px;transition:.15s}
+.addr:focus-within{border-color:var(--brand-500);box-shadow:var(--ring)}
+.addr input{flex:1;border:none;background:transparent;outline:none;font-family:var(--font);font-size:12.5px;color:var(--text);min-width:0}
+.addr-cog{font-size:18px;color:var(--text-3);cursor:pointer}
+.addr-cog:hover{color:var(--brand-600)}
+.browser-view{padding:28px 26px 22px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px}
+.co-logo{position:relative;width:66px;height:66px;border-radius:18px;background:var(--surface-2);border:1px dashed var(--border-strong);display:grid;place-items:center;cursor:pointer;overflow:hidden;flex-shrink:0}
+.co-logo .ph{font-size:30px;color:var(--text-3)}
+.co-logo img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.co-logo .ov{position:absolute;inset:0;background:rgba(15,23,42,.55);color:#fff;display:grid;place-items:center;opacity:0;transition:.15s}
+.co-logo:hover .ov{opacity:1}
+.co-name{border:1px dashed transparent;background:transparent;text-align:center;font-family:var(--font);font-size:19px;font-weight:700;color:var(--text);outline:none;border-radius:7px;padding:3px 10px;max-width:300px;margin-top:12px}
+.co-slogan1{font-size:15px;font-weight:600;color:var(--text);max-width:400px}
+.co-slogan2{font-size:13px;color:var(--text-2);max-width:440px}
+.co-edit{border:1px dashed transparent;background:transparent;text-align:center;font-family:var(--font);outline:none;resize:none;border-radius:7px;padding:4px 10px;width:100%;overflow:hidden;line-height:1.45}
+.co-name:hover,.co-name:focus,.co-edit:hover,.co-edit:focus{border-color:var(--border-strong)}
+.co-total{display:flex;align-items:center;gap:8px;width:100%;margin-top:16px;padding-top:18px;border-top:1px solid var(--border);font-size:13px;color:var(--text-2)}
+.co-total h3{font-size:16px;font-weight:700;color:var(--text)}
+.co-total .env-badge{margin-left:auto}
+.co-divider{width:100%;text-align:center;color:var(--text-3);font-size:12px;font-weight:600;position:relative;margin:8px 0 4px}
+.co-divider span{background:var(--surface);padding:0 12px;position:relative;z-index:1}
+.co-divider::before{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:var(--border)}
+#coMethods{width:100%;display:flex;flex-direction:column;gap:8px}
+.co-method{display:flex;align-items:center;gap:11px;padding:11px 14px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface)}
+.co-method .nm{flex:1;text-align:left;font-weight:600;font-size:13.5px}
+.co-method .rc{width:18px;height:18px;border-radius:50%;border:2px solid var(--border-strong)}
+.co-footer{display:flex;gap:10px;width:100%;margin-top:12px}
+.co-pay{flex:1;justify-content:center;opacity:.85;pointer-events:none}
+.co-footer .co-pay.primary{background:var(--brand-500);border-color:var(--brand-500);color:#fff}
+.co-warn{font-size:11px;color:var(--warn);font-weight:600;margin-top:-2px}
+.dns-table{border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden;margin-top:10px}
+.dns-row{display:flex;border-bottom:1px solid var(--border);font-size:13px}
+.dns-row:last-child{border-bottom:none}
+.dns-row .f{width:130px;padding:10px 12px;background:var(--surface-2);font-weight:600;color:var(--text-2)}
+.dns-row .v{flex:1;padding:10px 12px;display:flex;align-items:center;gap:8px}
+.dns-row code{font-family:ui-monospace,monospace;font-size:12.5px;background:var(--surface-2);padding:2px 7px;border-radius:5px}
+.dns-row .cp{cursor:pointer;color:var(--brand-600)}
+
+/* ============================================================
+   DASHBOARD STATE VIEWS (onboarding — Dashboard route state machine)
+   ============================================================ */
+.statebar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.statebar .hint{font-size:12px;color:var(--text-3);font-weight:600;display:flex;align-items:center;gap:6px}
+.banner{border-radius:var(--r-lg);padding:28px 30px;margin-bottom:20px;color:#fff;background:linear-gradient(120deg,var(--brand-700),var(--brand-500))}
+.banner.warn{background:linear-gradient(120deg,#7c2d12,#dc2626)}
+.banner h1{font-size:23px;font-weight:700;line-height:1.25}
+.banner p{margin-top:8px;font-size:14px;opacity:.92;max-width:640px}
+.setup-wrap{max-width:560px}
+.gs-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--sh-sm);padding:22px}
+.gs-card .gh{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:700}
+.gs-card .gh .material-symbols-outlined{color:var(--brand-600)}
+.gs-card .gsub{color:var(--text-3);font-size:13px;margin:4px 0 18px}
+.stepper{display:flex;flex-direction:column}
+.step{display:flex;gap:14px;padding-bottom:22px;position:relative}
+.step:last-child{padding-bottom:0}
+.step:not(:last-child)::before{content:"";position:absolute;left:15px;top:32px;bottom:0;width:2px;background:var(--border)}
+.step.completed:not(:last-child)::before{background:var(--ok)}
+.step-icon{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;z-index:1;border:2px solid var(--border);background:var(--surface);color:var(--text-3)}
+.step.completed .step-icon{background:var(--ok);border-color:var(--ok);color:#fff}
+.step.active .step-icon{border-color:var(--brand-500);background:var(--brand-weak)}
+.step.active .step-icon .inner{width:11px;height:11px;border-radius:50%;background:var(--brand-500)}
+.step .sc h3{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+.step.pending .sc h3{color:var(--text-3)}
+.step .sc p{font-size:12.5px;color:var(--text-2);margin-top:3px}
+.step-link{display:inline-flex;align-items:center;gap:6px;color:var(--brand-600);font-weight:600;font-size:13px;margin-top:9px;cursor:pointer}
+.step-link.disabled{color:var(--text-3);cursor:not-allowed}
+.minibadge{font-size:10px;font-weight:700;letter-spacing:.4px;padding:2px 7px;border-radius:var(--r-pill)}
+.minibadge.req{background:var(--warn-weak);color:var(--warn)}
+.minibadge.done{background:var(--ok-weak);color:var(--ok)}
+.minibadge.rec{background:var(--brand-weak);color:var(--brand-600)}
+.action-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.action-card{display:flex;gap:14px;align-items:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--sh-sm);padding:18px;cursor:pointer;transition:.15s}
+.action-card:hover{border-color:var(--brand-500);box-shadow:var(--sh-md);transform:translateY(-1px)}
+.action-card .iw{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;flex-shrink:0;color:#fff}
+.action-card h4{font-size:14.5px;font-weight:700}
+.action-card p{font-size:12.5px;color:var(--text-2);margin-top:3px}
+.license-card{background:var(--surface);border:1px solid var(--bad);border-left:4px solid var(--bad);border-radius:var(--r-md);box-shadow:var(--sh-sm);padding:22px;display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.license-card .ai{width:46px;height:46px;border-radius:12px;background:var(--bad-weak);color:var(--bad);display:grid;place-items:center;flex-shrink:0}
+.license-card .ai .material-symbols-outlined{font-size:26px}
+.license-card .lt{flex:1;min-width:240px}
+.license-card .lt h3{font-size:16px;font-weight:700;display:flex;align-items:center;gap:10px}
+.license-card .lt p{font-size:13px;color:var(--text-2);margin-top:5px}
+.fraud-card{grid-column:1/-1;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--sh-sm);padding:20px}
+.fraud-rules{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+.rule-item{border:1px solid var(--border);border-radius:var(--r-sm);padding:13px;background:var(--surface-2)}
+.rule-item h5{font-size:10.5px;letter-spacing:.5px;color:var(--brand-600);font-weight:700}
+.rule-item h6{font-size:13px;font-weight:700;margin-top:5px}
+.rule-item p{font-size:12px;color:var(--text-2);margin-top:4px}
+
+@media(max-width:1100px){.stategrid{grid-template-columns:repeat(2,1fr)}.detail-grid{grid-template-columns:1fr}.grid-2{grid-template-columns:1fr}.action-cards{grid-template-columns:1fr}.fraud-rules{grid-template-columns:1fr}}
+@media(max-width:820px){.app{grid-template-columns:1fr}.sidebar{display:none}.stategrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><div class="logo">P</div><div class="name"><small>Admin Console</small></div></div>
+    <div class="nav-label">Overview</div>
+    <div class="nav-item" data-nav="overview"><span class="material-symbols-outlined">monitoring</span> Overview</div>
+    <div class="nav-label">Operations</div>
+    <div class="nav-item" data-nav="payments"><span class="material-symbols-outlined">receipt_long</span> Payments <span class="badge">248</span></div>
+    <div class="nav-item" data-nav="customers"><span class="material-symbols-outlined">group</span> Customers</div>
+    <div class="nav-item" data-nav="gateways"><span class="material-symbols-outlined">hub</span> Gateways</div>
+    <div class="nav-item" data-nav="fraud"><span class="material-symbols-outlined">shield</span> Fraud Policies</div>
+    <div class="spacer"></div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="crumbs"><span></span><span class="material-symbols-outlined">chevron_right</span><b id="crumb">Dashboard</b></div>
+      <div class="spacer"></div>
+      <div class="license-pick" id="licensePick">License: <b id="licenseLabel">ACME · 2026</b> <span class="material-symbols-outlined">unfold_more</span>
+        <div class="license-menu" id="licenseMenu"></div>
+      </div>
+      <div class="env-toggle" id="envToggle"><button data-env="sandbox" class="active">Sandbox</button><button data-env="live">Live</button></div>
+      <button class="icon-btn" id="themeToggle" title="Toggle theme"><span class="material-symbols-outlined">dark_mode</span></button>
+      <div class="user-wrap">
+        <div class="user" id="userBtn"><div class="av">MB</div><div class="nm">Mark Brown<small>Owner</small></div><span class="material-symbols-outlined" style="color:var(--text-3)">expand_more</span></div>
+        <div class="user-menu" id="userMenu">
+          <div class="uhead"><div class="n">Mark Brown</div><div class="e">mark@shopmania.com</div></div>
+          <div class="sep"></div>
+          <div class="mi" data-nav="members"><span class="material-symbols-outlined">badge</span> Team Members</div>
+          <div class="mi" data-nav="billing"><span class="material-symbols-outlined">request_quote</span> Billing</div>
+          <div class="mi" data-nav="settings"><span class="material-symbols-outlined">settings</span> Settings</div>
+          <div class="sep"></div>
+          <div class="mi"><span class="material-symbols-outlined">logout</span> Sign out</div>
+        </div>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- ========== DASHBOARD — state machine (setup / gateway / completed / expired) ========== -->
+      <section class="page active" id="page-dashboard">
+        <div class="statebar">
+          <span class="hint"><span class="material-symbols-outlined" style="font-size:16px">visibility</span> Preview state (demo — no API to flip the real flags):</span>
+          <div class="seg" id="dashSeg">
+            <button data-state="setup" class="active">Setup</button>
+            <button data-state="gateway">Gateway connected</button>
+            <button data-state="completed">Completed</button>
+            <button data-state="expired">Expired</button>
+          </div>
+        </div>
+
+        <!-- SETUP  (isActive, isSetupCompleted=false, no gateway) -->
+        <div class="dash-state" data-state="setup">
+          <div class="banner"><h1>Welcome to your Payment Control Center</h1><p>Manage gateways, process payments, and monitor transactions — all from one place.</p></div>
+          <div class="setup-wrap"><div class="gs-card">
+            <div class="gh"><span class="material-symbols-outlined">rocket_launch</span> Getting Started</div>
+            <div class="gsub">Complete these mandatory steps to activate your account.</div>
+            <div class="stepper">
+              <div class="step completed"><div class="step-icon"><span class="material-symbols-outlined" style="font-size:18px">check</span></div><div class="sc"><h3>Account Verified</h3><p>Identity confirmed &amp; email validated.</p></div></div>
+              <div class="step active"><div class="step-icon"><div class="inner"></div></div><div class="sc"><h3>Add Gateway <span class="minibadge req">REQUIRED</span></h3><p>Connect Stripe, PayPal, Revolut, or your custom gateway.</p><span class="step-link" data-nav="gateways"><span class="material-symbols-outlined" style="font-size:18px">add_circle</span> Create your first gateway</span></div></div>
+              <div class="step pending"><div class="step-icon"><span class="material-symbols-outlined" style="font-size:16px">lock</span></div><div class="sc"><h3>Create First Test Payment <span class="minibadge req">REQUIRED</span></h3><p>Run a test transaction to verify your gateway.</p><span class="step-link disabled"><span class="material-symbols-outlined" style="font-size:18px">open_in_new</span> Go to payment page</span></div></div>
+            </div>
+            <button class="btn btn-primary" style="width:100%;margin-top:18px;justify-content:center" data-nav="gateways"><span class="material-symbols-outlined">bolt</span> Go to Gateway Setup</button>
+          </div></div>
+        </div>
+
+        <!-- GATEWAY CONNECTED  (isSetupCompleted still false, gateway done, no payment yet) -->
+        <div class="dash-state" data-state="gateway" style="display:none">
+          <div class="banner"><h1>Gateway connected. Next, create your first payment</h1><p>Your merchant account is ready to start accepting payments. Create your first payment to complete the setup flow.</p></div>
+          <div class="setup-wrap"><div class="gs-card">
+            <div class="gh"><span class="material-symbols-outlined">rocket_launch</span> Getting Started</div>
+            <div class="gsub">Complete these mandatory steps to activate your account.</div>
+            <div class="stepper">
+              <div class="step completed"><div class="step-icon"><span class="material-symbols-outlined" style="font-size:18px">check</span></div><div class="sc"><h3>Account Verified</h3><p>Identity confirmed &amp; email validated.</p></div></div>
+              <div class="step completed"><div class="step-icon"><span class="material-symbols-outlined" style="font-size:18px">check</span></div><div class="sc"><h3 style="color:var(--ok)">Gateway Created <span class="minibadge done">COMPLETED</span></h3><p>Your first gateway is connected and ready to process payments.</p></div></div>
+              <div class="step active"><div class="step-icon"><div class="inner"></div></div><div class="sc"><h3>Create First Test Payment <span class="minibadge req">REQUIRED</span></h3><p>Create a payment now to verify the full merchant journey.</p><span class="step-link" data-act="new-link"><span class="material-symbols-outlined" style="font-size:18px">open_in_new</span> Create your first payment</span></div></div>
+            </div>
+            <button class="btn btn-primary" style="width:100%;margin-top:18px;justify-content:center" data-act="new-link"><span class="material-symbols-outlined">payments</span> Create First Payment</button>
+          </div></div>
+        </div>
+
+        <!-- COMPLETED  (isSetupCompleted=true OR hasFirstCapturePayment=true) -->
+        <div class="dash-state" data-state="completed" style="display:none">
+          <div class="banner"><h1>Manage your merchant operations</h1><p>Track gateways, payments, fraud controls, and account activity from one place.</p></div>
+          <div class="action-cards">
+            <div class="action-card" data-nav="gateways"><div class="iw" style="background:#3880ff"><span class="material-symbols-outlined">hub</span></div><div><h4>Gateways</h4><p>Manage gateways.</p></div></div>
+            <div class="action-card" data-nav="payments"><div class="iw" style="background:#16a34a"><span class="material-symbols-outlined">credit_card</span></div><div><h4>Payments</h4><p>Open payment records, statuses, reports, and payment-link tools.</p></div></div>
+            <div class="action-card" data-nav="members"><div class="iw" style="background:#d97706"><span class="material-symbols-outlined">key</span></div><div><h4>API Keys</h4><p>Generate your API token.</p></div></div>
+            <div class="action-card" data-nav="overview"><div class="iw" style="background:#7c3aed"><span class="material-symbols-outlined">monitoring</span></div><div><h4>Overview</h4><p>Open your live overview for gateways, payments, fraud system, and activity.</p></div></div>
+            <div class="fraud-card">
+              <div style="display:flex;gap:14px;align-items:flex-start"><div class="iw" style="background:#dc2626;width:42px;height:42px;border-radius:11px;display:grid;place-items:center;color:#fff"><span class="material-symbols-outlined">shield</span></div><div><h4 style="font-size:14.5px;font-weight:700;display:flex;align-items:center;gap:9px">Fraud Policy <span class="minibadge rec">RECOMMENDED</span></h4><p style="font-size:12.5px;color:var(--text-2);margin-top:3px">Add simple rules before traffic starts.</p></div></div>
+              <div class="fraud-rules">
+                <div class="rule-item"><h5>VELOCITY</h5><h6>Repeat attempts</h6><p>Limit retries from the same IP or gateways.</p></div>
+                <div class="rule-item"><h5>GEO RISK</h5><h6>Country rules</h6><p>Block or review risky regions.</p></div>
+                <div class="rule-item"><h5>AMOUNT RULES</h5><h6>Daily limit by provider</h6><p>e.g. 5,000 USD/day combined across Stripe &amp; PayPal.</p></div>
+              </div>
+              <span class="step-link" data-nav="fraud" style="margin-top:14px"><span class="material-symbols-outlined" style="font-size:18px">tune</span> Open fraud policy</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- EXPIRED  (isActive=false — also covers completed-expired) -->
+        <div class="dash-state" data-state="expired" style="display:none">
+          <div class="banner warn"><h1>License expired. Renew access to continue</h1><p>This merchant cannot create gateways, create payments, or use admin actions until the license is renewed.</p></div>
+          <div class="license-card">
+            <div class="ai"><span class="material-symbols-outlined">warning</span></div>
+            <div class="lt"><h3>License Expired <span class="pill bad"><span class="dot"></span>ACCESS BLOCKED</span></h3><p>Gateway management, payments, dashboard access, and policy changes are blocked until the license is renewed.</p></div>
+            <div style="display:flex;gap:10px"><button class="btn btn-primary" data-act="toast-renew"><span class="material-symbols-outlined">refresh</span> Renew License</button><button class="btn" data-nav="billing"><span class="material-symbols-outlined">description</span> Open Billing</button></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== OVERVIEW (charts — faithful to IPaymentDashboard) ========== -->
+      <section class="page" id="page-overview">
+        <div class="page-head">
+          <div><h1>Overview <span style="color:var(--st-captured)">· Captured</span></h1><p>Live payment activity for Shop Mania.</p></div>
+          <div class="seg" id="ovSeg">
+            <button data-range="today">Today</button>
+            <button data-range="7d" class="active">Last 7 days</button>
+            <button data-range="30d">Last 30 days</button>
+            <button data-range="custom">Custom</button>
+          </div>
+        </div>
+
+        <!-- payment-state tracking cards -->
+        <div class="stategrid" id="stateGrid"></div>
+
+        <div class="grid-2">
+          <div class="panel"><h3>Transactions by provider</h3><div class="sub">Captured record count</div><div class="bars" id="provBars"></div></div>
+          <div class="panel"><h3>Provider breakdown</h3><div class="sub">By currency</div>
+            <div class="dc-tablewrap"><table class="dc"><thead><tr><th>Provider</th><th>Currency</th><th class="num">Count</th><th class="num">Total</th></tr></thead><tbody id="provTable"></tbody></table></div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="panel"><h3>By currency</h3><div class="sub">Captured volume</div><div class="curcards" id="curCards"></div></div>
+          <div class="panel"><h3>Rejected transactions</h3><div class="sub">Declined by fraud rules &amp; providers</div>
+            <div class="dc-tablewrap"><table class="dc"><thead><tr><th>Currency</th><th class="num">Count</th><th class="num">Amount</th></tr></thead><tbody id="rejTable"></tbody></table></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== PAYMENTS (base grid, live filtering) ========== -->
+      <section class="page" id="page-payments">
+        <div class="page-head"><div><h1>Payments</h1><p>Every transaction across all your connected providers.</p></div></div>
+        <div class="datacard">
+          <div class="dc-toolbar"><div class="dc-title">Transactions <span class="count" id="payCount">0</span></div><div class="spacer"></div>
+            <button class="btn btn-sm" data-act="refresh-pay">Refresh</button>
+            <button class="btn btn-sm" data-act="export-pay">Export</button>
+            <button class="btn btn-primary btn-sm" data-act="new-link">Payment link</button></div>
+          <div class="dc-filters">
+            <div class="search"><input id="paySearch" placeholder="Search by ID, customer, amount…" style="padding-left:12px" /></div>
+            <div class="select"><select id="payStatus" style="padding-right:12px"><option value="">All statuses</option><option>Captured</option><option>Pending</option><option>Failed</option><option>Refunded</option><option>Authorized</option><option>Canceled</option></select></div>
+            <div class="select"><select id="payProvider" style="padding-right:12px"><option value="">All providers</option><option>Stripe</option><option>PayPal</option><option>Adyen</option><option>Revolut</option><option>Authorize.Net</option></select></div>
+            <div class="select"><select id="payCurrency" style="padding-right:12px"><option value="">All currencies</option><option>USD</option><option>EUR</option><option>GBP</option></select></div>
+            <div class="select"><select id="payCustomer" style="padding-right:12px"><option value="">All customers</option></select></div>
+            <label class="date-filter">From <input type="date" id="payBegin" class="input"></label>
+            <label class="date-filter">To <input type="date" id="payEnd" class="input"></label>
+          </div>
+          <div class="dc-chips" id="payChips"></div>
+          <div class="dc-tablewrap"><table class="dc"><thead><tr><th>Payment ID</th><th>Customer</th><th>Provider</th><th>Status</th><th>Date</th><th class="num">Amount</th><th></th></tr></thead><tbody id="payBody"></tbody></table></div>
+          <div class="dc-foot"><div class="range" id="payRange"></div><div class="spacer"></div><div class="pager" id="payPager"></div></div>
+        </div>
+      </section>
+
+      <!-- ========== CUSTOMERS (base grid, live filtering) ========== -->
+      <section class="page" id="page-customers">
+        <div class="page-head"><div><h1>Customers</h1><p>The same Grid+Filter base — only columns &amp; filters differ.</p></div></div>
+        <div class="datacard">
+          <div class="dc-toolbar"><div class="dc-title"><span class="material-symbols-outlined" style="color:var(--brand-600)">group</span> Customers <span class="count" id="cusCount">0</span></div><div class="spacer"></div><button class="btn btn-primary btn-sm" data-act="new-customer"><span class="material-symbols-outlined">person_add</span> New customer</button></div>
+          <div class="dc-filters"><div class="search"><span class="material-symbols-outlined">search</span><input id="cusSearch" placeholder="Search customers…" /></div>
+            <div class="select"><select id="cusStatus"><option value="">Blocked: Any</option><option>Active</option><option>Blocked</option></select><span class="material-symbols-outlined">expand_more</span></div></div>
+          <div class="dc-tablewrap"><table class="dc"><thead><tr><th>Customer</th><th>Customer ID</th><th>Status</th><th>Created</th><th></th></tr></thead><tbody id="cusBody"></tbody></table></div>
+          <div class="dc-foot"><div class="range" id="cusRange"></div><div class="spacer"></div><div class="pager"><span class="pg active">1</span></div></div>
+        </div>
+      </section>
+
+      <!-- ========== CUSTOMER DETAIL (tabbed) ========== -->
+      <section class="page" id="page-customer-detail">
+        <div class="page-head">
+          <div>
+            <div class="crumbs" style="margin-bottom:8px"><span class="idlink" data-nav="customers">Customers</span><span class="material-symbols-outlined">chevron_right</span><b id="cdName">Customer</b></div>
+            <div style="display:flex;align-items:center;gap:13px"><div class="avi" id="cdAvi" style="width:46px;height:46px;font-size:17px"></div><div><h1 id="cdTitle" style="font-size:20px"></h1><p id="cdSub" style="color:var(--text-2)"></p></div></div>
+          </div>
+          <div><button class="btn" data-act="cd-edit"><span class="material-symbols-outlined">edit</span> Edit</button><button class="btn btn-primary" data-act="new-link"><span class="material-symbols-outlined">add_link</span> Payment link</button></div>
+        </div>
+        <div class="seg tabs" id="cdTabs" style="margin-bottom:18px">
+          <button class="active" data-tab="profile">Profile</button>
+          <button data-tab="methods">Payment methods</button>
+          <button data-tab="payments">Payments</button>
+          <button data-tab="fraud">Fraud</button>
+        </div>
+        <div id="cd-profile" class="cd-pane"></div>
+        <div id="cd-methods" class="cd-pane" style="display:none"></div>
+        <div id="cd-payments" class="cd-pane" style="display:none"></div>
+        <div id="cd-fraud" class="cd-pane" style="display:none"></div>
+      </section>
+
+      <!-- ========== PAYMENT DETAIL (comprehensive) ========== -->
+      <section class="page" id="page-detail">
+        <div class="page-head">
+          <div><div class="crumbs" style="margin-bottom:6px"><span class="idlink" data-nav="payments">Payments</span><span class="material-symbols-outlined">chevron_right</span><b id="pdCrumb">payment</b></div><h1>Payment details</h1></div>
+          <div id="pdActions" style="display:flex;gap:10px;flex-wrap:wrap"></div>
+        </div>
+        <div class="detail-grid">
+          <div class="info-card"><div class="h"><span class="material-symbols-outlined">smartphone</span> App</div><div class="kv" id="pdApp"></div></div>
+          <div class="info-card"><div class="h"><span class="material-symbols-outlined">credit_card</span> <span id="pdProviderH">Provider</span></div><div class="kv" id="pdProvider"></div></div>
+          <div class="info-card"><div class="h"><span class="material-symbols-outlined">receipt</span> <span id="pdInvoiceH">Invoice</span></div><div class="kv" id="pdInvoice"></div></div>
+        </div>
+        <div class="detail-grid detail-2">
+          <div class="info-card"><div class="h"><span class="material-symbols-outlined">shield</span> Policy</div><div class="kv" id="pdPolicy"></div></div>
+          <div class="info-card"><div class="h"><span class="material-symbols-outlined">percent</span> Fee</div><div class="kv" id="pdFee"></div></div>
+        </div>
+        <div class="datacard" style="margin-bottom:16px"><div class="dc-toolbar"><div class="dc-title"><span class="material-symbols-outlined" style="color:var(--brand-600)">history</span> State log</div></div>
+          <div class="dc-tablewrap"><table class="dc"><thead><tr><th>State</th><th>Actor</th><th>Date</th><th>Note</th></tr></thead><tbody id="pdLogs"></tbody></table></div></div>
+        <div class="datacard"><div class="dc-toolbar"><div class="dc-title"><span class="material-symbols-outlined" style="color:var(--brand-600)">list_alt</span> Invoice items</div></div>
+          <div class="dc-tablewrap"><table class="dc"><thead><tr><th>Item</th><th class="num">Qty</th><th class="num">Unit</th><th class="num">Amount</th></tr></thead><tbody id="pdItems"></tbody></table></div></div>
+      </section>
+
+      <!-- ========== GATEWAYS ========== -->
+      <section class="page" id="page-gateways">
+        <div class="page-head"><div><h1>Gateways</h1><p>Connected payment providers and their fee structure.</p></div></div>
+        <div class="datacard">
+          <div class="dc-toolbar"><div class="dc-title"><span class="material-symbols-outlined" style="color:var(--brand-600)">hub</span> Payment profiles <span class="count" id="gwCount">0</span></div><div class="spacer"></div><button class="btn btn-primary btn-sm" data-act="new-gateway"><span class="material-symbols-outlined">add</span> New gateway</button></div>
+          <div class="dc-tablewrap"><table class="dc"><thead><tr><th>Provider</th><th>Profile</th><th>Currency</th><th>Fees</th><th>Auto-pay</th><th>Status</th><th></th></tr></thead><tbody id="gwBody"></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- ========== GATEWAY DETAIL (edit page) ========== -->
+      <section class="page" id="page-gateway-detail">
+        <div class="page-head">
+          <div><div class="crumbs" style="margin-bottom:6px"><span class="idlink" data-nav="gateways">Gateways</span><span class="material-symbols-outlined">chevron_right</span><b id="gdName">Gateway</b></div>
+            <div style="display:flex;align-items:center;gap:12px"><span id="gdLogo"></span><div><h1 id="gdTitle" style="font-size:20px"></h1><p id="gdSub" style="color:var(--text-2)"></p></div></div></div>
+          <div><button class="btn btn-danger" id="gdDelete"><span class="material-symbols-outlined">delete</span> Delete</button></div>
+        </div>
+        <div class="detail-grid detail-2">
+          <div class="info-card"><div class="h"><span class="material-symbols-outlined">tune</span> General</div><div class="kv" id="gdGeneral"></div></div>
+          <div class="info-card"><div class="h"><span class="material-symbols-outlined">key</span> Provider API key</div><div class="kv" id="gdApi"></div></div>
+        </div>
+      </section>
+
+      <!-- ========== FRAUD POLICIES — FULL FAKE CRUD ========== -->
+      <section class="page" id="page-fraud">
+        <div class="page-head"><div><h1>Fraud Policies</h1><p>Rule sets applied to your payments. Create, edit, set default, delete — all live, no API.</p></div></div>
+        <div class="datacard">
+          <div class="dc-toolbar"><div class="dc-title"><span class="material-symbols-outlined" style="color:var(--brand-600)">shield</span> Policies <span class="count" id="polCount">0</span></div><div class="spacer"></div>
+            <button class="btn btn-sm" data-act="rejected-tx"><span class="material-symbols-outlined">block</span> Rejected transactions</button>
+            <button class="btn btn-sm" data-act="refresh-pol"><span class="material-symbols-outlined">refresh</span> Refresh</button>
+            <button class="btn btn-sm" data-act="export-pol"><span class="material-symbols-outlined">download</span> Export</button>
+            <button class="btn btn-primary btn-sm" data-act="new-pol"><span class="material-symbols-outlined">add</span> New policy</button></div>
+          <div class="dc-filters"><div class="search"><span class="material-symbols-outlined">search</span><input id="polSearch" placeholder="Search by name or ID…" /></div></div>
+          <div class="dc-tablewrap"><table class="dc"><thead><tr><th>ID</th><th>Name</th><th></th><th></th></tr></thead><tbody id="polBody"></tbody></table></div>
+          <div class="dc-foot"><div class="range" id="polRange"></div><div class="spacer"></div><div class="pager" id="polPager"></div></div>
+        </div>
+      </section>
+
+      <!-- ========== EDIT FRAUD POLICY — comprehensive editor ========== -->
+      <section class="page" id="page-policy-detail">
+        <div class="page-head">
+          <div>
+            <div class="crumbs" style="margin-bottom:6px"><span class="idlink" data-nav="fraud">Fraud Policies</span><span class="material-symbols-outlined">chevron_right</span><b id="peName">Policy</b></div>
+            <h1 id="peTitle">Policy</h1><p id="peAffected" style="color:var(--text-2)"></p>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn" data-act="pe-saveas"><span class="material-symbols-outlined">content_copy</span> Save as</button>
+            <button class="btn" data-act="pe-rename"><span class="material-symbols-outlined">edit</span> Edit name</button>
+            <button class="btn btn-danger" id="peDelete" data-act="pe-delete"><span class="material-symbols-outlined">delete</span> Delete</button>
+          </div>
+        </div>
+
+        <div class="datacard" style="margin-bottom:16px">
+          <div class="dc-toolbar"><div class="dc-title"><span class="material-symbols-outlined" style="color:var(--brand-600)">credit_card</span> Payment method rules</div><div class="spacer"></div><button class="btn btn-sm" data-act="pe-pm"><span class="material-symbols-outlined">edit</span> Edit</button></div>
+          <div class="sec-body"><div class="kv-grid" id="pePM"></div></div>
+        </div>
+
+        <div class="datacard" style="margin-bottom:16px">
+          <div class="dc-toolbar"><div class="dc-title"><span class="material-symbols-outlined" style="color:var(--brand-600)">manage_accounts</span> Customer panel configurations</div><div class="spacer"></div><button class="btn btn-sm" data-act="pe-cpadd"><span class="material-symbols-outlined">add</span> Add</button></div>
+          <div class="sec-body">
+            <div class="rulecards" id="peCP"></div>
+            <div style="margin-top:14px;display:flex;align-items:center;gap:8px;font-size:13px"><span style="color:var(--text-3);font-weight:600">Customer panel return URL:</span> <span id="peReturnUrl" class="cell-strong">-</span> <span class="linkish" data-act="pe-returnurl"><span class="material-symbols-outlined" style="font-size:17px">edit</span></span></div>
+          </div>
+        </div>
+
+        <div class="datacard" style="margin-bottom:16px">
+          <div class="dc-toolbar"><div class="dc-title"><span class="material-symbols-outlined" style="color:var(--brand-600)">local_fire_department</span> Firewall</div><div class="spacer"></div><button class="btn btn-sm" data-act="pe-fw"><span class="material-symbols-outlined">edit</span> Edit</button></div>
+          <div class="sec-body"><div class="kv-grid" id="peFW"></div></div>
+        </div>
+
+        <div class="datacard">
+          <div class="dc-toolbar"><div class="dc-title"><span class="material-symbols-outlined" style="color:var(--brand-600)">rule</span> Rules <span class="count" id="peRulesCount">0</span></div><div class="spacer"></div><button class="btn btn-primary btn-sm" data-act="pe-ruleadd"><span class="material-symbols-outlined">add</span> Add rule</button></div>
+          <div class="sec-body"><div class="rulecards" id="peRules"></div></div>
+        </div>
+      </section>
+
+      <!-- ========== TEAM MEMBERS ========== -->
+      <section class="page" id="page-members">
+        <div class="page-head"><div><h1>Team Members</h1><p>People and bots with access to this workspace.</p></div></div>
+        <div class="datacard">
+          <div class="dc-toolbar"><div class="dc-title"><span class="material-symbols-outlined" style="color:var(--brand-600)">badge</span> Members <span class="count" id="memCount">0</span></div><div class="spacer"></div><button class="btn btn-sm" data-act="new-bot"><span class="material-symbols-outlined">smart_toy</span> New bot</button><button class="btn btn-primary btn-sm" data-act="new-member"><span class="material-symbols-outlined">person_add</span> New member</button></div>
+          <div class="dc-tablewrap"><table class="dc"><thead><tr><th>Member</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr></thead><tbody id="memBody"></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- ========== BILLING ========== -->
+      <section class="page" id="page-billing">
+        <div class="page-head"><div><h1>Billing</h1><p>Your license invoices and payment history.</p></div>
+          <button class="btn btn-primary" data-act="renewal"><span class="material-symbols-outlined">autorenew</span> Renewal</button></div>
+        <div class="datacard">
+          <div class="dc-toolbar"><div class="dc-title"><span class="material-symbols-outlined" style="color:var(--brand-600)">request_quote</span> Invoices <span class="count" id="invCount">0</span></div><div class="spacer"></div><button class="btn btn-sm" data-act="refresh-inv"><span class="material-symbols-outlined">refresh</span> Refresh</button><button class="btn btn-sm" data-act="export-inv"><span class="material-symbols-outlined">download</span> Export</button></div>
+          <div class="dc-tablewrap"><table class="dc"><thead><tr><th>Invoice ID</th><th>Created</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody id="invBody"></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- ========== SETTINGS ========== -->
+      <section class="page" id="page-settings">
+        <div class="page-head"><div><h1>Settings</h1><p>Workspace configuration.</p></div></div>
+        <div class="seg tabs" id="setTabs"><button class="active" data-tab="general">General</button><button data-tab="checkout">Checkout</button><button data-tab="personalize">Personalization</button></div>
+
+        <!-- GENERAL -->
+        <div class="set-pane" id="set-general">
+          <div class="form-card">
+            <div class="h">Refund &amp; webhook settings</div>
+            <div class="form-row"><div class="lab">Default fraud policy<small>Applied to new customers automatically</small></div><div class="select"><select class="input"><option>Default policy</option><option>Strict</option></select><span class="material-symbols-outlined">expand_more</span></div></div>
+            <div class="form-row"><div class="lab">Max daily refunds<small>Per-customer cap</small></div><input class="input" value="5" /></div>
+            <div class="form-row"><div class="lab">Webhook URL<small>Where we POST payment events</small></div><input class="input" value="https://api.shopmania.com/hooks" /></div>
+            <div class="form-row"><div class="lab">Enable retries<small>Retry failed webhook deliveries</small></div><div class="switch on"></div></div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:18px;max-width:680px;justify-content:flex-end"><button class="btn">Reset</button><button class="btn btn-primary" data-act="toast-save">Save changes</button></div>
+        </div>
+
+        <!-- CHECKOUT BRANDING -->
+        <div class="set-pane" id="set-checkout" style="display:none">
+          <div class="co-head">
+            <div><h3>Your checkout, your brand</h3><p>Edit anything below — the preview <b>is</b> your live checkout page.</p></div>
+            <div style="display:flex;gap:10px"><button class="btn btn-sm" id="coReset" disabled>Reset</button><button class="btn btn-primary btn-sm" id="coSave" disabled><span class="material-symbols-outlined">check</span> Save</button></div>
+          </div>
+          <div class="browser-frame">
+            <div class="browser-chrome">
+              <div class="wc"><span class="c red"></span><span class="c yellow"></span><span class="c green"></span></div>
+              <div class="addr"><span class="material-symbols-outlined" style="font-size:15px;color:var(--ok)">lock</span><input id="coDomain" value="checkout.shopmania.com" placeholder="checkout.yourdomain.com"><span class="addr-cog material-symbols-outlined" data-act="co-dns" title="Connect a custom domain">settings</span></div>
+            </div>
+            <div class="browser-view">
+              <div class="co-logo" id="coLogo" title="Upload your logo">
+                <input type="file" id="coLogoFile" accept="image/*" hidden>
+                <span class="material-symbols-outlined ph" id="coLogoPh">storefront</span>
+                <img id="coLogoImg" style="display:none">
+                <div class="ov"><span class="material-symbols-outlined">cloud_upload</span></div>
+              </div>
+              <input id="coName" class="co-name" maxlength="45" value="Shop Mania" placeholder="Your store name">
+              <textarea id="coSlogan1" class="co-edit co-slogan1" rows="1" maxlength="40" placeholder="Add a headline…">Secure checkout, powered by </textarea>
+              <textarea id="coSlogan2" class="co-edit co-slogan2" rows="1" maxlength="90" placeholder="Add a short supporting line…">Pay with confidence — all your favorite payment methods in one place.</textarea>
+
+              <div class="co-total"><span>Order Total:</span><h3>USD 1.00</h3><span class="env-badge"><span class="dot"></span>Sandbox</span></div>
+              <div class="co-divider"><span>Select Payment Method</span></div>
+              <div id="coMethods"></div>
+              <div class="co-footer"><button class="btn co-pay primary">One-Time Payment</button><button class="btn co-pay">Recurring Payment</button></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PERSONALIZATION -->
+        <div class="set-pane" id="set-personalize" style="display:none">
+          <div class="form-card">
+            <div class="h">Personalization</div>
+            <div class="form-row"><div class="lab">Theme<small>Applies to your admin console</small></div>
+              <div class="seg" id="themeSeg"><button data-theme="light" class="active">Light</button><button data-theme="dark">Dark</button><button data-theme="system">Auto</button></div></div>
+            <div class="form-row"><div class="lab">Time zone<small>Used for reports &amp; timestamps</small></div><div class="select"><select class="input"><option>UTC</option><option>Europe/London</option><option selected>Asia/Dubai</option><option>America/New_York</option></select><span class="material-symbols-outlined">expand_more</span></div></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- advanced filter drawer -->
+<div class="overlay drawer" id="filterOverlay">
+  <div class="modal">
+    <div class="mh"><span class="material-symbols-outlined" style="color:var(--brand-600)">tune</span><h3>Advanced filters</h3><div class="spacer"></div><button class="icon-btn" data-close><span class="material-symbols-outlined">close</span></button></div>
+    <div class="mb">
+      <div class="field"><label>Amount range</label><div style="display:flex;gap:10px"><input class="input" placeholder="Min"/><input class="input" placeholder="Max"/></div></div>
+      <div class="field"><label>Date from</label><input class="input" type="date" /></div>
+      <div class="field"><label>Date to</label><input class="input" type="date" /></div>
+    </div>
+    <div class="mf"><button class="btn" data-close>Reset</button><button class="btn btn-primary" data-close>Apply filters</button></div>
+  </div>
+</div>
+
+<!-- policy create/edit modal -->
+<div class="overlay" id="polOverlay">
+  <div class="modal">
+    <div class="mh"><span class="material-symbols-outlined" style="color:var(--brand-600)">shield</span><h3 id="polModalTitle">New policy</h3><div class="spacer"></div><button class="icon-btn" data-close><span class="material-symbols-outlined">close</span></button></div>
+    <div class="mb">
+      <div class="field"><label>Policy name *</label><input class="input" id="polName" placeholder="e.g. High-risk subscriptions" /></div>
+      <div class="field"><label>Max allowed unique credit cards</label><input class="input" id="polMaxCards" type="number" value="3" /></div>
+      <div class="field" style="flex-direction:row;align-items:center;justify-content:space-between"><label>Set as default policy</label><div class="switch" id="polDefault"></div></div>
+    </div>
+    <div class="mf"><button class="btn" data-close>Cancel</button><button class="btn btn-primary" id="polSave">Save</button></div>
+  </div>
+</div>
+
+<!-- confirm delete -->
+<div class="overlay" id="confirmOverlay">
+  <div class="modal" style="width:400px">
+    <div class="mh"><span class="material-symbols-outlined" style="color:var(--bad)">warning</span><h3>Delete policy</h3></div>
+    <div class="mb"><div class="confirm-text" id="confirmText">Are you sure?</div></div>
+    <div class="mf"><button class="btn" data-close>Cancel</button><button class="btn btn-danger" id="confirmYes">Delete</button></div>
+  </div>
+</div>
+
+<!-- Customer panel link -->
+<div class="overlay" id="panelOverlay">
+  <div class="modal" style="width:460px">
+    <div class="mh"><span class="material-symbols-outlined" style="color:var(--brand-600)">add_link</span><h3>Customer panel link</h3><div class="spacer"></div><button class="icon-btn" data-close><span class="material-symbols-outlined">close</span></button></div>
+    <div class="mb" style="text-align:center">
+      <p style="color:var(--text-2);font-size:13px;margin:0 0 14px">Share this secure link so the customer can add and manage their own payment methods.</p>
+      <div style="display:flex;gap:8px;align-items:center"><input class="input" id="panelLink" readonly style="flex:1;min-width:0;font-family:ui-monospace,monospace;font-size:12px"><button class="btn btn-sm" id="panelCopy"><span class="material-symbols-outlined">content_copy</span> Copy</button></div>
+    </div>
+    <div class="mf"><button class="btn btn-primary" data-close>Done</button></div>
+  </div>
+</div>
+
+<!-- Invoice payments -->
+<div class="overlay" id="invOverlay">
+  <div class="modal tall" style="width:580px">
+    <div class="mh"><span class="material-symbols-outlined" style="color:var(--brand-600)">receipt</span><h3 id="invTitle">Invoice payment</h3><div class="spacer"></div><button class="icon-btn" data-close><span class="material-symbols-outlined">close</span></button></div>
+    <div class="mb" style="padding:0"><div class="dc-tablewrap"><table class="dc"><thead><tr><th>Payment ID</th><th>Created</th><th>Provider</th><th class="num">Amount</th><th>State</th></tr></thead><tbody id="invPayBody"></tbody></table></div></div>
+    <div class="mf"><button class="btn" data-close>Close</button></div>
+  </div>
+</div>
+
+<!-- Custom domain / DNS instructions -->
+<div class="overlay" id="dnsOverlay">
+  <div class="modal" style="width:480px">
+    <div class="mh"><span class="material-symbols-outlined" style="color:var(--brand-600)">dns</span><h3>Connect a custom domain</h3><div class="spacer"></div><button class="icon-btn" data-close><span class="material-symbols-outlined">close</span></button></div>
+    <div class="mb">
+      <p style="color:var(--text-2);font-size:13px;margin:0">Add a <b>DNS-only CNAME record</b> at your DNS provider to point your domain at your checkout page. On Cloudflare, set the proxy to <b>"DNS only" (gray cloud)</b>.</p>
+      <div class="dns-table">
+        <div class="dns-row"><div class="f">Type</div><div class="v">CNAME</div></div>
+        <div class="dns-row"><div class="f">Host</div><div class="v">your subdomain (e.g. checkout)</div></div>
+        <div class="dns-row"><div class="f">Value / Target</div><div class="v"><code id="dnsTarget">cname.brand.com</code><span class="material-symbols-outlined cp" id="dnsCopy" style="font-size:17px">content_copy</span></div></div>
+        <div class="dns-row"><div class="f">Proxy</div><div class="v">OFF (DNS only)</div></div>
+      </div>
+      <p style="color:var(--text-3);font-size:12px;margin:0">After you save the record we'll validate DNS and issue an SSL certificate automatically.</p>
+    </div>
+    <div class="mf"><button class="btn" data-close>Close</button></div>
+  </div>
+</div>
+
+<!-- New gateway wizard -->
+<div class="overlay" id="gwOverlay">
+  <div class="modal tall" style="width:520px">
+    <div class="mh"><span class="material-symbols-outlined" style="color:var(--brand-600)">hub</span><h3>New gateway</h3><div class="spacer"></div><button class="icon-btn" data-close><span class="material-symbols-outlined">close</span></button></div>
+    <div class="gw-steps" id="gwSteps"></div>
+    <div class="mb" id="gwBodyModal"></div>
+    <div class="mf" id="gwFooter"></div>
+  </div>
+</div>
+
+<!-- Create payment link -->
+<div class="overlay" id="linkOverlay">
+  <div class="modal tall" style="width:480px">
+    <div class="mh"><span class="material-symbols-outlined" style="color:var(--brand-600)">add_link</span><h3>Create payment link</h3><div class="spacer"></div><button class="icon-btn" data-close><span class="material-symbols-outlined">close</span></button></div>
+    <div class="mb" id="plForm">
+      <div style="display:flex;gap:12px">
+        <div class="field" style="flex:1"><label>Amount *</label><input class="input" id="plAmount" type="number" placeholder="0.00" inputmode="decimal"></div>
+        <div class="field" style="width:130px"><label>Currency *</label><div class="select"><select class="input" id="plCurrency"></select><span class="material-symbols-outlined">expand_more</span></div></div>
+      </div>
+      <div class="field"><label>Gateways *</label><div class="gw-box" id="plGateways"></div></div>
+      <div class="field"><label>Customer *</label><input class="input" id="plCustomer" readonly placeholder="Search &amp; select a customer…" style="cursor:pointer"></div>
+      <details class="pl-more"><summary>More options</summary>
+        <div class="field"><label>Fraud policy</label><div class="select"><select class="input" id="plPolicy"></select><span class="material-symbols-outlined">expand_more</span></div></div>
+        <div class="field"><label>Return URL</label><input class="input" id="plReturn" placeholder="https://…"></div>
+        <label class="checkrow"><input type="checkbox" id="plRecurring"> Recurring payment</label>
+        <div id="plPolicyNote" style="display:none;font-size:12px;color:var(--warn);margin-top:10px">* This policy differs from the customer's current policy — the customer's policy will be updated.</div>
+      </details>
+      <div id="plError" style="color:var(--bad);font-size:12.5px;font-weight:600;display:none"></div>
+    </div>
+    <div class="mb" id="plSuccess" style="display:none;text-align:center">
+      <div style="width:54px;height:54px;border-radius:50%;background:var(--ok-weak);color:var(--ok);display:grid;place-items:center;margin:8px auto 0"><span class="material-symbols-outlined" style="font-size:30px">check</span></div>
+      <h3 style="margin-top:12px;font-size:16px">Payment link created</h3>
+      <p style="color:var(--text-2);font-size:13px;margin-top:4px">Share this link with your customer to collect payment.</p>
+      <div style="display:flex;gap:8px;margin-top:16px;align-items:center"><input class="input" id="plLink" readonly style="flex:1;min-width:0;font-family:ui-monospace,monospace;font-size:12px"><button class="btn btn-sm" id="plCopy"><span class="material-symbols-outlined">content_copy</span> Copy</button></div>
+      <p style="color:var(--text-3);font-size:12px;margin-top:12px">A pending payment was added to your Payments list.</p>
+    </div>
+    <div class="mf" id="plFooterForm"><button class="btn" data-close>Cancel</button><button class="btn btn-primary" id="plCreate"><span class="material-symbols-outlined">add_link</span> Create link</button></div>
+    <div class="mf" id="plFooterSuccess" style="display:none"><button class="btn" id="plAnother">Create another</button><button class="btn btn-primary" data-close>Done</button></div>
+  </div>
+</div>
+
+<!-- Searchable customer picker -->
+<div class="overlay" id="custSearchOverlay">
+  <div class="modal tall" style="width:480px">
+    <div class="mh"><span class="material-symbols-outlined" style="color:var(--brand-600)">search</span><h3>Select customer</h3><div class="spacer"></div><button class="icon-btn" data-close><span class="material-symbols-outlined">close</span></button></div>
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border)"><div class="search"><span class="material-symbols-outlined">search</span><input id="custSearchInput" placeholder="Search by name, email or ID…"></div></div>
+    <div class="mb" id="custSearchResults" style="padding:8px;gap:0"></div>
+    <div class="mf"><button class="btn" id="custSearchNew"><span class="material-symbols-outlined">person_add</span> New customer</button></div>
+  </div>
+</div>
+
+<!-- Create customer -->
+<div class="overlay" id="customerOverlay">
+  <div class="modal" style="width:440px">
+    <div class="mh"><span class="material-symbols-outlined" style="color:var(--brand-600)">person_add</span><h3>New customer</h3><div class="spacer"></div><button class="icon-btn" data-close><span class="material-symbols-outlined">close</span></button></div>
+    <div class="mb">
+      <div class="field"><label>Customer ID *</label><input class="input" id="ncId" placeholder="e.g. cus_acme_01"></div>
+      <div class="field"><label>First name *</label><input class="input" id="ncFirst"></div>
+      <div class="field"><label>Last name *</label><input class="input" id="ncLast"></div>
+      <div class="field"><label>Email *</label><input class="input" id="ncEmail" type="email" placeholder="name@example.com"></div>
+      <div class="field"><label>Mobile</label><input class="input" id="ncMobile" inputmode="numeric" placeholder="optional"></div>
+      <div id="ncError" style="color:var(--bad);font-size:12.5px;font-weight:600;display:none"></div>
+    </div>
+    <div class="mf"><button class="btn" data-close>Cancel</button><button class="btn btn-primary" id="ncSave"><span class="material-symbols-outlined">check</span> Create</button></div>
+  </div>
+</div>
+
+<!-- generic edit modal (used by every policy-editor section) -->
+<div class="overlay" id="editOverlay">
+  <div class="modal tall">
+    <div class="mh"><span class="material-symbols-outlined" style="color:var(--brand-600)">edit</span><h3 id="editTitle">Edit</h3><div class="spacer"></div><button class="icon-btn" data-close><span class="material-symbols-outlined">close</span></button></div>
+    <div class="mb" id="editBody"></div>
+    <div class="mf"><button class="btn" data-close>Cancel</button><button class="btn btn-primary" id="editSave">Save</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="envLoading" style="z-index:60">
+  <div class="env-loading-box"><div class="spinner"></div><div id="envLoadingText" style="font-weight:600;font-size:14px">Switching environment…</div></div>
+</div>
+
+<div class="toast" id="toast"><span class="material-symbols-outlined">check_circle</span><span id="toastMsg">Saved</span></div>
+
+<script>
+/* ============================================================
+   Everything below is CLIENT-SIDE ONLY. No API, no backend.
+   Fake CRUD + live filtering, all in-memory.
+   ============================================================ */
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+
+/* ---------- toast ---------- */
+let toastT;
+function toast(msg){const t=$('#toast');$('#toastMsg').textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2200);}
+
+/* ---------- nav ---------- */
+const crumbMap={dashboard:'Dashboard',overview:'Overview',payments:'Payments',customers:'Customers','customer-detail':'Customer',gateways:'Gateways','gateway-detail':'Gateway',fraud:'Fraud Policies','policy-detail':'Edit policy',members:'Team Members',billing:'Billing',settings:'Settings',detail:'Payment details'};
+function go(nav){
+  $$('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+nav));
+  $$('.nav-item').forEach(i=>i.classList.toggle('active',i.dataset.nav===nav));
+  if(crumbMap[nav])$('#crumb').textContent=crumbMap[nav];
+  $('.content').scrollTop=0;
+}
+$$('[data-nav]').forEach(el=>el.addEventListener('click',()=>go(el.dataset.nav)));
+
+/* profile dropdown (holds the former Workspace items) */
+$('#userBtn').addEventListener('click',e=>{e.stopPropagation();$('#userMenu').classList.toggle('open');});
+$$('#userMenu .mi').forEach(m=>m.addEventListener('click',()=>$('#userMenu').classList.remove('open')));
+/* license selector */
+const LICENSES=['ACME · 2026','Shop Mania · Pro','Globex · Trial'];
+let curLicense=LICENSES[0];
+function renderLicenseMenu(){$('#licenseMenu').innerHTML=LICENSES.map(l=>`<div class="mi ${l===curLicense?'sel':''}" data-lic="${l}"><span class="material-symbols-outlined">workspace_premium</span> ${l}</div>`).join('');$$('#licenseMenu [data-lic]').forEach(el=>el.addEventListener('click',ev=>{ev.stopPropagation();curLicense=el.dataset.lic;$('#licenseLabel').textContent=curLicense;$('#licenseMenu').classList.remove('open');renderLicenseMenu();toast('Switched license: '+curLicense);}));}
+$('#licensePick').addEventListener('click',e=>{e.stopPropagation();$('#licenseMenu').classList.toggle('open');});
+renderLicenseMenu();
+/* environment toggle (Sandbox / Live) */
+$('#envToggle').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.classList.contains('active'))return;$$('#envToggle button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const env=b.dataset.env==='live'?'Live':'Sandbox';$('#envLoadingText').textContent='Switching to '+env+' mode…';$('#envLoading').classList.add('open');setTimeout(()=>{$('#envLoading').classList.remove('open');toast('Now in '+env+' mode');renderPay();},900);});
+/* close header popovers on outside click */
+document.addEventListener('click',()=>{$('#userMenu').classList.remove('open');$('#licenseMenu').classList.remove('open');});
+
+/* ---------- theme ---------- */
+const tt=$('#themeToggle');
+tt.addEventListener('click',()=>{const r=document.documentElement,d=r.getAttribute('data-theme')==='dark';r.setAttribute('data-theme',d?'light':'dark');tt.querySelector('.material-symbols-outlined').textContent=d?'dark_mode':'light_mode';});
+
+/* ---------- generic modal close ---------- */
+$$('.overlay').forEach(ov=>{ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('open');});ov.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>ov.classList.remove('open')));});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$$('.overlay.open').forEach(o=>o.classList.remove('open'));});
+
+/* ============================================================
+   OVERVIEW — faithful to IPaymentDashboard, date filter works
+   ============================================================ */
+const OV={
+  today:{states:{Captured:38,Authorized:6,InProgress:4,Created:9,Failed:5,Disputed:1,Refunded:2},
+    providers:[['Stripe',6210,'stripe'],['PayPal',3980,'paypal'],['Adyen',2640,'adyen'],['Revolut',1310,'revolut']],
+    provTable:[['Stripe','USD',24,'$8,120'],['PayPal','USD',11,'$2,540'],['Adyen','EUR',9,'€3,310'],['Revolut','GBP',4,'£980']],
+    currencies:[['USD','$10,660',35],['EUR','€3,310',9],['GBP','£980',4],['AED','1,420',3]],
+    rejected:[['USD',5,'$1,240'],['EUR',2,'€420']]},
+  '7d':{states:{Captured:412,Authorized:38,InProgress:21,Created:64,Failed:47,Disputed:9,Refunded:18},
+    providers:[['Stripe',24800,'stripe'],['PayPal',15900,'paypal'],['Adyen',10600,'adyen'],['Revolut',5300,'revolut']],
+    provTable:[['Stripe','USD',186,'$84,200'],['PayPal','USD',92,'$31,450'],['Adyen','EUR',74,'€41,900'],['Revolut','GBP',38,'£12,300']],
+    currencies:[['USD','$184,210',412],['EUR','€72,400',128],['GBP','£21,300',64],['AED','7,820',22]],
+    rejected:[['USD',31,'$8,120'],['EUR',12,'€2,940'],['GBP',5,'£640']]},
+  '30d':{states:{Captured:1847,Authorized:142,InProgress:63,Created:228,Failed:196,Disputed:34,Refunded:71},
+    providers:[['Stripe',98200,'stripe'],['PayPal',64100,'paypal'],['Adyen',42700,'adyen'],['Revolut',21300,'revolut']],
+    provTable:[['Stripe','USD',742,'$318,400'],['PayPal','USD',388,'$142,900'],['Adyen','EUR',296,'€168,200'],['Revolut','GBP',152,'£54,100']],
+    currencies:[['USD','$742,000',1480],['EUR','€291,000',512],['GBP','£86,400',256],['AED','31,200',88]],
+    rejected:[['USD',124,'$32,400'],['EUR',48,'€11,800'],['GBP',21,'£2,560']]},
+};
+OV.custom=OV['7d'];
+const STATE_META={Captured:'st-captured',Authorized:'st-hold',InProgress:'st-progress',Created:'st-created',Failed:'st-fail',Disputed:'st-disputed',Refunded:'st-refund'};
+const STATE_LABEL={Captured:'Captured',Authorized:'Authorized / Hold',InProgress:'In progress',Created:'Created',Failed:'Failed',Disputed:'Disputed',Refunded:'Refunded'};
+function renderOverview(range){
+  const d=OV[range]||OV['7d'];
+  $('#stateGrid').innerHTML=Object.keys(d.states).map(k=>
+    `<div class="stcard" style="--c:var(--${STATE_META[k]})"><div class="lab"><span class="d"></span>${STATE_LABEL[k]}</div><div class="val">${d.states[k].toLocaleString()}</div><div class="sub">transactions</div></div>`).join('');
+  const max=Math.max(...d.providers.map(p=>p[1]));
+  $('#provBars').innerHTML=d.providers.map(p=>`<div class="b"><div class="bar" style="height:${Math.round(p[1]/max*100)}%"></div><span class="bl">${p[0]}</span></div>`).join('');
+  $('#provTable').innerHTML=d.provTable.map(r=>`<tr><td><div class="with-icon"><div class="prov ${OV_provClass(r[0])}">${r[0][0]}</div><span class="cell-strong">${r[0]}</span></div></td><td>${r[1]}</td><td class="num">${r[2]}</td><td class="num">${r[3]}</td></tr>`).join('');
+  $('#curCards').innerHTML=d.currencies.map(c=>`<div class="curcard"><div class="c">${c[0]}</div><div class="a">${c[1]}</div><div class="n">${c[2]} payments</div></div>`).join('');
+  $('#rejTable').innerHTML=d.rejected.map(r=>`<tr><td class="cell-strong">${r[0]}</td><td class="num">${r[1]}</td><td class="num">${r[2]}</td></tr>`).join('');
+}
+function OV_provClass(n){return{Stripe:'stripe',PayPal:'paypal',Adyen:'adyen',Revolut:'revolut','Authorize.Net':'authnet'}[n]||'stripe';}
+$('#ovSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$$('#ovSeg button').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderOverview(b.dataset.range);});
+renderOverview('7d');
+
+/* ---------- Dashboard state-machine preview switcher ---------- */
+$('#dashSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$$('#dashSeg button').forEach(x=>x.classList.remove('active'));b.classList.add('active');$$('#page-dashboard .dash-state').forEach(d=>d.style.display=d.dataset.state===b.dataset.state?'':'none');});
+
+/* ============================================================
+   PAYMENTS — live search + 3 filters + chips + pagination
+   ============================================================ */
+const PAYMENTS=[
+  {id:'pay_8Kd2Lm9',name:'Sarah Adams',email:'sarah@acme.io',av:'SA',avc:'#f59e0b,#ef4444',prov:'Stripe',status:'Captured',date:'Jun 22, 14:32',cur:'USD',amt:'$1,240.00'},
+  {id:'pay_7Hf1Qa3',name:'James Lee',email:'james.lee@mail.com',av:'JL',avc:'#6366f1,#8b5cf6',prov:'PayPal',status:'Pending',date:'Jun 22, 13:10',cur:'USD',amt:'$89.50'},
+  {id:'pay_5Tg9Zx0',name:'Maria Klein',email:'m.klein@shop.de',av:'MK',avc:'#10b981,#059669',prov:'Adyen',status:'Captured',date:'Jun 22, 11:48',cur:'EUR',amt:'€2,310.00'},
+  {id:'pay_3Bn4Wp7',name:'Robert Tan',email:'rob@fintech.sg',av:'RT',avc:'#0ea5e9,#06b6d4',prov:'Revolut',status:'Failed',date:'Jun 22, 10:05',cur:'USD',amt:'$540.00'},
+  {id:'pay_9Lp0Yr5',name:'Emma Nolan',email:'emma.n@store.uk',av:'EN',avc:'#f43f5e,#e11d48',prov:'Stripe',status:'Refunded',date:'Jun 21, 18:20',cur:'GBP',amt:'£175.00'},
+  {id:'pay_2Cv6Uk8',name:'David Huang',email:'d.huang@biz.com',av:'DH',avc:'#8b5cf6,#6366f1',prov:'Authorize.Net',status:'Authorized',date:'Jun 21, 16:55',cur:'USD',amt:'$3,890.00'},
+  {id:'pay_6Mq3Df1',name:'Lucia Pérez',email:'lucia@tienda.es',av:'LP',avc:'#14b8a6,#0d9488',prov:'Adyen',status:'Captured',date:'Jun 21, 15:30',cur:'EUR',amt:'€620.00'},
+  {id:'pay_4Wz8Hn2',name:"Tom O'Brien",email:'tom@dublin.ie',av:'TO',avc:'#f59e0b,#d97706',prov:'PayPal',status:'Canceled',date:'Jun 21, 12:12',cur:'USD',amt:'$45.00'},
+  {id:'pay_1Ax5Vb6',name:'Nina Roth',email:'nina@berlin.de',av:'NR',avc:'#3880ff,#1f5bd0',prov:'Stripe',status:'Captured',date:'Jun 20, 19:02',cur:'EUR',amt:'€980.00'},
+  {id:'pay_0Qe7Mn4',name:'Omar Said',email:'omar@dubai.ae',av:'OS',avc:'#0891b2,#0e7490',prov:'Adyen',status:'Captured',date:'Jun 20, 09:41',cur:'USD',amt:'$2,150.00'},
+  {id:'pay_8Zr2Ct9',name:'Priya Nair',email:'priya@bombay.in',av:'PN',avc:'#db2777,#9d174d',prov:'Stripe',status:'Pending',date:'Jun 19, 22:18',cur:'GBP',amt:'£310.00'},
+  {id:'pay_3Yk6Lp1',name:'Carl Voss',email:'carl@wien.at',av:'CV',avc:'#65a30d,#3f6212',prov:'Revolut',status:'Captured',date:'Jun 19, 14:55',cur:'EUR',amt:'€1,475.00'},
+];
+const PILL={Captured:'ok',Pending:'warn',Failed:'bad',Refunded:'violet',Authorized:'info',Canceled:'muted'};
+const provClass={Stripe:'stripe',PayPal:'paypal',Adyen:'adyen',Revolut:'revolut','Authorize.Net':'authnet'};
+const provLabel={Stripe:'Stripe',PayPal:'PayPal',Adyen:'Adyen',Revolut:'Revolut','Authorize.Net':'Auth.Net'};
+let payF={q:'',status:'',prov:'',cur:'',customer:'',begin:'',end:'',page:1,size:8};
+const PAY_MONTHS={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+function payDateStr(p){ // -> 'YYYY-MM-DD' (year assumed 2026), '' if unknown
+  if(/just now/i.test(p.date))return '2026-06-22';
+  const m=p.date.match(/^(\w{3})\s+(\d+)/);
+  if(!m||!(m[1] in PAY_MONTHS))return '';
+  return '2026-'+String(PAY_MONTHS[m[1]]+1).padStart(2,'0')+'-'+String(+m[2]).padStart(2,'0');
+}
+function payFiltered(){
+  return PAYMENTS.filter(p=>{
+    const q=payF.q.toLowerCase();
+    const mq=!q||p.name.toLowerCase().includes(q)||p.id.toLowerCase().includes(q)||p.email.toLowerCase().includes(q)||p.amt.toLowerCase().includes(q);
+    const ds=payDateStr(p);
+    const mBegin=!payF.begin||(ds&&ds>=payF.begin);
+    const mEnd=!payF.end||(ds&&ds<=payF.end);
+    return mq&&mBegin&&mEnd&&(!payF.status||p.status===payF.status)&&(!payF.prov||p.prov===payF.prov)&&(!payF.cur||p.cur===payF.cur)&&(!payF.customer||p.name===payF.customer);
+  });
+}
+function renderPayChips(){
+  const c=[];
+  if(payF.status)c.push(['Status: '+payF.status,()=>{payF.status='';$('#payStatus').value='';}]);
+  if(payF.prov)c.push(['Provider: '+payF.prov,()=>{payF.prov='';$('#payProvider').value='';}]);
+  if(payF.cur)c.push(['Currency: '+payF.cur,()=>{payF.cur='';$('#payCurrency').value='';}]);
+  if(payF.customer)c.push(['Customer: '+payF.customer,()=>{payF.customer='';$('#payCustomer').value='';}]);
+  if(payF.begin)c.push(['From: '+payF.begin,()=>{payF.begin='';$('#payBegin').value='';}]);
+  if(payF.end)c.push(['To: '+payF.end,()=>{payF.end='';$('#payEnd').value='';}]);
+  if(payF.q)c.push(['Search: "'+payF.q+'"',()=>{payF.q='';$('#paySearch').value='';}]);
+  const box=$('#payChips');
+  if(!c.length){box.innerHTML='';return;}
+  box.innerHTML='<span class="lbl">Active:</span>'+c.map((x,i)=>`<span class="chip">${x[0]}<span class="x" data-ci="${i}">×</span></span>`).join('')+'<span class="chip-clear" id="payClear">Clear all</span>';
+  c.forEach((x,i)=>box.querySelector(`[data-ci="${i}"]`).addEventListener('click',()=>{x[1]();payF.page=1;renderPay();}));
+  $('#payClear').addEventListener('click',()=>{payF={q:'',status:'',prov:'',cur:'',customer:'',begin:'',end:'',page:1,size:8};$('#paySearch').value='';$('#payStatus').value='';$('#payProvider').value='';$('#payCurrency').value='';$('#payCustomer').value='';$('#payBegin').value='';$('#payEnd').value='';renderPay();});
+}
+function renderPay(){
+  { const sel=$('#payCustomer'); if(sel){ const names=[...new Set(PAYMENTS.map(p=>p.name))].sort(); sel.innerHTML='<option value="">All customers</option>'+names.map(n=>`<option ${n===payF.customer?'selected':''}>${n}</option>`).join(''); } }
+  const rows=payFiltered();
+  $('#payCount').textContent=rows.length;
+  const pages=Math.max(1,Math.ceil(rows.length/payF.size));
+  if(payF.page>pages)payF.page=pages;
+  const start=(payF.page-1)*payF.size, slice=rows.slice(start,start+payF.size);
+  $('#payBody').innerHTML=slice.length?slice.map(p=>`<tr>
+    <td><span class="idlink cell-mono" data-pid="${p.id}">${p.id}</span></td>
+    <td><div class="with-icon"><div class="avi" style="background:linear-gradient(135deg,${p.avc})">${p.av}</div><div><div class="cell-strong">${p.name}</div><div class="cell-sub">${p.email}</div></div></div></td>
+    <td><div class="with-icon"><div class="prov ${provClass[p.prov]}">${p.prov[0]}</div>${provLabel[p.prov]}</div></td>
+    <td><span class="pill ${PILL[p.status]}"><span class="dot"></span>${p.status}</span></td>
+    <td>${p.date}</td><td class="num">${p.amt}</td>
+    <td><div class="row-actions"><button class="btn btn-sm" data-pid="${p.id}">View</button></div></td></tr>`).join('')
+    :`<tr><td colspan="7"><div class="empty"><span class="material-symbols-outlined">search_off</span><h3>No transactions found</h3><p>Try adjusting your filters.</p></div></td></tr>`;
+  $$('#payBody [data-pid]').forEach(el=>el.addEventListener('click',()=>{const p=PAYMENTS.find(x=>x.id===el.dataset.pid);if(p)openPaymentDetail(p);}));
+  $('#payRange').textContent=rows.length?`${start+1}–${Math.min(start+payF.size,rows.length)} of ${rows.length}`:'0 of 0';
+  renderPager('#payPager',pages,payF.page,n=>{payF.page=n;renderPay();});
+  renderPayChips();
+}
+function renderPager(sel,pages,cur,cb){
+  const box=$(sel);let h='';
+  h+=`<span class="pg ${cur===1?'disabled':''}" data-p="${cur-1}"><span class="material-symbols-outlined" style="font-size:18px">chevron_left</span></span>`;
+  for(let i=1;i<=pages;i++)h+=`<span class="pg ${i===cur?'active':''}" data-p="${i}">${i}</span>`;
+  h+=`<span class="pg ${cur===pages?'disabled':''}" data-p="${cur+1}"><span class="material-symbols-outlined" style="font-size:18px">chevron_right</span></span>`;
+  box.innerHTML=h;
+  box.querySelectorAll('[data-p]').forEach(el=>el.addEventListener('click',()=>{const n=+el.dataset.p;if(n>=1&&n<=pages)cb(n);}));
+}
+$('#paySearch').addEventListener('input',e=>{payF.q=e.target.value;payF.page=1;renderPay();});
+$('#payStatus').addEventListener('change',e=>{payF.status=e.target.value;payF.page=1;renderPay();});
+$('#payProvider').addEventListener('change',e=>{payF.prov=e.target.value;payF.page=1;renderPay();});
+$('#payCurrency').addEventListener('change',e=>{payF.cur=e.target.value;payF.page=1;renderPay();});
+$('#payCustomer').addEventListener('change',e=>{payF.customer=e.target.value;payF.page=1;renderPay();});
+$('#payBegin').addEventListener('change',e=>{payF.begin=e.target.value;payF.page=1;renderPay();});
+$('#payEnd').addEventListener('change',e=>{payF.end=e.target.value;payF.page=1;renderPay();});
+$('[data-act="refresh-pay"]').addEventListener('click',()=>{renderPay();toast('Payments refreshed');});
+$('[data-act="export-pay"]').addEventListener('click',()=>toast('Exported '+payFiltered().length+' payments to Excel'));
+renderPay();
+
+/* ============================================================
+   CUSTOMERS — live search + status filter
+   ============================================================ */
+const CUSTOMERS=[
+  {name:'Sarah Adams',email:'sarah@acme.io',av:'SA',avc:'#f59e0b,#ef4444',id:'cus_8Kd2Lm9',status:'Active',pay:42,created:'Jan 12, 2026'},
+  {name:'James Lee',email:'james.lee@mail.com',av:'JL',avc:'#6366f1,#8b5cf6',id:'cus_7Hf1Qa3',status:'Blocked',pay:8,created:'Feb 03, 2026'},
+  {name:'Maria Klein',email:'m.klein@shop.de',av:'MK',avc:'#10b981,#059669',id:'cus_5Tg9Zx0',status:'Active',pay:117,created:'Mar 28, 2026'},
+  {name:'Robert Tan',email:'rob@fintech.sg',av:'RT',avc:'#0ea5e9,#06b6d4',id:'cus_3Bn4Wp7',status:'Active',pay:23,created:'Apr 14, 2026'},
+  {name:'Omar Said',email:'omar@dubai.ae',av:'OS',avc:'#0891b2,#0e7490',id:'cus_0Qe7Mn4',status:'Active',pay:31,created:'May 02, 2026'},
+];
+let cusF={q:'',status:''};
+function renderCus(){
+  const rows=CUSTOMERS.filter(c=>{const q=cusF.q.toLowerCase();return(!q||c.name.toLowerCase().includes(q)||c.email.toLowerCase().includes(q)||c.id.toLowerCase().includes(q))&&(!cusF.status||c.status===cusF.status);});
+  $('#cusCount').textContent=rows.length;
+  $('#cusBody').innerHTML=rows.length?rows.map(c=>`<tr>
+    <td><div class="with-icon"><div class="avi" style="background:linear-gradient(135deg,${c.avc})">${c.av}</div><div><div class="cell-strong">${c.name}</div><div class="cell-sub">${c.email}</div></div></div></td>
+    <td><span class="idlink cell-mono" data-cust="${c.id}">${c.id}</span></td><td><span class="pill ${c.status==='Active'?'ok':'bad'}"><span class="dot"></span>${c.status}</span></td>
+    <td>${c.created}</td>
+    <td><div class="row-actions"><button class="icon-btn" data-cust="${c.id}"><span class="material-symbols-outlined">visibility</span></button><button class="icon-btn"><span class="material-symbols-outlined">more_vert</span></button></div></td></tr>`).join('')
+    :`<tr><td colspan="5"><div class="empty"><span class="material-symbols-outlined">search_off</span><h3>No customers found</h3></div></td></tr>`;
+  $('#cusRange').textContent=`1–${rows.length} of ${rows.length}`;
+  $$('#cusBody [data-cust]').forEach(el=>el.addEventListener('click',()=>{const c=CUSTOMERS.find(x=>x.id===el.dataset.cust);if(c)openCustomerDetail(c);}));
+}
+$('#cusSearch').addEventListener('input',e=>{cusF.q=e.target.value;renderCus();});
+$('#cusStatus').addEventListener('change',e=>{cusF.status=e.target.value;renderCus();});
+renderCus();
+
+/* ============================================================
+   FRAUD POLICIES — FULL FAKE CRUD (create/edit/delete/default)
+   columns mirror real app: ID · Name · "Default" badge
+   ============================================================ */
+const ENUMS={
+  addCategory:['CreditCard','ElectronicCheck'],
+  addMode:['Direct','ClientSideIntent','None','Plaid','RedirectToProvider','InitialPaymentWithTokenization','AfterPayWithoutTokenization','InitialProviderIntentPaymentWithTokenization','RedirectToProviderByFormData'],
+  verification:['MicroDeposit','AutoVerification'],
+  payable:['CreditCard','ElectronicCheck','All'],
+  checkoutMethods:['CreditCard','ElectronicCheck'],
+  ruleAction:['RejectPayment','BlockCustomer'],
+  rulePeriod:['Daily','Weekly','Monthly'],
+  ruleCalc:['PaymentCount','ProviderRejectCount','TotalAmount','DistinctCard'],
+  currency:['USD','EUR','GBP','AED'],
+  providers:['Stripe','PayPal','Adyen','Revolut','Authorize.Net']
+};
+// comprehensive FraudPolicy object — mirrors payment-app-proxy FraudPolicy
+function blankPolicy(id,name){return{
+  fraudPolicyId:id,fraudPolicyName:name,isDefault:false,affected:0,
+  maxAllowedUniqueCreditCardCount:0,maxAllowedUniqueElectronicCheckCount:0,
+  maxUnconfirmedCreditCardCount:0,maxUnconfirmedElectronicCheckCount:0,
+  maxUnconfirmedCreditCardExpirationHour:null,maxUnconfirmedElectronicCheckExpirationHour:null,
+  checkAchBalance:false,
+  checkoutConfiguration:{checkoutMethods:['CreditCard'],payablePaymentMethodVerificationType:null},
+  paymentMethodPolicyRules:[],customerPanelReturnUrl:null,
+  firewallConfiguration:{ipRanges:[],countries:[],specificIps:[],isVpnAccepted:null,ipVerificationMaxFraudScore:null,emailVerificationMaxFraudScore:null,mobileVerificationMaxFraudScore:null,voipAccepted:null,ignoreIfServiceProviderIsNotAvailable:false},
+  rules:[]
+};}
+let POLICIES=[
+  (()=>{const p=blankPolicy(1001,'Default policy');p.isDefault=true;p.affected=1140;p.maxAllowedUniqueCreditCardCount=3;p.maxUnconfirmedCreditCardCount=5;p.maxUnconfirmedCreditCardExpirationHour=24;p.checkAchBalance=true;p.checkoutConfiguration={checkoutMethods:['CreditCard','ElectronicCheck'],payablePaymentMethodVerificationType:'All'};p.customerPanelReturnUrl='https://shopmania.com/return';p.firewallConfiguration={ipRanges:[{startIp:'10.0.0.1',endIp:'10.0.0.255'}],countries:['US','GB','DE','FR'],specificIps:['203.0.113.5'],isVpnAccepted:false,ipVerificationMaxFraudScore:75,emailVerificationMaxFraudScore:80,mobileVerificationMaxFraudScore:70,voipAccepted:false,ignoreIfServiceProviderIsNotAvailable:false};p.paymentMethodPolicyRules=[{paymentMethodAddCategory:'CreditCard',paymentMethodAddMode:'Direct',paymentMethodVerificationType:'AutoVerification',provider:'Stripe'},{paymentMethodAddCategory:'ElectronicCheck',paymentMethodAddMode:'Plaid',paymentMethodVerificationType:'MicroDeposit',provider:'Adyen'}];p.rules=[{action:'RejectPayment',periodType:'Daily',periodTypeValue:1,calcType:'TotalAmount',calcTypeValue:5000,currency:'USD',profiles:['Stripe','PayPal'],detectionMessage:'Daily volume cap exceeded'},{action:'BlockCustomer',periodType:'Weekly',periodTypeValue:1,calcType:'ProviderRejectCount',calcTypeValue:5,currency:null,profiles:[],detectionMessage:'Too many declines'}];return p;})(),
+  (()=>{const p=blankPolicy(1002,'Strict (high-risk)');p.affected=64;p.maxAllowedUniqueCreditCardCount=1;p.maxUnconfirmedCreditCardCount=1;p.checkAchBalance=true;p.firewallConfiguration.isVpnAccepted=false;p.firewallConfiguration.voipAccepted=false;p.firewallConfiguration.ipVerificationMaxFraudScore=40;p.firewallConfiguration.countries=['US'];p.rules=[{action:'RejectPayment',periodType:'Daily',periodTypeValue:1,calcType:'DistinctCard',calcTypeValue:2,currency:null,profiles:[],detectionMessage:'Card testing suspected'}];return p;})(),
+  (()=>{const p=blankPolicy(1003,'Subscriptions');p.affected=0;p.maxAllowedUniqueCreditCardCount=5;p.checkoutConfiguration={checkoutMethods:['CreditCard'],payablePaymentMethodVerificationType:'CreditCard'};return p;})(),
+  (()=>{const p=blankPolicy(1004,'Marketplace sellers');p.affected=212;p.maxAllowedUniqueCreditCardCount=4;return p;})(),
+];
+let polF={q:'',page:1,size:12}, peId=null;
+const fInt=v=>(v===null||v===undefined||v==='')?null:(+v);
+const unlim=v=>v===0?'0 (Unlimited)':(v==null?'-':v.toLocaleString());
+const hour=v=>v==null?'-':v+' (Hour)';
+const splitList=v=>v.split(',').map(x=>x.trim()).filter(Boolean);
+const polById=id=>POLICIES.find(p=>p.fraudPolicyId===id);
+function polFiltered(){
+  const q=polF.q.trim().toLowerCase();
+  let list=[...POLICIES].sort((a,b)=>(b.isDefault-a.isDefault)); // default first, like real app
+  if(!q)return list;
+  const num=Number(q);
+  return list.filter(p=>p.fraudPolicyName.toLowerCase().includes(q)||(!isNaN(num)&&p.fraudPolicyId===num));
+}
+function renderPol(){
+  const rows=polFiltered();
+  $('#polCount').textContent=POLICIES.length;
+  const pages=Math.max(1,Math.ceil(rows.length/polF.size));
+  if(polF.page>pages)polF.page=pages;
+  const start=(polF.page-1)*polF.size, slice=rows.slice(start,start+polF.size);
+  $('#polBody').innerHTML=slice.length?slice.map(p=>`<tr>
+    <td><span class="idlink cell-mono" data-edit="${p.fraudPolicyId}">${p.fraudPolicyId}</span></td>
+    <td><span class="idlink" data-edit="${p.fraudPolicyId}">${p.fraudPolicyName}</span></td>
+    <td>${p.isDefault?'<span class="badge-default"><span class="material-symbols-outlined" style="font-size:14px">star</span>Default</span>':''}</td>
+    <td><div class="row-actions">
+      ${p.isDefault?'':`<button class="icon-btn" data-default="${p.fraudPolicyId}" title="Set as default"><span class="material-symbols-outlined">star</span></button>`}
+      <button class="icon-btn" data-edit="${p.fraudPolicyId}" title="Edit"><span class="material-symbols-outlined">edit</span></button>
+      <button class="icon-btn" data-del="${p.fraudPolicyId}" title="Delete" ${p.isDefault?'style="opacity:.35"':''}><span class="material-symbols-outlined">delete</span></button>
+    </div></td></tr>`).join('')
+    :`<tr><td colspan="4"><div class="empty"><span class="material-symbols-outlined">shield</span><h3>No policies found</h3><p>Create your first fraud policy.</p></div></td></tr>`;
+  $('#polRange').textContent=rows.length?`${start+1}–${Math.min(start+polF.size,rows.length)} of ${rows.length}`:'0 of 0';
+  renderPager('#polPager',pages,polF.page,n=>{polF.page=n;renderPol();});
+  // row click / edit icon → open the comprehensive editor
+  $$('#polBody [data-edit]').forEach(el=>el.addEventListener('click',()=>openPolicyEditor(+el.dataset.edit)));
+  $$('#polBody [data-default]').forEach(el=>el.addEventListener('click',()=>{POLICIES.forEach(p=>p.isDefault=false);polById(+el.dataset.default).isDefault=true;renderPol();toast('Default policy updated');}));
+  $$('#polBody [data-del]').forEach(el=>el.addEventListener('click',()=>{const p=polById(+el.dataset.del);if(p.isDefault){toast('Cannot delete the default policy');return;}askDelete(p);}));
+}
+function openPolModal(){
+  $('#polModalTitle').textContent='New policy';
+  $('#polName').value='';$('#polMaxCards').value=3;$('#polDefault').classList.remove('on');
+  $('#polOverlay').classList.add('open');setTimeout(()=>$('#polName').focus(),50);
+}
+$('#polDefault').addEventListener('click',()=>$('#polDefault').classList.toggle('on'));
+$('#polSave').addEventListener('click',()=>{
+  const name=$('#polName').value.trim();
+  if(!name){$('#polName').focus();$('#polName').style.borderColor='var(--bad)';return;}
+  $('#polName').style.borderColor='';
+  const id=Math.max(1000,...POLICIES.map(p=>p.fraudPolicyId))+1;
+  const p=blankPolicy(id,name);
+  p.maxAllowedUniqueCreditCardCount=+$('#polMaxCards').value||0;
+  if($('#polDefault').classList.contains('on')){POLICIES.forEach(x=>x.isDefault=false);p.isDefault=true;}
+  POLICIES.push(p);
+  $('#polOverlay').classList.remove('open');renderPol();toast('Policy created');
+  openPolicyEditor(id); // jump straight into the full editor
+});
+let delTarget=null;
+function askDelete(p){delTarget=p;$('#confirmText').innerHTML=`Delete policy <b>${p.fraudPolicyName}</b> (ID ${p.fraudPolicyId})? This cannot be undone.`;$('#confirmOverlay').classList.add('open');}
+$('#confirmYes').addEventListener('click',()=>{if(delTarget){const wasOpen=peId===delTarget.fraudPolicyId;POLICIES=POLICIES.filter(p=>p.fraudPolicyId!==delTarget.fraudPolicyId);toast('Policy deleted');delTarget=null;$('#confirmOverlay').classList.remove('open');renderPol();if(wasOpen)go('fraud');}else{$('#confirmOverlay').classList.remove('open');}});
+$('#polSearch').addEventListener('input',e=>{polF.q=e.target.value;polF.page=1;renderPol();});
+$('[data-act="new-pol"]').addEventListener('click',openPolModal);
+$('[data-act="refresh-pol"]').addEventListener('click',()=>{polF.q='';$('#polSearch').value='';renderPol();toast('Policies refreshed');});
+$('[data-act="export-pol"]').addEventListener('click',()=>toast('Exported '+POLICIES.length+' policies to Excel'));
+$('[data-act="rejected-tx"]').addEventListener('click',()=>toast('Opening rejected transactions…'));
+renderPol();
+
+/* ---------- generic form modal (used by every editor section) ---------- */
+let editSaveHandler=null;
+function openForm(title,html,onSave){
+  $('#editTitle').textContent=title;
+  $('#editBody').innerHTML=html;
+  editSaveHandler=onSave;
+  $$('#editBody .switch').forEach(s=>s.addEventListener('click',()=>s.classList.toggle('on')));
+  $('#editOverlay').classList.add('open');
+}
+$('#editSave').addEventListener('click',()=>{if(editSaveHandler&&editSaveHandler()!==false)$('#editOverlay').classList.remove('open');});
+const selOpts=(arr,cur)=>arr.map(o=>`<option ${o===cur?'selected':''}>${o}</option>`).join('');
+const esc=v=>(v==null?'':String(v)).replace(/"/g,'&quot;');
+function promptText(title,label,val,cb){openForm(title,`<div class="field"><label>${label}</label><input class="input" id="f_txt" value="${esc(val)}"></div>`,()=>{cb($('#f_txt').value.trim());toast('Saved');});setTimeout(()=>$('#f_txt').focus(),60);}
+
+/* ---------- COMPREHENSIVE EDITOR ---------- */
+function openPolicyEditor(id){peId=id;renderPolicyEditor();go('policy-detail');}
+function kvRow(k,v){return`<div class="kv-item"><span class="k">${k}</span><span class="v">${v}</span></div>`;}
+function renderPolicyEditor(){
+  const p=polById(peId);if(!p)return;
+  $('#peName').textContent=p.fraudPolicyName;$('#peTitle').textContent=p.fraudPolicyName;
+  $('#peAffected').innerHTML=`Affected <b>${p.affected.toLocaleString()}</b> customer(s)`+(p.isDefault?' · <span class="badge-default"><span class="material-symbols-outlined" style="font-size:13px">star</span>Default</span>':'');
+  $('#peDelete').style.display=p.isDefault?'none':'';
+  const cm=p.checkoutConfiguration;
+  $('#pePM').innerHTML=[
+    ['Checkout method',cm.checkoutMethods.length?cm.checkoutMethods.join(', '):'-'],
+    ['Pay by',cm.payablePaymentMethodVerificationType||'-'],
+  ].map(x=>kvRow(x[0],x[1])).join('');
+  const cp=p.paymentMethodPolicyRules||[];
+  $('#peCP').innerHTML=cp.length?cp.map((r,i)=>`<div class="rulecard"><div class="rh">${r.paymentMethodAddCategory}<button class="icon-btn" data-cpdel="${i}"><span class="material-symbols-outlined">delete</span></button></div><div class="rb"><div class="li"><span class="k">Add mode</span><span class="v">${r.paymentMethodAddMode}</span></div><div class="li"><span class="k">Verification</span><span class="v">${r.paymentMethodVerificationType}</span></div><div class="li"><span class="k">Profile</span><span class="v">${r.provider||'-'}</span></div></div></div>`).join(''):'<div class="sec-empty">No configurations found</div>';
+  $('#peReturnUrl').textContent=p.customerPanelReturnUrl||'-';
+  $$('#peCP [data-cpdel]').forEach(el=>el.addEventListener('click',()=>{p.paymentMethodPolicyRules.splice(+el.dataset.cpdel,1);renderPolicyEditor();toast('Configuration removed');}));
+  const f=p.firewallConfiguration||{};
+  $('#peFW').innerHTML=[
+    ['When service unavailable',f.ignoreIfServiceProviderIsNotAvailable===false?'Reject payment':'Ignore firewall'],
+    ['VPN',f.isVpnAccepted===false?'Unacceptable':'No check'],
+    ['VOIP',f.voipAccepted===false?'Unacceptable':'No check'],
+    ['White countries',f.countries&&f.countries.length?f.countries.join(', '):'-'],
+    ['White IPs',f.specificIps&&f.specificIps.length?f.specificIps.join(', '):'-'],
+    ['White IP ranges',f.ipRanges&&f.ipRanges.length?f.ipRanges.map(r=>r.startIp+' – '+r.endIp).join(', '):'-'],
+    ['Mobile accepted max fraud score',f.mobileVerificationMaxFraudScore??'-'],
+    ['IP accepted max fraud score',f.ipVerificationMaxFraudScore??'-'],
+    ['Email accepted max fraud score',f.emailVerificationMaxFraudScore??'-'],
+  ].map(x=>kvRow(x[0],x[1])).join('');
+  const rs=p.rules||[];
+  $('#peRulesCount').textContent=rs.length;
+  $('#peRules').innerHTML=rs.length?rs.map((r,i)=>`<div class="rulecard"><div class="rh"><span class="pill ${r.action==='RejectPayment'?'bad':'warn'}"><span class="dot"></span>${r.action}</span><span><button class="icon-btn" data-ruleedit="${i}"><span class="material-symbols-outlined">edit</span></button><button class="icon-btn" data-ruledel="${i}"><span class="material-symbols-outlined">delete</span></button></span></div><div class="rb"><div class="li"><span class="k">Period</span><span class="v">${r.periodTypeValue} × ${r.periodType}</span></div><div class="li"><span class="k">Calculation</span><span class="v">${r.calcType} = ${(r.calcTypeValue||0).toLocaleString()}</span></div><div class="li"><span class="k">Currency</span><span class="v">${r.currency||'Any'}</span></div><div class="li"><span class="k">Profiles</span><span class="v">${r.profiles&&r.profiles.length?r.profiles.join(', '):'All'}</span></div>${r.detectionMessage?`<div class="li"><span class="k">Message</span><span class="v">${r.detectionMessage}</span></div>`:''}</div></div>`).join(''):'<div class="sec-empty">No rules yet. Add a rule to start detecting fraud patterns.</div>';
+  $$('#peRules [data-ruledel]').forEach(el=>el.addEventListener('click',()=>{p.rules.splice(+el.dataset.ruledel,1);renderPolicyEditor();toast('Rule deleted');}));
+  $$('#peRules [data-ruleedit]').forEach(el=>el.addEventListener('click',()=>openRuleModal(+el.dataset.ruleedit)));
+}
+
+/* section edit modals */
+function editGeneral(){const p=polById(peId);openForm('Edit general rules',`
+  <div class="field"><label>Max duplicate credit cards (0 = unlimited)</label><input class="input" id="g1" type="number" value="${p.maxAllowedUniqueCreditCardCount??0}"></div>
+  <div class="field"><label>Max duplicate electronic checks (0 = unlimited)</label><input class="input" id="g2" type="number" value="${p.maxAllowedUniqueElectronicCheckCount??0}"></div>
+  <div class="field"><label>Max unconfirmed credit cards</label><input class="input" id="g3" type="number" value="${p.maxUnconfirmedCreditCardCount??0}"></div>
+  <div class="field"><label>Max unconfirmed electronic checks</label><input class="input" id="g4" type="number" value="${p.maxUnconfirmedElectronicCheckCount??0}"></div>
+  <div class="field"><label>Auto-reject unconfirmed credit card after (hours)</label><input class="input" id="g5" type="number" value="${p.maxUnconfirmedCreditCardExpirationHour??''}"></div>
+  <div class="field"><label>Auto-reject unconfirmed e-check after (hours)</label><input class="input" id="g6" type="number" value="${p.maxUnconfirmedElectronicCheckExpirationHour??''}"></div>
+  <div class="field" style="flex-direction:row;justify-content:space-between;align-items:center"><label>Check ACH balance</label><div class="switch ${p.checkAchBalance?'on':''}" id="gAch"></div></div>
+`,()=>{p.maxAllowedUniqueCreditCardCount=fInt($('#g1').value)||0;p.maxAllowedUniqueElectronicCheckCount=fInt($('#g2').value)||0;p.maxUnconfirmedCreditCardCount=fInt($('#g3').value)||0;p.maxUnconfirmedElectronicCheckCount=fInt($('#g4').value)||0;p.maxUnconfirmedCreditCardExpirationHour=fInt($('#g5').value);p.maxUnconfirmedElectronicCheckExpirationHour=fInt($('#g6').value);p.checkAchBalance=$('#gAch').classList.contains('on');renderPolicyEditor();toast('General rules updated');});}
+function editPM(){const p=polById(peId),cm=p.checkoutConfiguration;openForm('Edit payment method rules',`
+  <div class="field"><label>Checkout methods</label>${ENUMS.checkoutMethods.map(m=>`<label class="checkrow"><input type="checkbox" value="${m}" ${cm.checkoutMethods.includes(m)?'checked':''}> ${m}</label>`).join('')}</div>
+  <div class="field"><label>Pay by</label><div class="select"><select class="input" id="pmPay"><option value="">-</option>${selOpts(ENUMS.payable,cm.payablePaymentMethodVerificationType)}</select><span class="material-symbols-outlined">expand_more</span></div></div>
+`,()=>{cm.checkoutMethods=$$('#editBody input[type=checkbox]:checked').map(c=>c.value);cm.payablePaymentMethodVerificationType=$('#pmPay').value||null;renderPolicyEditor();toast('Payment method rules updated');});}
+function addCP(){const p=polById(peId);openForm('Add customer panel configuration',`
+  <div class="field"><label>Category</label><div class="select"><select class="input" id="cpCat">${selOpts(ENUMS.addCategory)}</select><span class="material-symbols-outlined">expand_more</span></div></div>
+  <div class="field"><label>Add mode</label><div class="select"><select class="input" id="cpMode">${selOpts(ENUMS.addMode)}</select><span class="material-symbols-outlined">expand_more</span></div></div>
+  <div class="field"><label>Verification type</label><div class="select"><select class="input" id="cpVer">${selOpts(ENUMS.verification)}</select><span class="material-symbols-outlined">expand_more</span></div></div>
+  <div class="field"><label>Supported profile</label><div class="select"><select class="input" id="cpProv">${selOpts(ENUMS.providers)}</select><span class="material-symbols-outlined">expand_more</span></div></div>
+`,()=>{p.paymentMethodPolicyRules.push({paymentMethodAddCategory:$('#cpCat').value,paymentMethodAddMode:$('#cpMode').value,paymentMethodVerificationType:$('#cpVer').value,provider:$('#cpProv').value});renderPolicyEditor();toast('Configuration added');});}
+function editFW(){const p=polById(peId),f=p.firewallConfiguration;openForm('Edit firewall',`
+  <div class="field" style="flex-direction:row;justify-content:space-between;align-items:center"><label>Reject payment when service unavailable</label><div class="switch ${f.ignoreIfServiceProviderIsNotAvailable===false?'on':''}" id="fwRej"></div></div>
+  <div class="field" style="flex-direction:row;justify-content:space-between;align-items:center"><label>VPN unacceptable</label><div class="switch ${f.isVpnAccepted===false?'on':''}" id="fwVpn"></div></div>
+  <div class="field" style="flex-direction:row;justify-content:space-between;align-items:center"><label>VOIP unacceptable</label><div class="switch ${f.voipAccepted===false?'on':''}" id="fwVoip"></div></div>
+  <div class="field"><label>IP max fraud score</label><input class="input" id="fwIp" type="number" value="${f.ipVerificationMaxFraudScore??''}"></div>
+  <div class="field"><label>Email max fraud score</label><input class="input" id="fwEm" type="number" value="${f.emailVerificationMaxFraudScore??''}"></div>
+  <div class="field"><label>Mobile max fraud score</label><input class="input" id="fwMb" type="number" value="${f.mobileVerificationMaxFraudScore??''}"></div>
+  <div class="field"><label>White countries (comma separated)</label><input class="input" id="fwCty" value="${esc((f.countries||[]).join(', '))}"></div>
+  <div class="field"><label>White IPs (comma separated)</label><input class="input" id="fwIps" value="${esc((f.specificIps||[]).join(', '))}"></div>
+  <div class="field"><label>White IP ranges (start-end, comma separated)</label><input class="input" id="fwRng" value="${esc((f.ipRanges||[]).map(r=>r.startIp+'-'+r.endIp).join(', '))}"></div>
+`,()=>{f.ignoreIfServiceProviderIsNotAvailable=!$('#fwRej').classList.contains('on');f.isVpnAccepted=$('#fwVpn').classList.contains('on')?false:null;f.voipAccepted=$('#fwVoip').classList.contains('on')?false:null;f.ipVerificationMaxFraudScore=fInt($('#fwIp').value);f.emailVerificationMaxFraudScore=fInt($('#fwEm').value);f.mobileVerificationMaxFraudScore=fInt($('#fwMb').value);f.countries=splitList($('#fwCty').value);f.specificIps=splitList($('#fwIps').value);f.ipRanges=splitList($('#fwRng').value).map(s=>{const a=s.split('-').map(x=>x.trim());return{startIp:a[0],endIp:a[1]||a[0]};});renderPolicyEditor();toast('Firewall updated');});}
+function openRuleModal(idx){const p=polById(peId);const r=idx!=null?p.rules[idx]:{action:'RejectPayment',periodType:'Daily',periodTypeValue:1,calcType:'PaymentCount',calcTypeValue:1,currency:null,profiles:[],detectionMessage:''};
+  openForm(idx!=null?'Edit rule':'Add rule',`
+  <div class="field"><label>Action</label><div class="select"><select class="input" id="rAct">${selOpts(ENUMS.ruleAction,r.action)}</select><span class="material-symbols-outlined">expand_more</span></div></div>
+  <div class="field"><label>Calculation type</label><div class="select"><select class="input" id="rCalc">${selOpts(ENUMS.ruleCalc,r.calcType)}</select><span class="material-symbols-outlined">expand_more</span></div></div>
+  <div class="field"><label>Threshold value</label><input class="input" id="rCalcv" type="number" value="${r.calcTypeValue}"></div>
+  <div class="field"><label>Period</label><div class="select"><select class="input" id="rPer">${selOpts(ENUMS.rulePeriod,r.periodType)}</select><span class="material-symbols-outlined">expand_more</span></div></div>
+  <div class="field"><label>Period value</label><input class="input" id="rPerv" type="number" value="${r.periodTypeValue}"></div>
+  <div class="field"><label>Currency</label><div class="select"><select class="input" id="rCur"><option value="">Any</option>${selOpts(ENUMS.currency,r.currency)}</select><span class="material-symbols-outlined">expand_more</span></div></div>
+  <div class="field"><label>Profiles (leave all unchecked = all profiles)</label>${ENUMS.providers.map(pr=>`<label class="checkrow"><input type="checkbox" value="${pr}" ${(r.profiles||[]).includes(pr)?'checked':''}> ${pr}</label>`).join('')}</div>
+  <div class="field"><label>Detection message</label><input class="input" id="rMsg" value="${esc(r.detectionMessage)}"></div>
+`,()=>{const nr={action:$('#rAct').value,calcType:$('#rCalc').value,calcTypeValue:+$('#rCalcv').value||0,periodType:$('#rPer').value,periodTypeValue:+$('#rPerv').value||1,currency:$('#rCur').value||null,profiles:$$('#editBody input[type=checkbox]:checked').map(c=>c.value),detectionMessage:$('#rMsg').value.trim()};if(idx!=null)p.rules[idx]=nr;else p.rules.push(nr);renderPolicyEditor();toast(idx!=null?'Rule updated':'Rule added');});}
+
+/* editor header + section action buttons (event delegation) */
+$('#page-policy-detail').addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act,p=polById(peId);
+  if(a==='pe-general')editGeneral();
+  else if(a==='pe-pm')editPM();
+  else if(a==='pe-cpadd')addCP();
+  else if(a==='pe-fw')editFW();
+  else if(a==='pe-ruleadd')openRuleModal(null);
+  else if(a==='pe-returnurl')promptText('Customer panel return URL','URL',p.customerPanelReturnUrl||'',v=>{p.customerPanelReturnUrl=v||null;renderPolicyEditor();});
+  else if(a==='pe-rename')promptText('Rename policy','Policy name',p.fraudPolicyName,v=>{if(v){p.fraudPolicyName=v;renderPolicyEditor();renderPol();}});
+  else if(a==='pe-saveas')promptText('Save as new policy','New policy name',p.fraudPolicyName+' (copy)',v=>{if(!v)return;const id=Math.max(1000,...POLICIES.map(x=>x.fraudPolicyId))+1;const copy=JSON.parse(JSON.stringify(p));copy.fraudPolicyId=id;copy.fraudPolicyName=v;copy.isDefault=false;copy.affected=0;POLICIES.push(copy);renderPol();openPolicyEditor(id);});
+  else if(a==='pe-delete'){if(p.isDefault){toast('Cannot delete the default policy');return;}askDelete(p);}
+});
+
+/* ---------- misc ---------- */
+$$('.switch').forEach(s=>{if(s.id==='polDefault')return;s.addEventListener('click',()=>s.classList.toggle('on'));});
+$$('.seg.tabs button').forEach(b=>b.addEventListener('click',()=>{$$('.seg.tabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');}));
+const sv=$('[data-act="toast-save"]');if(sv)sv.addEventListener('click',()=>toast('Settings saved'));
+const rb=$('[data-act="toast-renew"]');if(rb)rb.addEventListener('click',()=>toast('Opening renewal…'));
+
+/* ============================================================
+   CREATE PAYMENT LINK — faithful to report/create-payment-link
+   Amount · Currency · Gateways(multi) · Customer · More(Policy/ReturnUrl/Recurring)
+   ============================================================ */
+const PROFILES=[{id:1,provider:'Stripe',currency:'USD'},{id:2,provider:'PayPal',currency:'USD'},{id:3,provider:'Adyen',currency:'EUR'},{id:4,provider:'Revolut',currency:'GBP'},{id:5,provider:'Authorize.Net',currency:'USD'}];
+const CUR_SYMBOL={USD:'$',EUR:'€',GBP:'£',AED:''};
+const CUSTOMER_POLICY=1001; // pretend the chosen customer currently uses the default policy
+const AVI_COLORS=['#f59e0b,#ef4444','#6366f1,#8b5cf6','#10b981,#059669','#0ea5e9,#06b6d4','#3880ff,#1f5bd0','#db2777,#9d174d'];
+function plRenderGateways(){
+  const cur=$('#plCurrency').value;
+  const list=PROFILES.filter(p=>p.currency===cur);
+  $('#plGateways').innerHTML=list.length
+    ? list.map(p=>`<label class="checkrow"><input type="checkbox" value="${p.id}" data-prov="${p.provider}"> ${p.provider} · ${p.currency}</label>`).join('')
+    : '<span class="cell-sub">No gateways for this currency</span>';
+}
+function plShowForm(isForm){
+  $('#plForm').style.display=isForm?'':'none';
+  $('#plSuccess').style.display=isForm?'none':'';
+  $('#plFooterForm').style.display=isForm?'':'none';
+  $('#plFooterSuccess').style.display=isForm?'none':'';
+}
+function openLinkModal(){
+  $('#plCurrency').innerHTML=ENUMS.currency.map(c=>`<option>${c}</option>`).join('');
+  $('#plCustomer').value='';
+  $('#plPolicy').innerHTML=POLICIES.map(p=>`<option value="${p.fraudPolicyId}" ${p.fraudPolicyId===CUSTOMER_POLICY?'selected':''}>${p.fraudPolicyName}</option>`).join('');
+  plRenderGateways();
+  $('#plAmount').value='';$('#plReturn').value='';$('#plRecurring').checked=false;
+  $('#plError').style.display='none';$('#plPolicyNote').style.display='none';
+  plShowForm(true);
+  $('#linkOverlay').classList.add('open');
+  setTimeout(()=>$('#plAmount').focus(),60);
+}
+$('#plCurrency').addEventListener('change',plRenderGateways);
+$('#plPolicy').addEventListener('change',e=>{$('#plPolicyNote').style.display=(+e.target.value!==CUSTOMER_POLICY)?'':'none';});
+$('#plCreate').addEventListener('click',()=>{
+  const amt=parseFloat($('#plAmount').value), cur=$('#plCurrency').value, cust=$('#plCustomer').value;
+  const gws=$$('#plGateways input:checked');
+  let err='';
+  if(!amt||amt<=0)err='Enter a valid amount.';
+  else if(!gws.length)err='Select at least one gateway.';
+  else if(!cust)err='Select a customer.';
+  if(err){$('#plError').textContent=err;$('#plError').style.display='';return;}
+  $('#plError').style.display='none';
+  const id=Math.random().toString(36).slice(2,10);
+  $('#plLink').value='https://pay.shopmania.com/l/'+id;
+  // add a pending payment to the grid (fake CRUD)
+  const sym=CUR_SYMBOL[cur]||'';
+  const provider=gws[0].dataset.prov;
+  const custName=cust==='__new'?'New Customer':cust;
+  const initials=custName.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+  PAYMENTS.unshift({id:'pay_'+id.slice(0,7),name:custName,email:custName.toLowerCase().replace(/\s+/g,'.')+'@mail.com',av:initials,avc:AVI_COLORS[(PAYMENTS.length)%AVI_COLORS.length],prov:provider,status:'Pending',date:'Just now',cur:cur,amt:sym+amt.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})});
+  payF.q='';payF.status='';payF.prov='';payF.cur='';payF.page=1;
+  $('#paySearch')&&($('#paySearch').value='');
+  renderPay();
+  plShowForm(false);
+  toast('Payment link created');
+});
+$('#plCopy').addEventListener('click',()=>{const i=$('#plLink');i.select();i.setSelectionRange(0,200);try{document.execCommand('copy');}catch(e){}toast('Link copied to clipboard');});
+$('#plAnother').addEventListener('click',openLinkModal);
+$$('[data-act="new-link"]').forEach(b=>b.addEventListener('click',openLinkModal));
+
+/* ============================================================
+   CREATE CUSTOMER — faithful to customer/create-customer
+   Customer ID · First name · Last name · Email · Mobile
+   ============================================================ */
+let customerCreatedCb=null;
+function openCustomerModal(cb){
+  customerCreatedCb=cb||null;
+  ['ncId','ncFirst','ncLast','ncEmail','ncMobile'].forEach(id=>$('#'+id).value='');
+  $('#ncError').style.display='none';
+  $('#customerOverlay').classList.add('open');
+  setTimeout(()=>$('#ncId').focus(),60);
+}
+$('#ncSave').addEventListener('click',()=>{
+  const id=$('#ncId').value.trim(),f=$('#ncFirst').value.trim(),l=$('#ncLast').value.trim(),em=$('#ncEmail').value.trim(),mob=$('#ncMobile').value.trim();
+  let err='';
+  if(!id||!f||!l||!em)err='Customer ID, first name, last name and email are required.';
+  else if(!/^[A-Za-z0-9._%+-]{2,}@[A-Za-z0-9.-]{2,}\.[A-Za-z]{2,}$/.test(em))err='Enter a valid email address.';
+  if(err){$('#ncError').textContent=err;$('#ncError').style.display='';return;}
+  const cust={name:(f+' '+l).trim(),email:em,av:(f[0]+l[0]).toUpperCase(),avc:AVI_COLORS[CUSTOMERS.length%AVI_COLORS.length],id,status:'Active',pay:0,created:'Just now',mobile:mob,first:f,last:l};
+  CUSTOMERS.unshift(cust);
+  renderCus();
+  $('#customerOverlay').classList.remove('open');
+  toast('Customer created');
+  if(customerCreatedCb){customerCreatedCb(cust);customerCreatedCb=null;}
+});
+$$('[data-act="new-customer"]').forEach(b=>b.addEventListener('click',()=>openCustomerModal()));
+// "+ New customer" inside the payment-link customer dropdown
+$('#plCustomer').addEventListener('click',()=>openCustomerSearch(c=>{$('#plCustomer').value=c.name;}));
+/* ---- reusable searchable customer picker (handles 10k+ customers) ---- */
+let custSearchCb=null;
+function openCustomerSearch(cb){custSearchCb=cb;$('#custSearchInput').value='';renderCustSearch('');$('#custSearchOverlay').classList.add('open');setTimeout(()=>$('#custSearchInput').focus(),60);}
+function renderCustSearch(q){
+  q=q.trim().toLowerCase();
+  const all=CUSTOMERS.filter(c=>!q||c.name.toLowerCase().includes(q)||c.email.toLowerCase().includes(q)||c.id.toLowerCase().includes(q));
+  const rows=all.slice(0,50);
+  $('#custSearchResults').innerHTML=(rows.length?rows.map(c=>`<div class="cs-item" data-cs="${c.id}"><div class="avi" style="background:linear-gradient(135deg,${c.avc})">${c.av}</div><div><div class="cell-strong">${c.name}</div><div class="cell-sub">${c.email} · ${c.id}</div></div></div>`).join(''):'<div class="sec-empty">No customers found</div>')+(all.length>50?`<div class="sec-empty" style="padding:10px 11px">Showing first 50 of ${all.length.toLocaleString()} — refine your search.</div>`:'');
+  $$('#custSearchResults [data-cs]').forEach(el=>el.addEventListener('click',()=>{const c=CUSTOMERS.find(x=>x.id===el.dataset.cs);$('#custSearchOverlay').classList.remove('open');if(custSearchCb)custSearchCb(c);}));
+}
+$('#custSearchInput').addEventListener('input',e=>renderCustSearch(e.target.value));
+$('#custSearchNew').addEventListener('click',()=>{$('#custSearchOverlay').classList.remove('open');openCustomerModal(c=>{if(custSearchCb)custSearchCb(c);});});
+
+/* ============================================================
+   GATEWAYS — data-driven grid + New Gateway 3-step wizard
+   ============================================================ */
+let GATEWAYS=[
+  {provider:'Stripe',profile:'Primary USD',currency:'USD',initialFee:0.30,percentageFee:2.9,fields:{'Publishable key':'pk_live_5Kd2Lm','Secret key':'sk_live_8Hf1Qa'},active:true},
+  {provider:'Adyen',profile:'EU acquiring',currency:'EUR',initialFee:0.10,percentageFee:1.8,fields:{'API key':'AQE9aXt8Z','Merchant account':'ShopManiaEU'},active:true},
+  {provider:'PayPal',profile:'Global checkout',currency:'USD',initialFee:0.30,percentageFee:3.4,fields:{'Client ID':'AeR3client','Client secret':'EGn7secret'},active:false},
+];
+const gwClass=p=>({Stripe:'stripe',PayPal:'paypal',Adyen:'adyen',Revolut:'revolut','Authorize.Net':'authnet',Braintree:'braintree'}[p]||'stripe');
+const PROVIDER_LOGO={Stripe:'stripe.com',PayPal:'paypal.com',Adyen:'adyen.com',Braintree:'braintreepayments.com',Revolut:'revolut.com','Authorize.Net':'authorize.net','Amazon Pay':'amazon.com',Klarna:'klarna.com','2Checkout':'2checkout.com',Square:'squareup.com',Binance:'binance.com',BitPay:'bitpay.com',Oxapay:'oxapay.com',Tap:'tap.company',PayTabs:'paytabs.com'};
+function provLogo(p,size=26){const d=PROVIDER_LOGO[p];const st=`width:${size}px;height:${size}px;font-size:${Math.round(size*0.42)}px`;if(!d)return `<span class="prov ${gwClass(p)}" style="${st}">${p[0]}</span>`;const fav=`https://www.google.com/s2/favicons?domain=${d}&sz=64`;return `<span class="prov ${gwClass(p)}" style="${st}">${p[0]}<img src="https://logo.clearbit.com/${d}" alt="${p}" onerror="this.onerror=function(){this.remove()};this.src='${fav}'"></span>`;}
+/* auto-pay is a built-in provider capability, not merchant-selectable */
+function gwAutopay(p){return ({Stripe:1,PayPal:1,Adyen:1,Braintree:1,Revolut:1,'Authorize.Net':1,'Amazon Pay':1,Klarna:1,'2Checkout':1,Square:1,Binance:0,BitPay:0,Oxapay:0,Tap:1,PayTabs:1})[p]===1;}
+function renderGateways(){
+  $('#gwCount').textContent=GATEWAYS.length;
+  $('#gwBody').innerHTML=GATEWAYS.map((g,i)=>`<tr>
+    <td><div class="with-icon">${provLogo(g.provider)}<span class="cell-strong idlink" data-gw="${i}">${g.provider}</span></div></td>
+    <td>${g.profile}</td><td>${g.currency}</td><td>${gwFeeStr(g)}</td>
+    <td><span class="pill plain ${gwAutopay(g.provider)?'ok':'muted'}"><span class="dot"></span>${gwAutopay(g.provider)?'Supported':'Not supported'}</span></td>
+    <td><div class="switch ${g.active?'on':''}" data-gwtog="${i}"></div></td>
+    <td><div class="row-actions"><button class="icon-btn" data-gwedit="${i}" title="Edit"><span class="material-symbols-outlined">edit</span></button></div></td></tr>`).join('');
+  $$('#gwBody [data-gwtog]').forEach(el=>el.addEventListener('click',()=>{const g=GATEWAYS[+el.dataset.gwtog];g.active=!g.active;el.classList.toggle('on');toast(g.provider+(g.active?' enabled':' disabled'));}));
+  $$('#gwBody [data-gw]').forEach(el=>el.addEventListener('click',()=>openGatewayDetail(+el.dataset.gw)));
+  $$('#gwBody [data-gwedit]').forEach(el=>el.addEventListener('click',()=>openGatewayDetail(+el.dataset.gwedit)));
+}
+function editGateway(i){const g=GATEWAYS[i];openForm('Edit gateway — '+g.provider,`
+  <div class="field"><label>Profile name</label><input class="input" id="geName" value="${esc(g.profile)}"></div>
+  <div class="field"><label>Currency</label><div class="select"><select class="input" id="geCur">${ENUMS.currency.map(c=>`<option ${c===g.currency?'selected':''}>${c}</option>`).join('')}</select><span class="material-symbols-outlined">expand_more</span></div></div>
+  <div style="display:flex;gap:12px"><div class="field" style="flex:1"><label>Initial fee</label><input class="input" id="geInit" type="number" placeholder="leave blank to keep"></div><div class="field" style="flex:1"><label>Percentage fee (%)</label><input class="input" id="gePct" type="number" placeholder="leave blank to keep"></div></div>
+  <label class="checkrow"><input type="checkbox" id="geActive" ${g.active?'checked':''}> Active</label>
+`,()=>{g.profile=$('#geName').value.trim()||g.profile;g.currency=$('#geCur').value;const sym=CUR_SYMBOL[g.currency]||'';const ii=parseFloat($('#geInit').value),pp=parseFloat($('#gePct').value);if(!isNaN(ii)||!isNaN(pp)){const parts=[];if(pp>0)parts.push(pp+'%');if(ii>0)parts.push(sym+ii.toFixed(2));g.fee=parts.length?parts.join(' + '):'—';}g.active=$('#geActive').checked;renderGateways();toast('Gateway updated');});}
+renderGateways();
+function gwFeeStr(g){const sym=CUR_SYMBOL[g.currency]||'';const parts=[];if(g.percentageFee>0)parts.push(g.percentageFee+'%');if(g.initialFee>0)parts.push(sym+(+g.initialFee).toFixed(2));return parts.join(' + ')||'—';}
+let gdIdx=null;
+function openGatewayDetail(i){gdIdx=i;renderGatewayDetail();go('gateway-detail');}
+function renderGatewayDetail(){
+  const g=GATEWAYS[gdIdx];if(!g)return;g.fields=g.fields||{};
+  const sym=CUR_SYMBOL[g.currency]||'';
+  $('#gdName').textContent=g.provider+' · '+g.currency;
+  $('#gdTitle').textContent=g.provider;
+  $('#gdSub').textContent=g.profile+' · '+g.currency;
+  $('#gdLogo').innerHTML=provLogo(g.provider,40);
+  const row=(k,v,ef)=>`<div class="row"><span class="k">${k}</span><span class="v">${v}${ef?` <span class="linkish" data-gdef="${ef}" title="Edit ${k}" style="margin-left:6px"><span class="material-symbols-outlined" style="font-size:16px">edit</span></span>`:''}</span></div>`;
+  $('#gdGeneral').innerHTML=
+    row('Profile name',g.profile,'profile')+
+    row('Currency',g.currency)+
+    row('Initial fee',g.initialFee>0?sym+(+g.initialFee).toFixed(2):'—','initialFee')+
+    row('Percentage fee',g.percentageFee>0?g.percentageFee+'%':'—','percentageFee')+
+    `<div class="row"><span class="k">Active</span><span class="v"><div class="switch ${g.active?'on':''}" id="gdActive"></div></span></div>`+
+    row('Auto-pay',gwAutopay(g.provider)?'<span class="pill plain ok"><span class="dot"></span>Supported</span>':'<span class="pill plain muted"><span class="dot"></span>Not supported</span>');
+  const fs=PROVIDER_FIELDS[g.provider]||[];
+  $('#gdApi').innerHTML=fs.length?fs.map(f=>row(f,g.fields[f]?'<span class="cell-mono">•••• '+String(g.fields[f]).slice(-4)+'</span>':'<span class="cell-sub">Not set</span>','api:'+f)).join(''):'<div class="sec-empty">No API fields for this provider.</div>';
+  $('#gdActive').addEventListener('click',()=>{g.active=!g.active;$('#gdActive').classList.toggle('on');renderGateways();toast(g.provider+(g.active?' enabled':' disabled'));});
+  $$('#gdGeneral [data-gdef]').forEach(el=>el.addEventListener('click',()=>{const f=el.dataset.gdef;const map={profile:['Profile name',g.profile,'text'],initialFee:['Initial fee',g.initialFee||'','number'],percentageFee:['Percentage fee (%)',g.percentageFee||'','number']};const cfg=map[f];if(!cfg)return;editField(cfg[0],cfg[1],v=>{g[f]=f==='profile'?(v||g.profile):(parseFloat(v)||0);renderGatewayDetail();renderGateways();},cfg[2]);}));
+  $$('#gdApi [data-gdef]').forEach(el=>el.addEventListener('click',()=>{const f=el.dataset.gdef.replace('api:','');editField(f,g.fields[f]||'',v=>{g.fields[f]=v.trim();renderGatewayDetail();},'text');}));
+  $('#gdDelete').onclick=()=>{GATEWAYS.splice(gdIdx,1);renderGateways();go('gateways');toast('Gateway deleted');};
+}
+
+const PROVIDER_FIELDS={
+  Stripe:['Publishable key','Secret key'],
+  PayPal:['Client ID','Client secret'],
+  Adyen:['API key','Merchant account'],
+  Braintree:['Merchant ID','Public key','Private key'],
+  Revolut:['API key'],
+  'Authorize.Net':['API login ID','Transaction key'],
+  'Amazon Pay':['Merchant ID','Public key ID','Private key'],
+  Klarna:['Username (UID)','Password'],
+  '2Checkout':['Merchant code','Secret key'],
+  Square:['Application ID','Access token'],
+  Binance:['API key','Secret key'],
+  BitPay:['API token'],
+  Oxapay:['Merchant API key'],
+  Tap:['Secret API key'],
+  PayTabs:['Profile ID','Server key']
+};
+const PROVIDER_CUR={Stripe:'USD',PayPal:'USD',Adyen:'EUR',Braintree:'USD',Revolut:'GBP','Authorize.Net':'USD','Amazon Pay':'USD',Klarna:'EUR','2Checkout':'USD',Square:'USD',Binance:'USD',BitPay:'USD',Oxapay:'USD',Tap:'AED',PayTabs:'AED'};
+let gwStep=1, gwData={};
+function openGwWizard(){gwStep=1;gwData={provider:null,currency:'',fields:{},initialFee:'',percentageFee:'',autopay:true};renderGwStep();$('#gwOverlay').classList.add('open');}
+function gwUsedCurrencies(prov){return new Set(GATEWAYS.filter(g=>g.provider===prov).map(g=>g.currency));}
+function gwFee(){const sym=CUR_SYMBOL[gwData.currency]||'';const i=parseFloat(gwData.initialFee),p=parseFloat(gwData.percentageFee);const parts=[];if(p>0)parts.push(p+'%');if(i>0)parts.push(sym+i.toFixed(2));return parts.join(' + ');}
+function gwSaveStep2(){const fs=PROVIDER_FIELDS[gwData.provider];gwData.currency=$('#gwCur').value;fs.forEach((f,i)=>gwData.fields[f]=$('#gwf'+i).value.trim());}
+function gwSaveStep3(){gwData.initialFee=$('#gwInit').value;gwData.percentageFee=$('#gwPct').value;}
+function renderGwStep(){
+  const steps=[['1','Provider'],['2','API key'],['3','Fee'],['4','Review']];
+  $('#gwSteps').innerHTML=steps.map((s,i)=>{const n=i+1;const cls=gwStep===n?'active':(gwStep>n?'done':'');return `<div class="s ${cls}"><span class="n">${gwStep>n?'✓':s[0]}</span>${s[1]}</div>${i<3?'<span class="sep"></span>':''}`;}).join('');
+  const body=$('#gwBodyModal'), foot=$('#gwFooter');
+  if(gwStep===1){
+    body.innerHTML='<div class="gw-prov">'+Object.keys(PROVIDER_FIELDS).map(p=>{const used=gwUsedCurrencies(p);const avail=ENUMS.currency.filter(c=>!used.has(c));const dis=avail.length===0;const note=dis?'All currencies added':(used.size?used.size+' configured':'');return `<div class="opt ${gwData.provider===p?'sel':''} ${dis?'disabled':''}" ${dis?'':`data-prov="${p}"`}>${provLogo(p,30)}<span class="nm">${p}</span>${note?`<span class="ex">${note}</span>`:''}${gwData.provider===p?'<span class="material-symbols-outlined" style="color:var(--brand-600)">check_circle</span>':''}</div>`;}).join('')+'</div>';
+    body.querySelectorAll('[data-prov]').forEach(el=>el.addEventListener('click',()=>{gwData.provider=el.dataset.prov;const used=gwUsedCurrencies(gwData.provider);gwData.currency=ENUMS.currency.filter(c=>!used.has(c))[0]||'';renderGwStep();}));
+    foot.innerHTML='<button class="btn" data-close>Cancel</button><button class="btn btn-primary" id="gwNext" '+(gwData.provider?'':'style="opacity:.5;pointer-events:none"')+'>Next</button>';
+    foot.querySelector('[data-close]').addEventListener('click',()=>$('#gwOverlay').classList.remove('open'));
+    if(gwData.provider)$('#gwNext').addEventListener('click',()=>{gwStep=2;renderGwStep();});
+  }else if(gwStep===2){
+    const fs=PROVIDER_FIELDS[gwData.provider];
+    const availCur=ENUMS.currency.filter(c=>!gwUsedCurrencies(gwData.provider).has(c));
+    if(!availCur.includes(gwData.currency))gwData.currency=availCur[0]||'';
+    body.innerHTML=`<div class="field"><label>Currency</label><div class="select"><select class="input" id="gwCur">${availCur.map(c=>`<option ${c===gwData.currency?'selected':''}>${c}</option>`).join('')}</select><span class="material-symbols-outlined">expand_more</span></div></div>`
+      +fs.map((f,i)=>`<div class="field"><label>${f} *</label><input class="input" id="gwf${i}" value="${esc(gwData.fields[f]||'')}" placeholder="${f}"></div>`).join('');
+    foot.innerHTML='<button class="btn" id="gwBack">Back</button><button class="btn btn-primary" id="gwNext2">Next</button>';
+    $('#gwBack').addEventListener('click',()=>{gwSaveStep2();gwStep=1;renderGwStep();});
+    $('#gwNext2').addEventListener('click',()=>{const fs2=PROVIDER_FIELDS[gwData.provider];for(let i=0;i<fs2.length;i++){if(!$('#gwf'+i).value.trim()){$('#gwf'+i).style.borderColor='var(--bad)';$('#gwf'+i).focus();return;}}gwSaveStep2();gwStep=3;renderGwStep();});
+  }else if(gwStep===3){
+    body.innerHTML=`<p style="color:var(--text-2);font-size:13px;margin:0 0 4px">Optional — fees you add on top of this gateway. Leave blank for none.</p>`
+      +`<div style="display:flex;gap:12px"><div class="field" style="flex:1"><label>Initial fee (${CUR_SYMBOL[gwData.currency]||gwData.currency})</label><input class="input" id="gwInit" type="number" value="${gwData.initialFee}" placeholder="0"></div><div class="field" style="flex:1"><label>Percentage fee (%)</label><input class="input" id="gwPct" type="number" value="${gwData.percentageFee}" placeholder="0"></div></div>`;
+    foot.innerHTML='<button class="btn" id="gwBack3">Back</button><button class="btn btn-primary" id="gwNext3">Next</button>';
+    $('#gwBack3').addEventListener('click',()=>{gwSaveStep3();gwStep=2;renderGwStep();});
+    $('#gwNext3').addEventListener('click',()=>{gwSaveStep3();gwStep=4;renderGwStep();});
+  }else{
+    const fs=PROVIDER_FIELDS[gwData.provider];
+    body.innerHTML=`<div class="kv" style="padding:0;gap:12px">
+      <div class="row"><span class="k">Provider</span><span class="v"><span class="with-icon" style="justify-content:flex-end">${provLogo(gwData.provider)}${gwData.provider}</span></span></div>
+      <div class="row"><span class="k">Currency</span><span class="v">${gwData.currency}</span></div>
+      ${fs.map(f=>`<div class="row"><span class="k">${f}</span><span class="v cell-mono">${gwData.fields[f]?'•••• '+String(gwData.fields[f]).slice(-4):'-'}</span></div>`).join('')}
+      <div class="row"><span class="k">Fees</span><span class="v">${gwFee()||'—'}</span></div>
+    </div>`;
+    foot.innerHTML='<button class="btn" id="gwBack2">Back</button><button class="btn btn-primary" id="gwCreate"><span class="material-symbols-outlined">check</span> Create gateway</button>';
+    $('#gwBack2').addEventListener('click',()=>{gwStep=3;renderGwStep();});
+    $('#gwCreate').addEventListener('click',()=>{GATEWAYS.push({provider:gwData.provider,profile:gwData.provider+' '+gwData.currency,currency:gwData.currency,initialFee:parseFloat(gwData.initialFee)||0,percentageFee:parseFloat(gwData.percentageFee)||0,fields:gwData.fields||{},active:true});renderGateways();$('#gwOverlay').classList.remove('open');toast('Gateway created');});
+  }
+}
+$$('[data-act="new-gateway"]').forEach(b=>b.addEventListener('click',openGwWizard));
+
+/* ============================================================
+   CUSTOMER DETAIL — tabbed (Profile / Methods / Payments / Fraud)
+   ============================================================ */
+let cdCust=null;
+function openCustomerDetail(c){cdCust=c;renderCustomerDetail();setCdTab('profile');go('customer-detail');}
+function setCdTab(t){$$('#cdTabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));$$('#page-customer-detail .cd-pane').forEach(p=>p.style.display=p.id==='cd-'+t?'':'none');}
+$('#cdTabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setCdTab(b.dataset.tab);});
+function renderCustomerDetail(){
+  const c=cdCust;if(!c)return;
+  $('#cdName').textContent=c.name;$('#cdTitle').textContent=c.name;$('#cdSub').textContent=c.email;
+  const avi=$('#cdAvi');avi.style.background='linear-gradient(135deg,'+c.avc+')';avi.textContent=c.av;
+  const first=c.first||c.name.split(' ')[0], last=c.last||c.name.split(' ').slice(1).join(' ');
+  const cdEF=(k,v,field)=>`<div class="row"><span class="k">${k}</span><span class="v">${v}${field?` <span class="linkish" data-ef="${field}" title="Edit ${k}" style="margin-left:6px"><span class="material-symbols-outlined" style="font-size:16px">edit</span></span>`:''}</span></div>`;
+  $('#cd-profile').innerHTML=`<div class="info-card" style="max-width:680px"><div class="h"><span class="material-symbols-outlined">person</span> Profile</div><div class="kv">
+    ${cdEF('First name',first||'-','first')}
+    ${cdEF('Last name',last||'-','last')}
+    ${cdEF('Email',c.email,'email')}
+    ${cdEF('Mobile',c.mobile||'-','mobile')}
+    ${cdEF('Created',c.created)}
+    ${cdEF('Customer ID','<span class="cell-mono">'+c.id+'</span>')}
+    ${cdEF('Status','<span class="pill '+(c.status==='Active'?'ok':'bad')+'"><span class="dot"></span>'+c.status+'</span>')}
+  </div></div>`;
+  $$('#cd-profile [data-ef]').forEach(el=>el.addEventListener('click',()=>cdEditField(el.dataset.ef)));
+  const methods=c.methods||(c.methods=[{brand:'Visa',last4:'4242',exp:'08/27',def:true},{brand:'Mastercard',last4:'5519',exp:'01/26',def:false}]);
+  $('#cd-methods').innerHTML=`<div class="datacard"><div class="dc-toolbar"><div class="dc-title"><span class="material-symbols-outlined" style="color:var(--brand-600)">credit_card</span> Payment methods <span class="count">${methods.length}</span></div><div class="spacer"></div><button class="btn btn-primary btn-sm" id="cdPanelLink"><span class="material-symbols-outlined">add_link</span> Create customer panel link</button></div>
+    <div class="dc-tablewrap"><table class="dc"><thead><tr><th>Card</th><th>Number</th><th>Expiry</th><th>Default</th></tr></thead><tbody>
+    ${methods.map(m=>`<tr><td class="cell-strong">${m.brand}</td><td class="cell-mono">•••• ${m.last4}</td><td>${m.exp}</td><td>${m.def?'<span class="pill ok"><span class="dot"></span>Default</span>':''}</td></tr>`).join('')}
+    </tbody></table></div></div>`;
+  $('#cdPanelLink').addEventListener('click',openPanelLink);
+  const pays=PAYMENTS.filter(p=>p.name===c.name);
+  $('#cd-payments').innerHTML=`<div class="datacard"><div class="dc-toolbar"><div class="dc-title"><span class="material-symbols-outlined" style="color:var(--brand-600)">receipt_long</span> Payments <span class="count">${pays.length}</span></div><div class="spacer"></div><button class="btn btn-primary btn-sm" data-act="new-link"><span class="material-symbols-outlined">add</span> Payment link</button></div>
+    <div class="dc-tablewrap"><table class="dc"><thead><tr><th>Payment ID</th><th>Provider</th><th>Status</th><th>Date</th><th class="num">Amount</th></tr></thead><tbody>
+    ${pays.length?pays.map(p=>`<tr><td><span class="cell-mono">${p.id}</span></td><td><div class="with-icon"><div class="prov ${provClass[p.prov]}">${p.prov[0]}</div>${provLabel[p.prov]}</div></td><td><span class="pill ${PILL[p.status]}"><span class="dot"></span>${p.status}</span></td><td>${p.date}</td><td class="num">${p.amt}</td></tr>`).join(''):`<tr><td colspan="5"><div class="empty"><span class="material-symbols-outlined">receipt_long</span><h3>No payments yet</h3><p>Create a payment link to get started.</p></div></td></tr>`}
+    </tbody></table></div></div>`;
+  if(!c.policyName){const def=POLICIES.find(p=>p.isDefault)||POLICIES[0];c.policyId=def?def.fraudPolicyId:null;c.policyName=def?def.fraudPolicyName:'—';}
+  const acts=c.acts||(c.acts=[{type:'Policy applied',desc:c.policyName+' assigned',date:c.created,by:'System'},{type:'Velocity check',desc:'3 attempts in 5 minutes — passed',date:'Jun 20, 12:04',by:'System'}]);
+  $('#cd-fraud').innerHTML=`<div class="info-card" style="max-width:680px;margin-bottom:16px"><div class="h"><span class="material-symbols-outlined">shield</span> Fraud policy</div><div class="kv"><div class="row"><span class="k">Assigned policy</span><span class="v"><span class="idlink" id="cdPolicyLink">${c.policyName}</span> <span class="linkish" id="cdPolicyEdit" title="Change policy" style="margin-left:8px"><span class="material-symbols-outlined" style="font-size:16px">edit</span></span></span></div></div></div>`
+    +`<div class="datacard"><div class="dc-toolbar"><div class="dc-title"><span class="material-symbols-outlined" style="color:var(--brand-600)">history</span> Fraud activity <span class="count">${acts.length}</span></div></div>
+    <div class="dc-tablewrap"><table class="dc"><thead><tr><th>Activity</th><th>Description</th><th>Date</th><th>By</th></tr></thead><tbody>
+    ${acts.map(a=>`<tr><td class="cell-strong">${a.type}</td><td class="cell-sub">${a.desc}</td><td>${a.date}</td><td>${a.by}</td></tr>`).join('')}
+    </tbody></table></div></div>`;
+  $('#cdPolicyEdit').addEventListener('click',changeCustomerPolicy);
+  $('#cdPolicyLink').addEventListener('click',()=>{if(c.policyId)openPolicyEditor(c.policyId);});
+  $$('#page-customer-detail [data-act="new-link"]').forEach(b=>b.addEventListener('click',openLinkModal));
+}
+function editCustomerProfile(c){openForm('Edit customer',`
+  <div class="field"><label>First name</label><input class="input" id="ecF" value="${esc(c.first||c.name.split(' ')[0])}"></div>
+  <div class="field"><label>Last name</label><input class="input" id="ecL" value="${esc(c.last||c.name.split(' ').slice(1).join(' '))}"></div>
+  <div class="field"><label>Email</label><input class="input" id="ecE" value="${esc(c.email)}"></div>
+  <div class="field"><label>Mobile</label><input class="input" id="ecM" value="${esc(c.mobile||'')}"></div>
+`,()=>{c.first=$('#ecF').value.trim();c.last=$('#ecL').value.trim();c.name=(c.first+' '+c.last).trim();c.email=$('#ecE').value.trim();c.mobile=$('#ecM').value.trim();c.av=((c.first[0]||'')+(c.last[0]||'')).toUpperCase();renderCustomerDetail();renderCus();toast('Customer updated');});}
+$('#page-customer-detail').addEventListener('click',e=>{const b=e.target.closest('[data-act="cd-edit"]');if(b)editCustomerProfile(cdCust);});
+
+/* ---------- reusable single-field edit module (pencil → modal → save one value) ---------- */
+function editField(label,value,onSave,type){
+  openForm('Edit '+label.toLowerCase(),`<div class="field"><label>${label}</label><input class="input" id="efVal" type="${type||'text'}" value="${esc(value)}"></div>`,()=>{onSave($('#efVal').value.trim());toast(label+' updated');});
+  setTimeout(()=>{const el=$('#efVal');if(el){el.focus();el.select();}},60);
+}
+function openPanelLink(){const c=cdCust;if(!c)return;$('#panelLink').value='https://panel.shopmania.com/c/'+((c.id||'cus').replace(/[^a-z0-9_]/gi,''))+'-'+Math.random().toString(36).slice(2,8);$('#panelOverlay').classList.add('open');}
+$('#panelCopy').addEventListener('click',()=>{const i=$('#panelLink');i.select();try{document.execCommand('copy');}catch(e){}toast('Link copied');});
+function changeCustomerPolicy(){
+  const c=cdCust;if(!c)return;
+  openForm('Change fraud policy',`<div class="field"><label>Fraud policy</label><div class="select"><select class="input" id="cpSel">${POLICIES.map(p=>`<option value="${p.fraudPolicyId}" ${p.fraudPolicyId===c.policyId?'selected':''}>${p.fraudPolicyName}${p.isDefault?' (default)':''}</option>`).join('')}</select><span class="material-symbols-outlined">expand_more</span></div></div>`,()=>{
+    const id=+$('#cpSel').value, p=POLICIES.find(x=>x.fraudPolicyId===id);
+    if(p&&p.fraudPolicyId!==c.policyId){c.policyId=p.fraudPolicyId;c.policyName=p.fraudPolicyName;(c.acts=c.acts||[]).unshift({type:'Policy changed',desc:'Assigned to '+p.fraudPolicyName,date:'Just now',by:'Mark Brown'});}
+    renderCustomerDetail();toast('Fraud policy updated');
+  });
+}
+function cdEditField(f){
+  const c=cdCust;if(!c)return;
+  const first=c.first||c.name.split(' ')[0], last=c.last||c.name.split(' ').slice(1).join(' ');
+  const map={first:['First name',first,'text'],last:['Last name',last,'text'],email:['Email',c.email,'email'],mobile:['Mobile',c.mobile||'','text']};
+  const cfg=map[f];if(!cfg)return;
+  editField(cfg[0],cfg[1],v=>{
+    if(f==='first'){c.first=v;c.last=c.last||last;}
+    else if(f==='last'){c.last=v;c.first=c.first||first;}
+    else c[f]=v;
+    if(f==='first'||f==='last'){c.name=((c.first||'')+' '+(c.last||'')).trim();c.av=(((c.first||'')[0]||'')+((c.last||'')[0]||'')).toUpperCase();}
+    renderCustomerDetail();renderCus();
+  },cfg[2]);
+}
+
+/* ============================================================
+   SETTINGS TABS + CHECKOUT BRANDING (live mockup)
+   ============================================================ */
+const CO_DEFAULTS={domain:'checkout.shopmania.com',name:'Shop Mania',s1:'Secure checkout, powered by ',s2:'Pay with confidence — all your favorite payment methods in one place.'};
+let coDirty=false, coInited=false;
+function coGrow(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';}
+function coTouch(){if(!coDirty){coDirty=true;$('#coSave').disabled=false;$('#coReset').disabled=false;}}
+function coRenderMethods(){
+  const active=GATEWAYS.filter(g=>g.active);
+  $('#coMethods').innerHTML=active.length?active.map(g=>`<div class="co-method"><div class="prov ${gwClass(g.provider)}">${g.provider[0]}</div><span class="nm">${g.provider}</span><span class="rc"></span></div>`).join(''):'<div class="sec-empty">No active gateways — connect one under Gateways.</div>';
+}
+function coInit(){coRenderMethods();coGrow($('#coSlogan1'));coGrow($('#coSlogan2'));}
+['coDomain','coName'].forEach(id=>$('#'+id).addEventListener('input',coTouch));
+['coSlogan1','coSlogan2'].forEach(id=>$('#'+id).addEventListener('input',e=>{coGrow(e.target);coTouch();}));
+$('#coLogo').addEventListener('click',()=>$('#coLogoFile').click());
+$('#coLogoFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{$('#coLogoImg').src=ev.target.result;$('#coLogoImg').style.display='';$('#coLogoPh').style.display='none';coTouch();};r.readAsDataURL(f);});
+$('#coSave').addEventListener('click',()=>{coDirty=false;$('#coSave').disabled=true;$('#coReset').disabled=true;toast('Checkout branding saved');});
+$('#coReset').addEventListener('click',()=>{$('#coDomain').value=CO_DEFAULTS.domain;$('#coName').value=CO_DEFAULTS.name;$('#coSlogan1').value=CO_DEFAULTS.s1;$('#coSlogan2').value=CO_DEFAULTS.s2;$('#coLogoImg').style.display='none';$('#coLogoPh').style.display='';coGrow($('#coSlogan1'));coGrow($('#coSlogan2'));coDirty=false;$('#coSave').disabled=true;$('#coReset').disabled=true;toast('Reset to defaults');});
+$('#setTabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$$('#setTabs button').forEach(x=>x.classList.toggle('active',x===b));$$('#page-settings .set-pane').forEach(p=>p.style.display=p.id==='set-'+b.dataset.tab?'':'none');if(b.dataset.tab==='checkout')coInit();});
+const dnsCog=$('[data-act="co-dns"]');if(dnsCog)dnsCog.addEventListener('click',()=>$('#dnsOverlay').classList.add('open'));
+$('#dnsCopy').addEventListener('click',()=>{const ta=document.createElement('textarea');ta.value=$('#dnsTarget').textContent;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e){}ta.remove();toast('CNAME copied');});
+// personalization theme segment mirrors the top theme toggle
+$('#themeSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$$('#themeSeg button').forEach(x=>x.classList.toggle('active',x===b));const t=b.dataset.theme,dark=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.setAttribute('data-theme',dark?'dark':'light');tt.querySelector('.material-symbols-outlined').textContent=dark?'light_mode':'dark_mode';});
+
+/* ============================================================
+   TEAM MEMBERS — data-driven + Add Member / Add Bot / edit / delete
+   ============================================================ */
+let MEMBERS=[
+  {name:'Mark Brown',email:'mark@shopmania.com',av:'MB',avc:'#f59e0b,#ef4444',role:'Owner',bot:false},
+  {name:'Anna Park',email:'anna@shopmania.com',av:'AP',avc:'#6366f1,#8b5cf6',role:'Admin',bot:false},
+  {name:'Reporting Bot',email:'bot-9f2a',av:null,avc:'#64748b,#475569',role:'Bot',bot:true},
+];
+const ROLE_PILL={Owner:'info',Admin:'violet',Manager:'ok',Viewer:'muted',Bot:'muted'};
+const MEMBER_ROLES=['Admin','Manager','Viewer'];
+function renderMembers(){
+  $('#memCount').textContent=MEMBERS.length;
+  $('#memBody').innerHTML=MEMBERS.map((m,i)=>`<tr>
+    <td><div class="with-icon"><div class="avi" style="background:linear-gradient(135deg,${m.avc})">${m.bot?'<span class="material-symbols-outlined" style="font-size:17px">smart_toy</span>':m.av}</div><span class="cell-strong">${m.name}</span></div></td>
+    <td>${m.email}</td>
+    <td><span class="pill ${ROLE_PILL[m.role]||'muted'}"><span class="dot"></span>${m.role}</span></td>
+    <td><span class="pill ok"><span class="dot"></span>Active</span></td>
+    <td><div class="row-actions"><button class="icon-btn" data-memedit="${i}"><span class="material-symbols-outlined">edit</span></button>${m.role==='Owner'?'':`<button class="icon-btn" data-memdel="${i}"><span class="material-symbols-outlined">delete</span></button>`}</div></td></tr>`).join('');
+  $$('#memBody [data-memdel]').forEach(el=>el.addEventListener('click',()=>{MEMBERS.splice(+el.dataset.memdel,1);renderMembers();toast('Member removed');}));
+  $$('#memBody [data-memedit]').forEach(el=>el.addEventListener('click',()=>editMember(+el.dataset.memedit)));
+}
+function editMember(i){const m=MEMBERS[i];openForm(m.bot?'Edit bot':'Edit member',`
+  <div class="field"><label>${m.bot?'Bot name':'Name'}</label><input class="input" id="emName" value="${esc(m.name)}"></div>
+  ${m.bot?'':`<div class="field"><label>Email</label><input class="input" id="emEmail" value="${esc(m.email)}"></div>`}
+  ${(m.bot||m.role==='Owner')?'':`<div class="field"><label>Role</label><div class="select"><select class="input" id="emRole">${MEMBER_ROLES.map(r=>`<option ${r===m.role?'selected':''}>${r}</option>`).join('')}</select><span class="material-symbols-outlined">expand_more</span></div></div>`}
+`,()=>{m.name=$('#emName').value.trim()||m.name;if($('#emEmail'))m.email=$('#emEmail').value.trim();if($('#emRole'))m.role=$('#emRole').value;if(!m.bot)m.av=m.name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();renderMembers();toast('Member updated');});}
+function openAddMember(){openForm('Add new member',`
+  <div class="field"><label>Email *</label><input class="input" id="amEmail" type="email" placeholder="name@example.com"></div>
+  <div class="field"><label>Role *</label><div class="select"><select class="input" id="amRole">${MEMBER_ROLES.map(r=>`<option>${r}</option>`).join('')}</select><span class="material-symbols-outlined">expand_more</span></div></div>
+  <div id="amErr" style="color:var(--bad);font-size:12.5px;font-weight:600;display:none"></div>
+`,()=>{const em=$('#amEmail').value.trim();if(!/^[A-Za-z0-9._%+-]{2,}@[A-Za-z0-9.-]{2,}\.[A-Za-z]{2,}$/.test(em)){$('#amErr').textContent='Enter a valid email address.';$('#amErr').style.display='';return false;}const nm=em.split('@')[0].replace(/[._]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase());MEMBERS.push({name:nm,email:em,av:nm.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase(),avc:AVI_COLORS[MEMBERS.length%AVI_COLORS.length],role:$('#amRole').value,bot:false});renderMembers();toast('Member invited');});}
+function openAddBot(){openForm('Add new bot',`
+  <div class="field"><label>Bot name *</label><input class="input" id="abName" placeholder="e.g. Reporting Bot"></div>
+`,()=>{const n=$('#abName').value.trim();if(!n){$('#abName').style.borderColor='var(--bad)';$('#abName').focus();return false;}MEMBERS.push({name:n,email:'bot-'+Math.random().toString(36).slice(2,6),av:null,avc:'#64748b,#475569',role:'Bot',bot:true});renderMembers();toast('Bot created');});}
+$$('[data-act="new-member"]').forEach(b=>b.addEventListener('click',openAddMember));
+$$('[data-act="new-bot"]').forEach(b=>b.addEventListener('click',openAddBot));
+renderMembers();
+
+/* ============================================================
+   PAYMENT DETAIL — comprehensive, data-driven (customer link → detail)
+   ============================================================ */
+const PD_STATE_PILL={Captured:'ok',Authorized:'info',Created:'muted',Refunded:'violet',Failed:'bad',Pending:'warn',Canceled:'muted',Disputed:'bad'};
+const pdAmt=p=>parseFloat(String(p.amt).replace(/[^\d.]/g,''))||0;
+const pdMoney=(cur,n)=>(CUR_SYMBOL[cur]||'')+Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const pdRow=(k,v)=>`<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`;
+function openPaymentDetail(p){renderPaymentDetail(p);go('detail');}
+function renderPaymentDetail(p){
+  const amt=pdAmt(p);
+  const provFee=Math.round((amt*0.029+0.3)*100)/100, appFee=Math.round(amt*0.01*100)/100, net=Math.max(0,amt-provFee-appFee);
+  const cust=CUSTOMERS.find(c=>c.name===p.name)||{name:p.name,email:p.email,av:p.av,avc:p.avc,id:'cus_'+p.id.slice(4),status:'Active',created:'—'};
+  const captured=['Captured','Refunded','Disputed'].includes(p.status);
+  $('#pdCrumb').textContent=p.id;
+  $('#pdProviderH').textContent='Provider ('+provLabel[p.prov]+')';
+  $('#pdInvoiceH').textContent='Invoice ('+p.cur+')';
+  $('#pdApp').innerHTML=pdRow('Payment ID','<span class="cell-mono">'+p.id+'</span>')
+    +pdRow('Reference ID','<span class="cell-mono">ord_'+p.id.slice(4)+'</span>')
+    +pdRow('Webhook sent',p.date)
+    +pdRow('Customer ID','<span class="idlink" id="pdCustLink">'+cust.id+'</span>')
+    +pdRow('Payer IP','<span class="cell-mono">203.0.113.'+(p.id.charCodeAt(4)%240+1)+'</span>')
+    +pdRow('Auto pay',captured?'True':'-')
+    +pdRow('State','<span class="pill '+(PILL[p.status]||'muted')+'"><span class="dot"></span>'+p.status+'</span>');
+  $('#pdProvider').innerHTML=pdRow('Captured amount',captured?pdMoney(p.cur,amt):'-')
+    +pdRow('Net amount',captured?pdMoney(p.cur,net):'-')
+    +pdRow('Provider fee',pdMoney(p.cur,provFee))
+    +pdRow('Capture ID','<span class="cell-mono">cap_'+p.id.slice(4)+'</span>')
+    +pdRow('Authorize ID','<span class="cell-mono">auth_'+p.id.slice(4)+'</span>')
+    +pdRow('Provider ref','<span class="cell-mono">'+p.prov.toLowerCase().replace(/[^a-z]/g,'').slice(0,4)+'_'+p.id.slice(4)+'</span>')
+    +pdRow('Card','<span class="cell-mono">•••• 4242</span> <span class="cell-sub">(Visa)</span>')
+    +pdRow('Card holder',p.name)
+    +pdRow('Balance',p.status==='Captured'?'<span style="color:var(--ok)">Checked</span>':'-');
+  const tax=Math.round(amt*0.07*100)/100, shipping=amt>200?9.99:0, subtotal=Math.max(0,amt-tax-shipping);
+  $('#pdInvoice').innerHTML=pdRow('Amount',pdMoney(p.cur,subtotal))
+    +pdRow('Shipping',shipping?pdMoney(p.cur,shipping):'-')
+    +pdRow('Insurance','-')+pdRow('Discount','-')
+    +pdRow('Total tax',pdMoney(p.cur,tax))+pdRow('Handling','-')
+    +pdRow('Total','<b>'+pdMoney(p.cur,amt)+'</b>')
+    +pdRow('Customer name',p.name);
+  $('#pdPolicy').innerHTML=pdRow('Policy name','<span class="idlink" id="pdPolicyLink">Default policy</span>')
+    +pdRow('Message',p.status==='Failed'?'Declined by issuer (firewall)':'-');
+  $('#pdFee').innerHTML=pdRow('App fee',pdMoney(p.cur,appFee))
+    +pdRow('Provider fee',pdMoney(p.cur,provFee))
+    +pdRow('Payment amount',pdMoney(p.cur,amt))
+    +pdRow('Captured amount',captured?pdMoney(p.cur,amt):'-')
+    +pdRow('Net amount',pdMoney(p.cur,net));
+  const acts=[];
+  if(p.status==='Pending'||p.status==='Authorized'){acts.push(['Capture','check',true],['Cancel','block',false]);}
+  if(p.status==='Captured'){acts.push(['Refund','undo',false],['Mark as dispute','gavel',false]);}
+  if(p.status==='Failed')acts.push(['Recheck','sync',true]);
+  $('#pdActions').innerHTML=acts.length?acts.map(a=>`<button class="btn ${a[2]?'btn-primary':''}" data-pdact="${a[0]}"><span class="material-symbols-outlined">${a[1]}</span> ${a[0]}</button>`).join(''):'<span class="cell-sub" style="align-self:center">No actions available</span>';
+  $$('#pdActions [data-pdact]').forEach(b=>b.addEventListener('click',()=>toast(b.dataset.pdact+' — done')));
+  const logs=[{s:'Created',a:'Merchant',n:'Payment link generated'}];
+  if(['Authorized','Captured','Refunded','Disputed'].includes(p.status))logs.push({s:'Authorized',a:provLabel[p.prov],n:'3-D Secure passed'});
+  if(captured)logs.push({s:'Captured',a:'System',n:'Auto-captured on authorization'});
+  if(p.status==='Refunded')logs.push({s:'Refunded',a:'Merchant',n:'Full refund issued'});
+  if(p.status==='Failed')logs.push({s:'Failed',a:provLabel[p.prov],n:'Declined by issuer'});
+  if(p.status==='Pending')logs.push({s:'Pending',a:'System',n:'Awaiting confirmation'});
+  if(p.status==='Canceled')logs.push({s:'Canceled',a:'Merchant',n:'Order canceled'});
+  $('#pdLogs').innerHTML=logs.reverse().map(l=>`<tr><td><span class="pill ${PD_STATE_PILL[l.s]||'muted'}"><span class="dot"></span>${l.s}</span></td><td>${l.a}</td><td>${p.date}</td><td class="cell-sub">${l.n}</td></tr>`).join('');
+  const items=[['Order '+p.id.slice(4),1,subtotal]];
+  if(shipping)items.push(['Shipping',1,shipping]);
+  $('#pdItems').innerHTML=items.map(it=>`<tr><td class="cell-strong">${it[0]}</td><td class="num">${it[1]}</td><td class="num">${pdMoney(p.cur,it[2])}</td><td class="num">${pdMoney(p.cur,it[2]*it[1])}</td></tr>`).join('');
+  $('#pdCustLink').addEventListener('click',()=>openCustomerDetail(cust));
+  $('#pdPolicyLink').addEventListener('click',()=>{const def=POLICIES.find(x=>x.isDefault)||POLICIES[0];if(def)openPolicyEditor(def.fraudPolicyId);});
+}
+
+/* ============================================================
+   BILLING — license invoices grid + Pay process + payments modal
+   ============================================================ */
+let INVOICES=[
+  {id:'INV-2026-014',created:'Jun 01, 2026',status:'Pending',amount:'$49.00',canPay:true,payments:[]},
+  {id:'INV-2026-013',created:'May 01, 2026',status:'Paid',amount:'$49.00',canPay:false,payments:[{pid:'lpay_91c2',created:'May 01, 2026',prov:'Stripe',amt:'$49.00',cur:'USD',state:'Captured'}]},
+  {id:'INV-2026-012',created:'Apr 01, 2026',status:'Paid',amount:'$49.00',canPay:false,payments:[{pid:'lpay_77a0',created:'Apr 01, 2026',prov:'Stripe',amt:'$49.00',cur:'USD',state:'Captured'}]},
+  {id:'INV-2026-011',created:'Mar 01, 2026',status:'Overdue',amount:'$49.00',canPay:true,payments:[]},
+];
+const INV_PILL={Paid:'ok',Pending:'warn',Overdue:'bad',Canceled:'muted'};
+function renderInvoices(){
+  $('#invCount').textContent=INVOICES.length;
+  $('#invBody').innerHTML=INVOICES.map((v,i)=>`<tr>
+    <td><span class="idlink cell-mono" data-inv="${i}">${v.id}</span></td>
+    <td>${v.created}</td><td class="cell-strong">${v.amount}</td>
+    <td><span class="pill ${INV_PILL[v.status]||'muted'}"><span class="dot"></span>${v.status}</span></td>
+    <td><div class="row-actions">${v.canPay?`<button class="btn btn-primary btn-sm" data-invpay="${i}">Pay</button>`:''}</div></td></tr>`).join('');
+  $$('#invBody [data-inv]').forEach(el=>el.addEventListener('click',()=>openInvoice(+el.dataset.inv)));
+  $$('#invBody [data-invpay]').forEach(el=>el.addEventListener('click',()=>payInvoice(+el.dataset.invpay)));
+}
+function openInvoice(i){const v=INVOICES[i];$('#invTitle').textContent='Invoice payment ('+v.id+')';
+  $('#invPayBody').innerHTML=v.payments.length?v.payments.map(pm=>`<tr><td class="cell-mono">${pm.pid}</td><td>${pm.created}</td><td><div class="with-icon"><div class="prov ${gwClass(pm.prov)}">${pm.prov[0]}</div>${pm.prov}</div></td><td class="num">${pm.amt} <span class="cell-sub">(${pm.cur})</span></td><td><span class="pill ${PILL[pm.state]||'ok'}"><span class="dot"></span>${pm.state}</span></td></tr>`).join(''):`<tr><td colspan="5"><div class="empty"><span class="material-symbols-outlined">receipt_long</span><h3>No payments for this invoice</h3></div></td></tr>`;
+  $('#invOverlay').classList.add('open');}
+function payInvoice(i){const v=INVOICES[i];v.status='Paid';v.canPay=false;v.payments.push({pid:'lpay_'+Math.random().toString(36).slice(2,6),created:'Just now',prov:'Stripe',amt:v.amount,cur:'USD',state:'Captured'});renderInvoices();toast('Invoice '+v.id+' paid');}
+$$('[data-act="refresh-inv"]').forEach(b=>b.addEventListener('click',()=>{renderInvoices();toast('Billing refreshed');}));
+$$('[data-act="export-inv"]').forEach(b=>b.addEventListener('click',()=>toast('Exported '+INVOICES.length+' invoices')));
+$$('[data-act="renewal"]').forEach(b=>b.addEventListener('click',()=>toast('Opening renewal…')));
+renderInvoices();
+</script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+@if (isOpen()) {
+  <div class="overlay">
+    <div class="modal">
+      <div class="mh">
+        <span class="material-symbols-outlined head-ic">filter_alt</span>
+        <h3>Advanced filter</h3>
+        <div class="spacer"></div>
+        <button class="icon-btn" type="button" (click)="close()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="mb">
+        <!-- State -->
+        <div class="section">
+          <label class="sec-label">State</label>
+          <div class="chips">
+            @for (s of states; track s.code) {
+              <button
+                type="button"
+                class="state-chip"
+                [class.on]="isStateSelected(s.code)"
+                (click)="toggleState(s.code)"
+              >{{ s.name }}</button>
+            }
+          </div>
+        </div>
+
+        <!-- Gateway -->
+        <div class="section">
+          <label class="sec-label">Gateway</label>
+          @if (loadingData()) {
+            <div class="sk-field"></div>
+          } @else {
+            <div class="gw-drop">
+              <button type="button" class="input gw-trigger" (click)="$event.stopPropagation(); gwOpen = !gwOpen">
+                @if (selectedProfile(); as p) {
+                  <app-provider-logo [provider]="p.paymentProvider" [showName]="false" [size]="44" />
+                  <span class="gw-trig-label">{{ p.currency }}</span>
+                } @else {
+                  <span class="material-symbols-outlined gw-all-ic">apps</span>
+                  <span class="gw-trig-label">All gateways</span>
+                }
+                <span class="material-symbols-outlined gw-caret">expand_more</span>
+              </button>
+              @if (gwOpen) {
+                <div class="gw-backdrop" (click)="gwOpen = false"></div>
+                <div class="gw-menu">
+                  <button type="button" class="gw-opt" [class.on]="paymentProfileId === null" (click)="selectGateway(null)">
+                    <span class="material-symbols-outlined gw-all-ic">apps</span>
+                    <span class="gw-opt-label">All gateways</span>
+                    @if (paymentProfileId === null) {
+                      <span class="material-symbols-outlined gw-sel-ic">check</span>
+                    }
+                  </button>
+                  @for (p of profiles(); track p.paymentProfileId) {
+                    <button type="button" class="gw-opt" [class.on]="paymentProfileId === p.paymentProfileId" (click)="selectGateway(p.paymentProfileId!)">
+                      <app-provider-logo [provider]="p.paymentProvider" [showName]="false" [size]="44" />
+                      <span class="gw-opt-label">{{ p.currency }}</span>
+                      @if (paymentProfileId === p.paymentProfileId) {
+                        <span class="material-symbols-outlined gw-sel-ic">check</span>
+                      }
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Customer -->
+        <div class="section">
+          <label class="sec-label">Customer</label>
+          <div class="cust-field" (click)="custModal.open()">
+            <span class="material-symbols-outlined">person_search</span>
+            <span class="cust-val" [class.placeholder]="!customerLabel">{{ customerLabel || 'Search & select a customer…' }}</span>
+            @if (customerLabel) {
+              <button class="icon-btn sm" type="button" (click)="$event.stopPropagation(); clearCustomer()">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Policy -->
+        <div class="section">
+          <label class="sec-label">Fraud policy</label>
+          <div class="select">
+            <select class="input" [(ngModel)]="fraudPolicyId">
+              <option [ngValue]="null">All policies</option>
+              @for (pol of policies(); track pol.fraudPolicyId) {
+                <option [ngValue]="pol.fraudPolicyId">{{ pol.fraudPolicyName }}{{ pol.isDefault ? ' (default)' : '' }}</option>
+              }
+            </select>
+            <span class="material-symbols-outlined">expand_more</span>
+          </div>
+        </div>
+
+        <!-- Dates -->
+        <div class="section">
+          <label class="sec-label">Date range</label>
+          <app-date-range-picker
+            [from]="startTime || null"
+            [to]="endTime || null"
+            [openUp]="true"
+            (rangeChange)="onDateRangeChange($event)"
+          ></app-date-range-picker>
+        </div>
+      </div>
+
+      <div class="mf">
+        <button class="btn" type="button" (click)="clear()">Clear</button>
+        <div class="spacer"></div>
+        <button class="btn" type="button" (click)="close()">Cancel</button>
+        <button class="btn btn-primary" type="button" (click)="apply()">
+          <span class="material-symbols-outlined">filter_alt</span> Apply filter
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Reusable customer picker -->
+<app-customer-picker-modal #custModal (selected)="onCustomerSelected($event)" />

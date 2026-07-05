@@ -1,0 +1,45 @@
+<div class="drp-wrap" (click)="$event.stopPropagation()">
+  <button class="drp-btn" [class.active]="isOpen()" [disabled]="disabled()" (click)="toggle($event)">
+    <span class="material-symbols-outlined">calendar_month</span>
+    <span class="drp-label">{{ rangeText() }}</span>
+    @if (from() || to()) {
+      <span class="material-symbols-outlined drp-clear" (click)="clearRange($event)">close</span>
+    }
+  </button>
+
+  @if (isOpen()) {
+    <div class="drp-dropdown" [class.open-up]="openUp()">
+      <div class="cal-header">
+        <button class="nav-btn" (click)="prevMonth($event)">
+          <span class="material-symbols-outlined">chevron_left</span>
+        </button>
+        <span class="month-title">{{ monthName() }}</span>
+        <button class="nav-btn" (click)="nextMonth($event)">
+          <span class="material-symbols-outlined">chevron_right</span>
+        </button>
+      </div>
+
+      <div class="cal-weekdays">
+        <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+      </div>
+
+      <div class="cal-days">
+        @for (day of calendarDays(); track day.date.getTime()) {
+          <button
+            class="day-btn"
+            [class.outside]="!day.isCurrentMonth"
+            [class.in-range]="isInRange(day.date)"
+            [class.sel-start]="isStart(day.date)"
+            [class.sel-end]="isEnd(day.date)"
+            (click)="selectDate(day.date)"
+          >{{ day.date.getDate() }}</button>
+        }
+      </div>
+
+      <div class="cal-footer">
+        <button class="txt-btn" (click)="setToday($event)">Today</button>
+        <button class="txt-btn clear-act" (click)="clearRange($event)">Clear</button>
+      </div>
+    </div>
+  }
+</div>

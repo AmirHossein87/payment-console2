@@ -1,0 +1,82 @@
+<div class="cd-actions">
+  <span class="cd-action-label">Policy:</span>
+  <strong>{{ policyName() }}</strong>
+  <button class="icon-btn" title="Change policy" (click)="editPolicy()">
+    <span class="material-symbols-outlined">edit</span>
+  </button>
+  <div class="spacer"></div>
+  @if (customer(); as c) {
+    <button
+      class="btn btn-sm"
+      [class.btn-danger]="!c.isBlocked"
+      [class.btn-success]="c.isBlocked"
+      (click)="confirmToggleBlock()"
+    >
+      <span class="material-symbols-outlined">{{ c.isBlocked ? 'lock_open' : 'block' }}</span>
+      {{ c.isBlocked ? 'Unblock' : 'Block' }}
+    </button>
+    <button class="btn btn-sm" (click)="confirmResetAffectedPolicy()">
+      <span class="material-symbols-outlined">restart_alt</span>
+      Reset affected policy
+    </button>
+  }
+</div>
+
+<app-data-grid
+  title="Activity log"
+  titleIcon="gavel"
+  [showCount]="false"
+  [data]="filteredLogs()"
+  [columns]="gridColumns"
+  [loading]="loadingLogs()"
+  [defaultPageSize]="10"
+  [hideFilters]="true"
+  (refreshRequested)="loadLogs()"
+>
+  <div toolbar-actions class="filter-type">
+    <div class="select sm">
+      <select
+        [value]="selectedType() ?? ''"
+        (change)="onTypeFilter($any($event.target).value)"
+      >
+        <option value="">All events</option>
+        @for (t of logTypeOptions; track t) {
+          <option [value]="t">{{ t }}</option>
+        }
+      </select>
+      <span class="material-symbols-outlined">expand_more</span>
+    </div>
+  </div>
+</app-data-grid>
+
+<ng-template #descriptionTemplate let-value>
+  @if (value) {
+    <span class="idlink" (click)="viewCustomData(value)">{{ customDataSummary(value) }}</span>
+  } @else {
+    <span class="cell-sub">—</span>
+  }
+</ng-template>
+
+@if (showCustomData()) {
+  <div class="overlay" (click)="closeCustomData()">
+    <div class="raw-modal" (click)="$event.stopPropagation()">
+      <div class="raw-mh">
+        <span class="material-symbols-outlined">description</span>
+        <h3>Activity details</h3>
+        <div class="spacer"></div>
+        <button class="icon-btn" (click)="closeCustomData()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="raw-body">
+        <pre>{{ customDataContent() }}</pre>
+      </div>
+      <div class="raw-mf">
+        <button class="btn btn-primary" (click)="closeCustomData()">Close</button>
+      </div>
+    </div>
+  </div>
+}
+
+<app-universal-edit-modal #editor />
+<app-confirm-modal #confirm />

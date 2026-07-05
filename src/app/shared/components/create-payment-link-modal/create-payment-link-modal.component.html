@@ -1,0 +1,168 @@
+@if (isOpen()) {
+  <div class="overlay">
+    <div class="modal">
+      <div class="mh">
+        <span class="material-symbols-outlined head-ic">add_link</span>
+        <h3>Create payment link</h3>
+        <div class="spacer"></div>
+        <button class="icon-btn" type="button" [disabled]="busy()" (click)="close()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      @if (!isSuccess()) {
+        <div class="mb" [class.locked]="busy()">
+          <div class="two-col">
+            <div class="field">
+              <label>Amount *</label>
+              <input class="input" [class.invalid]="amountInvalid" type="number" min="0" step="0.01" placeholder="0.00"
+                     inputmode="decimal" [(ngModel)]="amount"
+                     (input)="onAmountInput($event)" />
+            </div>
+            <div class="field cur">
+              <label>Currency *</label>
+              <div class="select">
+                <select class="input" [class.invalid]="currencyInvalid"
+                        [ngModel]="currency()" (ngModelChange)="onCurrencyChange($event)"
+                        [disabled]="loadingGateways() || availableCurrencies().length === 1">
+                  <option value=""></option>
+                  @for (c of availableCurrencies(); track c) {
+                    <option [value]="c">{{ c }}</option>
+                  }
+                </select>
+                <span class="material-symbols-outlined">expand_more</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gateway (optional) — selecting one auto-fills the currency above -->
+          <div class="field">
+            <label>Gateway</label>
+            @if (loadingGateways()) {
+              <div class="gw-skeleton"></div>
+            } @else {
+            <div class="gw-drop">
+              <button type="button" class="input gw-trigger" [disabled]="singleGateway()"
+                      (click)="$event.stopPropagation(); gwOpen = !gwOpen">
+                @if (selectedProfile(); as p) {
+                  <app-provider-logo [provider]="p.paymentProvider" [showName]="false" [size]="44" />
+                  <span class="gw-trig-label">{{ profileLabel(p) }}</span>
+                  @if (!singleGateway()) {
+                    <button class="icon-btn sm" type="button"
+                            (click)="$event.stopPropagation(); clearGateway()">
+                      <span class="material-symbols-outlined">close</span>
+                    </button>
+                  }
+                } @else {
+                  <span class="material-symbols-outlined gw-all-ic">apps</span>
+                  <span class="gw-trig-label placeholder">Select a gateway…</span>
+                  <span class="material-symbols-outlined gw-caret">expand_more</span>
+                }
+              </button>
+              @if (gwOpen) {
+                <div class="gw-backdrop" (click)="gwOpen = false"></div>
+                <div class="gw-menu">
+                  @if (filteredGateways().length === 0) {
+                    <div class="gw-no-data">No gateways configured for this workspace.</div>
+                  }
+                  @for (p of filteredGateways(); track p.paymentProfileId) {
+                    <button type="button" class="gw-opt" [class.on]="paymentProfileId === p.paymentProfileId"
+                            (click)="selectGateway(p.paymentProfileId!)">
+                      <app-provider-logo [provider]="p.paymentProvider" [showName]="false" [size]="44" />
+                      <span class="gw-opt-label">{{ profileLabel(p) }}</span>
+                      @if (paymentProfileId === p.paymentProfileId) {
+                        <span class="material-symbols-outlined gw-sel-ic">check</span>
+                      }
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+            }
+          </div>
+
+          <!-- Customer picker (matches advanced filter style) -->
+          <div class="field">
+            <label>Customer *</label>
+            <div class="cust-field" [class.invalid]="customerInvalid" (click)="custModal.open()">
+              <span class="material-symbols-outlined">person_search</span>
+              <span class="cust-val" [class.placeholder]="!customerLabel">
+                {{ customerLabel || 'Search & select a customer…' }}
+              </span>
+              @if (customerLabel) {
+                <button class="icon-btn sm" type="button" (click)="$event.stopPropagation(); clearCustomer()">
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="pl-acc" [class.open]="moreOpen()">
+            <div class="pl-acc-head" (click)="toggleMore()">
+              <span>More options</span>
+              <span class="material-symbols-outlined">expand_more</span>
+            </div>
+            @if (moreOpen()) {
+              <div class="pl-acc-body">
+                <div class="field">
+                  <label>Fraud policy</label>
+                  @if (loadingPolicies()) {
+                    <div class="gw-skeleton"></div>
+                  } @else {
+                    <div class="select">
+                      <select
+                        class="input"
+                        [(ngModel)]="fraudPolicyId"
+                        [disabled]="singlePolicy() || policies().length === 0"
+                      >
+                        @if (policies().length === 0) {
+                          <option [ngValue]="null">No policies</option>
+                        }
+                        @for (pol of policies(); track pol.fraudPolicyId) {
+                          <option [ngValue]="pol.fraudPolicyId">
+                            {{ pol.fraudPolicyName }}{{ pol.isDefault ? ' (default)' : '' }}
+                          </option>
+                        }
+                      </select>
+                      <span class="material-symbols-outlined">expand_more</span>
+                    </div>
+                  }
+                </div>
+                <div class="field">
+                  <label>Return URL</label>
+                  <input class="input" placeholder="https://…" [(ngModel)]="returnUrl" />
+                </div>
+                <label class="checkrow">
+                  <input type="checkbox" [(ngModel)]="recurring" /> Recurring payment
+                </label>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="mf">
+          <button class="btn" type="button" [disabled]="busy()" (click)="close()">Cancel</button>
+          <button class="btn btn-primary" type="button" [disabled]="busy()" (click)="create()">
+            <span class="material-symbols-outlined" [class.spin]="busy()">add_link</span>
+            {{ busy() ? 'Creating…' : 'Create link' }}
+          </button>
+        </div>
+      } @else {
+        <div class="mb success">
+          <div class="ok-ic"><span class="material-symbols-outlined">check</span></div>
+          <h3 class="s-title">Payment link created</h3>
+          <p class="s-sub">Share this link with your customer to collect payment.</p>
+          <app-payment-link-result [url]="createdLink()" />
+        </div>
+
+        <div class="mf">
+          <button class="btn" type="button" (click)="createAnother()">Create another</button>
+          <button class="btn btn-primary" type="button" (click)="close()">Done</button>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- Customer picker modal (always in DOM so template variable is reachable) -->
+<app-customer-picker-modal #custModal (selected)="onCustomerSelected($event)" />

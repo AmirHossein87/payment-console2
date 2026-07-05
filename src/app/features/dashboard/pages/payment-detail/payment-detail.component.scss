@@ -1,0 +1,376 @@
+:host { display: block; }
+
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+}
+
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text-3);
+  font-size: 13px;
+  margin-bottom: 6px;
+
+  b { color: var(--text); font-weight: 600; }
+  .material-symbols-outlined { font-size: 16px; }
+}
+
+.idlink {
+  color: var(--brand-600);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+
+  &:hover { text-decoration: underline; }
+}
+
+.pd-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.pd-loading {
+  display: grid;
+  place-items: center;
+  padding: 60px 0;
+  color: var(--text-3);
+}
+
+.spinner {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  border-top-color: var(--brand-500);
+  animation: spin 0.7s linear infinite;
+}
+
+/* ── Skeleton (initial load + async state-log fetch) ──────── */
+.sk {
+  background: var(--border);
+  border-radius: 5px;
+  animation: pd-shimmer 1.4s ease infinite;
+}
+
+@keyframes pd-shimmer {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
+.sk-ic       { width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0; }
+.sk-ch-title { width: 140px; height: 13px; }
+.sk-kv-key   { width: 90px;  height: 12px; }
+.sk-kv-val   { width: 120px; height: 12px; }
+.sk-row-line { display: inline-block; width: 100%; max-width: 320px; height: 12px; }
+
+/* ── Info cards ─────────────────────────────────────────── */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.info-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+
+  .h {
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 700;
+    font-size: 13.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface-2);
+
+    .material-symbols-outlined { font-size: 19px; color: var(--text-3); }
+
+    .right {
+      margin-left: auto;
+      display: flex;
+      gap: 10px;
+    }
+  }
+}
+
+.kv {
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+  }
+
+  .k { color: var(--text-3); font-size: 12.5px; font-weight: 500; }
+  .v {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    text-align: right;
+    word-break: break-word;
+  }
+
+  /* Provider card's logo — sits above the Amount/Fee rows, not squeezed into
+     the card header (which stays the same compact height as the App card's). */
+  .provider-row {
+    display: flex;
+    align-items: center;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+.cell-mono { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 12.5px; }
+.cell-strong { color: var(--text); font-weight: 600; }
+.cell-sub { color: var(--text-3); font-size: 12px; }
+
+/* ── Tables ─────────────────────────────────────────────── */
+.datacard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.pd-card { margin-bottom: 16px; }
+
+.dc-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+
+  .spacer { flex: 1; }
+}
+
+.dc-title {
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  .ti { color: var(--brand-600); font-size: 20px; }
+}
+
+.dc-tablewrap { overflow-x: auto; }
+
+table.pdt {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  /* Even, consistent columns (each column shares the width equally) instead of
+     the auto-layout spread that leaves headers unevenly spaced. */
+  table-layout: fixed;
+
+  thead th {
+    text-align: left;
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-3);
+    padding: 11px 18px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+
+    &.num { text-align: right; }
+  }
+
+  tbody td {
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-2);
+    vertical-align: middle;
+    /* Wrap (don't clip) so the full cell data is always visible within its
+       fixed-width column — e.g. a long state-log error message. */
+    white-space: normal;
+    word-break: break-word;
+
+    &.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+      color: var(--text);
+    }
+  }
+
+  tbody tr { transition: 0.12s; }
+  tbody tr:hover { background: var(--surface-2); }
+  tbody tr:last-child td { border-bottom: none; }
+}
+
+/* table-layout:fixed sizes columns from the header row's own width — with no
+   width set, a short header ("State", "SKU") locks its column too narrow to
+   ever show the (often much longer) body content. Give each column an
+   explicit share of the table so every row has room to render. */
+table.pdt.state-log-table {
+  thead th:nth-child(1) { width: 18%; }
+  thead th:nth-child(2) { width: 22%; }
+  thead th:nth-child(3) { width: 60%; }
+}
+
+table.pdt.invoice-items-table {
+  thead th:nth-child(1) { width: 20%; }
+  thead th:nth-child(2) { width: 14%; }
+  thead th:nth-child(3) { width: 11%; }
+  thead th:nth-child(4) { width: 9%; }
+  thead th:nth-child(5) { width: 13%; }
+  thead th:nth-child(6) { width: 9%; }
+  thead th:nth-child(7) { width: 24%; }
+}
+
+.pd-empty {
+  text-align: center;
+  color: var(--text-3);
+  padding: 28px 18px !important;
+}
+
+/* ── Modals ─────────────────────────────────────────────── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  animation: fade 0.2s ease;
+}
+
+.modal {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  width: 560px;
+  max-width: calc(100vw - 32px);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+
+  &.sm { width: 420px; }
+
+  .mh {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+
+    h3 { font-size: 15px; font-weight: 700; }
+    .spacer { flex: 1; }
+  }
+
+  .mb {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px 20px;
+  }
+
+  .mf {
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+}
+
+.confirm-text { color: var(--text-2); font-size: 13.5px; }
+
+.btn-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 7px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #fff;
+  animation: spin 0.7s linear infinite;
+  vertical-align: -2px;
+}
+
+.ta {
+  width: 100%;
+  margin-top: 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  padding: 10px 12px;
+  font-family: var(--font);
+  font-size: 13.5px;
+  color: var(--text);
+  outline: none;
+  resize: vertical;
+  box-sizing: border-box;
+
+  &:focus { border-color: var(--brand-500); box-shadow: var(--ring); }
+
+  &.invalid {
+    border-color: var(--bad);
+    &:focus { border-color: var(--bad); box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18); }
+  }
+}
+
+.err-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--bad);
+}
+
+.info-body .kv { padding: 0; }
+
+.modal-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  .sk-row {
+    height: 16px;
+    border-radius: var(--r-xs);
+    background: var(--surface-2);
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+
+    &.short { width: 60%; }
+  }
+}
+
+.json {
+  margin: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 12px;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 60vh;
+  overflow: auto;
+
+  &.sm { padding: 6px 8px; max-height: 160px; font-size: 11px; }
+}

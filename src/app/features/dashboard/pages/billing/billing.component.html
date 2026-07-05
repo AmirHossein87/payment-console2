@@ -1,0 +1,160 @@
+<app-data-grid
+  [titleIcon]="licenseExpiryLabel() ? 'schedule' : 'request_quote'"
+  [title]="licenseExpiryLabel() ? ('Expires ' + licenseExpiryLabel()) : 'Invoices'"
+  [data]="invoices()"
+  [columns]="gridColumns"
+  [loading]="loading()"
+  [defaultPageSize]="10"
+  [showCount]="false"
+  [fill]="true"
+  [hideFilters]="true"
+  (refreshRequested)="load()"
+>
+  <div toolbar-actions>
+    <button class="btn btn-sm btn-primary" (click)="openRenewal()" [disabled]="renewPreparing() || renewSaving()">
+      <span class="material-symbols-outlined" [class.spin]="renewPreparing()">autorenew</span>
+      {{ renewPreparing() ? 'Loading…' : 'Renewal' }}
+    </button>
+  </div>
+</app-data-grid>
+
+<!-- Invoice ID cell -->
+<ng-template #invoiceIdTpl let-row="row">
+  <button class="id-link" (click)="openInvoicePayments(row)" title="View payment history">
+    {{ row.licenseInvoiceId }}
+  </button>
+</ng-template>
+
+<!-- Status cell (flat — colored dot + text, no background) -->
+<ng-template #statusTpl let-row="row">
+  <span class="pill plain" [ngClass]="statusPillClass(row.status)">
+    <span class="dot"></span>{{ row.status }}
+  </span>
+</ng-template>
+
+<!-- Action cell -->
+<ng-template #actionTpl let-row="row">
+  @if (row.canPayLicenseInvoice) {
+    <button class="btn btn-sm btn-primary" (click)="openPayInvoice(row)" [disabled]="payPreparing()">
+      <span class="material-symbols-outlined" [class.spin]="payPreparing()">progress_activity</span>
+      {{ payPreparing() ? 'Loading…' : 'Pay' }}
+    </button>
+  }
+</ng-template>
+
+<!-- ── Invoice Payments Modal ── -->
+@if (selectedInvoice(); as inv) {
+  <div class="overlay open" (click)="closePaymentsModal()">
+    <div class="modal wide" (click)="$event.stopPropagation()">
+      <div class="mh">
+        <span class="material-symbols-outlined brand-ic">receipt_long</span>
+        <h3>Invoice #{{ inv.licenseInvoiceId }} — Payments</h3>
+        <div class="spacer"></div>
+        <button class="icon-btn" (click)="closePaymentsModal()" title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="mb">
+        @if (paymentsLoading()) {
+          <div class="loading-row">
+            <span class="material-symbols-outlined spin">progress_activity</span>
+            Loading…
+          </div>
+        } @else if (invoicePayments().length === 0) {
+          <p class="empty-msg">No payments found for this invoice.</p>
+        } @else {
+          <table class="pay-table">
+            <thead>
+              <tr>
+                <th>Payment ID</th>
+                <th>Created Time</th>
+                <th>Gateway</th>
+                <th>Amount</th>
+                <th>State</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of invoicePayments(); track p.paymentId) {
+                <tr>
+                  <td>{{ p.paymentId }}</td>
+                  <td>{{ p.createdTime | date: 'MMM d, HH:mm' }}</td>
+                  <td>
+                    <app-provider-logo [provider]="p.paymentProvider" [showName]="true" [wide]="false" />
+                  </td>
+                  <td>{{ p.amount }} <span class="currency">{{ p.currency }}</span></td>
+                  <td>
+                    <span class="pill" [ngClass]="paymentStatePillClass(p.paymentState)">
+                      <span class="dot"></span>{{ p.paymentState }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+      <div class="mf">
+        <div class="spacer"></div>
+        <button class="btn" (click)="closePaymentsModal()">Close</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── Renewal Confirm Modal ── -->
+@if (renewOpen()) {
+  <div class="overlay open" (click)="closeRenewal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="mh">
+        <span class="material-symbols-outlined brand-ic">autorenew</span>
+        <h3>Renew License</h3>
+        <div class="spacer"></div>
+        <button class="icon-btn" (click)="closeRenewal()" [disabled]="renewSaving()" title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="mb">
+        <p class="conf-msg">
+          {{ renewalDescription() || 'Would you like to renew your license?' }}
+        </p>
+      </div>
+      <div class="mf">
+        <div class="spacer"></div>
+        <button class="btn" (click)="closeRenewal()" [disabled]="renewSaving()">Cancel</button>
+        <button class="btn btn-primary" (click)="confirmRenewal()" [disabled]="renewSaving()">
+          <span class="material-symbols-outlined" [class.spin]="renewSaving()">autorenew</span>
+          {{ renewSaving() ? 'Processing…' : 'Confirm Renewal' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── Pay Invoice Confirm Modal ── -->
+@if (payTarget(); as pt) {
+  <div class="overlay open" (click)="closePayInvoice()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="mh">
+        <span class="material-symbols-outlined brand-ic">payments</span>
+        <h3>Pay Invoice #{{ pt.licenseInvoiceId }}</h3>
+        <div class="spacer"></div>
+        <button class="icon-btn" (click)="closePayInvoice()" [disabled]="paySaving()" title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="mb">
+        <p class="conf-msg">
+          {{ payDescription() || 'Proceed to the payment gateway for this invoice?' }}
+        </p>
+      </div>
+      <div class="mf">
+        <div class="spacer"></div>
+        <button class="btn" (click)="closePayInvoice()" [disabled]="paySaving()">Cancel</button>
+        <button class="btn btn-primary" (click)="confirmPayInvoice()" [disabled]="paySaving()">
+          <span class="material-symbols-outlined" [class.spin]="paySaving()">payments</span>
+          {{ paySaving() ? 'Processing…' : 'Proceed to Payment' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

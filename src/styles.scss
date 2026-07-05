@@ -1,0 +1,385 @@
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL STYLES — Payment Console (Pure Angular)
+   Design tokens from ui-prototype.html
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Reset ────────────────────────────────────────────── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--app-bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Dashboard pages: propagate the flex column so app-data-grid (flex: 1)
+   can fill the remaining height below a page-head.
+   router-outlet is excluded — it sits as a sibling marker element and must
+   not consume flex space. Pages with their own :host rule override this. */
+.content > *:not(router-outlet) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+::selection {
+  background: var(--brand-weak-2);
+}
+
+.material-symbols-outlined {
+  font-size: 20px;
+  line-height: 1;
+  vertical-align: middle;
+  user-select: none;
+}
+
+/* ── Design Tokens (Light — default) ──────────────────── */
+:root,
+[data-theme='light'] {
+  --brand-500: #3880ff;
+  --brand-600: #2f6fe6;
+  --brand-700: #1f5bd0;
+  --brand-weak: #eaf2ff;
+  --brand-weak-2: #d4e5ff;
+  --ok: #16a34a;
+  --ok-weak: #dcfce7;
+  --warn: #d97706;
+  --warn-weak: #fef3c7;
+  --bad: #dc2626;
+  --bad-weak: #fee2e2;
+  --info: #2563eb;
+  --info-weak: #dbeafe;
+  --muted-pill: #475569;
+  --muted-pill-weak: #f1f5f9;
+  --violet: #7c3aed;
+  --violet-weak: #ede9fe;
+  --st-captured: #19bb77;
+  --st-fail: #e93e63;
+  --st-progress: #5a99d8;
+  --st-disputed: #92959a;
+  --st-hold: #e0a800;
+  --st-created: #64748b;
+  --st-refund: #7c3aed;
+  --app-bg: #f5f6f8;
+  --surface: #fff;
+  --surface-2: #fafbfc;
+  --border: #e6e8ee;
+  --border-strong: #d4d8e0;
+  --text: #0f172a;
+  --text-2: #475569;
+  --text-3: #94a3b8;
+  --sidebar-bg: #0f1729;
+  --sidebar-text: #aeb6c7;
+  --sidebar-text-active: #fff;
+  --sidebar-active: #1e293b;
+  --sidebar-brand: #fff;
+  --r-xs: 6px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-pill: 999px;
+  --sh-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --sh-md: 0 4px 12px rgba(16, 24, 40, 0.08);
+  --sh-lg: 0 12px 32px rgba(16, 24, 40, 0.12);
+  --ring: 0 0 0 3px var(--brand-weak-2);
+  --sidebar-w: 248px;
+  --topbar-h: 60px;
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ── Design Tokens (Dark) ─────────────────────────────── */
+[data-theme='dark'] {
+  --app-bg: #0b1120;
+  --surface: #111827;
+  --surface-2: #0f1626;
+  --border: #1f2937;
+  --border-strong: #334155;
+  --text: #f1f5f9;
+  --text-2: #94a3b8;
+  --text-3: #64748b;
+  --sidebar-bg: #080d18;
+  --sidebar-active: #1e293b;
+  --brand-weak: #0c1f47;
+  --brand-weak-2: #16336b;
+  --ok-weak: #052e16;
+  --warn-weak: #451a03;
+  --bad-weak: #450a0a;
+  --info-weak: #172554;
+  --muted-pill-weak: #1e293b;
+  --muted-pill: #cbd5e1;
+  --violet-weak: #2e1065;
+  --sh-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --sh-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --sh-lg: 0 12px 32px rgba(0, 0, 0, 0.55);
+}
+
+/* ── Animations ───────────────────────────────────────── */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ── Utility Classes ──────────────────────────────────── */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* ── Brand skeleton (auth pages, while settings load) ──── */
+.brand-icon-skeleton {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: var(--surface-2);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.brand-name-skeleton {
+  width: 110px;
+  height: 18px;
+  border-radius: var(--r-xs);
+  background: var(--surface-2);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+/* ── Buttons (shared) ─────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 15px;
+  border-radius: var(--r-sm);
+  font-family: var(--font);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  transition: 0.15s;
+  white-space: nowrap;
+
+  &:hover {
+    background: var(--surface-2);
+    border-color: var(--text-3);
+  }
+
+  .material-symbols-outlined {
+    font-size: 19px;
+  }
+}
+
+.btn-primary {
+  background: var(--brand-500);
+  border-color: var(--brand-500);
+  color: #fff;
+  box-shadow: var(--sh-sm);
+
+  &:hover {
+    background: var(--brand-600);
+    border-color: var(--brand-600);
+  }
+}
+
+.btn-danger {
+  background: var(--bad);
+  border-color: var(--bad);
+  color: #fff;
+
+  &:hover {
+    filter: brightness(0.93);
+  }
+}
+
+.btn-success {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #fff;
+
+  &:hover {
+    filter: brightness(0.95);
+  }
+}
+
+.btn-warn {
+  background: var(--warn);
+  border-color: var(--warn);
+  color: #fff;
+
+  &:hover {
+    filter: brightness(0.95);
+  }
+}
+
+.btn-sm {
+  height: 32px;
+  padding: 0 11px;
+  font-size: 12.5px;
+}
+
+/* ── Pills (shared) ───────────────────────────────────── */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  line-height: 1.6;
+
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  &.ok {
+    background: var(--ok-weak);
+    color: var(--ok);
+  }
+  &.warn {
+    background: var(--warn-weak);
+    color: var(--warn);
+  }
+  &.bad {
+    background: var(--bad-weak);
+    color: var(--bad);
+  }
+  &.info {
+    background: var(--info-weak);
+    color: var(--info);
+  }
+  &.muted {
+    background: var(--muted-pill-weak);
+    color: var(--muted-pill);
+  }
+  &.violet {
+    background: var(--violet-weak);
+    color: var(--violet);
+  }
+
+  /* Plain status pill — transparent background, just a colored dot + text */
+  &.plain {
+    background: transparent;
+    padding: 0;
+
+    &.muted {
+      color: var(--text-3);
+    }
+  }
+}
+
+/* ── Icon Button (shared) ─────────────────────────────── */
+.icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: var(--text-2);
+  transition: 0.15s;
+
+  &:hover {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text);
+  }
+}
+
+/* ── Projected Template Utilities (Avatars & Providers) ─ */
+.with-icon {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.avi {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.prov {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+
+  &.stripe { background: #635bff; }
+  &.paypal { background: #003087; }
+  &.adyen { background: #0abf53; }
+  &.revolut { background: #0a0a0a; }
+  &.authnet { background: #e21836; }
+}
+

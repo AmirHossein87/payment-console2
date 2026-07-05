@@ -1,0 +1,89 @@
+@if (isOpen()) {
+  <div class="overlay">
+    <div class="modal">
+      <div class="mh">
+        <span class="material-symbols-outlined head-ic">person_add</span>
+        <h3>New customer</h3>
+        <div class="spacer"></div>
+        <button class="icon-btn" type="button" (click)="close()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="mb">
+        <div class="field">
+          <label>Customer ID *</label>
+          <input
+            class="input"
+            [class.invalid]="customerIdInvalid"
+            type="text"
+            name="customerId"
+            placeholder="Unique identifier"
+            [(ngModel)]="form.customerId"
+            (ngModelChange)="form.customerId = form.customerId.trim()"
+          />
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <label>First name *</label>
+            <input
+              class="input"
+              [class.invalid]="firstNameInvalid"
+              type="text"
+              name="firstName"
+              [(ngModel)]="form.firstName"
+              (ngModelChange)="form.firstName = form.firstName.trim()"
+            />
+          </div>
+          <div class="field">
+            <label>Last name *</label>
+            <input
+              class="input"
+              [class.invalid]="lastNameInvalid"
+              type="text"
+              name="lastName"
+              [(ngModel)]="form.lastName"
+              (ngModelChange)="form.lastName = form.lastName.trim()"
+            />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Email *</label>
+          <input
+            class="input"
+            [class.invalid]="emailInvalid"
+            type="email"
+            name="email"
+            placeholder="name@example.com"
+            [(ngModel)]="form.email"
+          />
+        </div>
+
+        <div class="field">
+          <label>Mobile</label>
+          <input
+            class="input"
+            type="tel"
+            inputmode="numeric"
+            name="mobileNumber"
+            placeholder="Optional"
+            [(ngModel)]="form.mobileNumber"
+          />
+        </div>
+      </div>
+
+      <div class="mf">
+        <button class="btn" type="button" [disabled]="busy()" (click)="close()">Cancel</button>
+        <button class="btn btn-primary" type="button" [disabled]="busy()" (click)="create()">
+          @if (busy()) {
+            <span class="btn-spinner"></span> Creating…
+          } @else {
+            <span class="material-symbols-outlined">person_add</span> Create customer
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

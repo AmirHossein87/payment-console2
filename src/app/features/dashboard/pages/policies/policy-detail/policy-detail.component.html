@@ -1,0 +1,188 @@
+@if (loading()) {
+  <div class="pd-loading"><div class="spinner"></div></div>
+} @else {
+  @if (policy(); as p) {
+  <!-- Header -->
+  <div class="page-head">
+    <div>
+      <h1>{{ p.fraudPolicyName }}</h1>
+      <p class="pd-sub">Fraud policy · ID {{ p.fraudPolicyId }}</p>
+    </div>
+    <div class="head-actions">
+      <button class="btn" type="button" (click)="saveAs()">
+        <span class="material-symbols-outlined">content_copy</span> Save as
+      </button>
+      <button class="btn" type="button" (click)="editName()">
+        <span class="material-symbols-outlined">edit</span> Edit name
+      </button>
+      @if (!p.isDefault) {
+        <button class="btn btn-danger" type="button" (click)="askDelete()">
+          <span class="material-symbols-outlined">delete</span> Delete
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Firewall -->
+  <div class="datacard pd-card">
+    <div class="dc-toolbar">
+      <div class="dc-title">
+        <span class="material-symbols-outlined ti">local_fire_department</span> Firewall
+      </div>
+      <div class="spacer"></div>
+      <button class="btn btn-sm" type="button" (click)="openFirewall()">
+        <span class="material-symbols-outlined">edit</span> Edit
+      </button>
+    </div>
+    <div class="sec-body">
+      <div class="kv-grid">
+        @for (row of firewallRows(); track row.k) {
+          <div class="kv-item">
+            <span class="k">{{ row.k }}</span>
+            <span class="v">{{ row.v }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Rules -->
+  <div class="datacard pd-card">
+    <div class="dc-toolbar">
+      <div class="dc-title">
+        <span class="material-symbols-outlined ti">rule</span> Rules
+        <span class="count">{{ rules().length }}</span>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn btn-primary btn-sm" type="button" [disabled]="rulesLoading()" (click)="addRule()">
+        <span class="material-symbols-outlined">add</span> Add rule
+      </button>
+    </div>
+    <div class="sec-body">
+      @if (rulesLoading()) {
+        <div class="rulecards">
+          @for (i of [1, 2, 3]; track i) {
+            <div class="rulecard">
+              <div class="rh rh-sk"></div>
+              <div class="rb">
+                <div class="sk-line sk-w-80"></div>
+                <div class="sk-line sk-w-60"></div>
+                <div class="sk-line sk-w-70"></div>
+                <div class="sk-line sk-w-50"></div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else if (rules().length) {
+        <div class="rulecards">
+          @for (r of rules(); track $index) {
+            <div class="rulecard">
+              <div class="rh">
+                <span class="pill" [ngClass]="actionPill(r.action)">
+                  <span class="dot"></span>{{ r.action }}
+                </span>
+                <span class="rh-actions">
+                  <button class="icon-btn" type="button" title="Edit rule" (click)="editRule($index)">
+                    <span class="material-symbols-outlined">edit</span>
+                  </button>
+                  <button class="icon-btn" type="button" title="Delete rule" (click)="deleteRule($index)">
+                    <span class="material-symbols-outlined">delete</span>
+                  </button>
+                </span>
+              </div>
+              <div class="rb">
+                <div class="li"><span class="k">Period</span><span class="v">{{ r.periodTypeValue }} × {{ r.periodType }}</span></div>
+                <div class="li"><span class="k">Calculation</span><span class="v">{{ r.calcType }} = {{ (r.calcTypeValue || 0).toLocaleString() }}</span></div>
+                <div class="li"><span class="k">Currency</span><span class="v">{{ r.currency || 'Any' }}</span></div>
+                <div class="li"><span class="k">Profiles</span><span class="v">{{ ruleProfilesLabel(r) }}</span></div>
+                @if (r.detectionMessage) {
+                  <div class="li"><span class="k">Message</span><span class="v">{{ r.detectionMessage }}</span></div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="sec-empty">No rules yet. Add a rule to start detecting fraud patterns.</div>
+      }
+    </div>
+  </div>
+  } @else {
+    <div class="pd-loading"><p>Policy not found.</p></div>
+  }
+}
+
+<!-- Firewall edit modal -->
+@if (fwOpen()) {
+  <div class="overlay open">
+    <div class="modal tall">
+      <div class="mh">
+        <span class="material-symbols-outlined brand-ic">local_fire_department</span>
+        <h3>Edit firewall</h3>
+        <div class="spacer"></div>
+        <button class="icon-btn" type="button" (click)="closeFirewall()" [disabled]="saving()" title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="mb">
+        <div class="field row-field">
+          <label>Reject payment when service unavailable</label>
+          <div class="switch" [class.on]="fwForm.rejectWhenUnavailable" (click)="fwForm.rejectWhenUnavailable = !fwForm.rejectWhenUnavailable">
+            <span class="knob"></span>
+          </div>
+        </div>
+        <div class="field row-field">
+          <label>VPN unacceptable</label>
+          <div class="switch" [class.on]="fwForm.vpnUnacceptable" (click)="fwForm.vpnUnacceptable = !fwForm.vpnUnacceptable">
+            <span class="knob"></span>
+          </div>
+        </div>
+        <div class="field row-field">
+          <label>VOIP unacceptable</label>
+          <div class="switch" [class.on]="fwForm.voipUnacceptable" (click)="fwForm.voipUnacceptable = !fwForm.voipUnacceptable">
+            <span class="knob"></span>
+          </div>
+        </div>
+        <div class="field">
+          <label>IP max fraud score</label>
+          <input class="input" type="number" [(ngModel)]="fwForm.ipScore" />
+        </div>
+        <div class="field">
+          <label>Email max fraud score</label>
+          <input class="input" type="number" [(ngModel)]="fwForm.emailScore" />
+        </div>
+        <div class="field">
+          <label>Mobile max fraud score</label>
+          <input class="input" type="number" [(ngModel)]="fwForm.mobileScore" />
+        </div>
+        <div class="field">
+          <label>White countries (comma separated)</label>
+          <input class="input" [(ngModel)]="fwForm.countries" />
+        </div>
+        <div class="field">
+          <label>White IPs (comma separated)</label>
+          <input class="input" [(ngModel)]="fwForm.specificIps" />
+        </div>
+        <div class="field">
+          <label>White IP ranges (start-end, comma separated)</label>
+          <input class="input" [(ngModel)]="fwForm.ipRanges" />
+        </div>
+      </div>
+      <div class="mf">
+        <button class="btn" type="button" (click)="closeFirewall()" [disabled]="saving()">Cancel</button>
+        <button class="btn btn-primary" type="button" (click)="saveFirewall()" [disabled]="saving()">
+          {{ saving() ? "Saving…" : "Save" }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Single-field editor (rename / save as) -->
+<app-universal-edit-modal #editor />
+
+<!-- Delete confirmation (backdrop click does NOT close) -->
+<app-confirm-modal #confirm />
+
+<!-- Shared add/edit rule editor -->
+<app-rule-editor-modal #ruleEditor (saved)="onRuleSaved($event)" />

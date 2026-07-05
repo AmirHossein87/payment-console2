@@ -1,0 +1,278 @@
+:host {
+  display: inline-flex;
+  min-width: 0;
+  vertical-align: middle;
+}
+
+/* ── Root layout ───────────────────────────────────────────────────────── */
+.pl {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  line-height: 1.2;
+
+  &.pl--name-bottom {
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+    text-align: center;
+  }
+
+  &.pl--name-overlay {
+    position: relative;
+  }
+
+  &.pl--wide {
+    gap: 0;
+  }
+
+  &.pl--interactive {
+    cursor: pointer;
+  }
+
+  &.pl--interactive .pl-logo {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  &.pl--interactive:hover .pl-logo {
+    transform: translateY(-1px);
+  }
+}
+
+/* ── Logo box ──────────────────────────────────────────────────────────── */
+.pl-logo {
+  position: relative;
+  width: var(--sz, 44px);
+  height: var(--sz, 44px);
+  border-radius: var(--sz-r, 10px);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+
+  img.pl-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: var(--surface);
+    padding: var(--sz-p, 6px);
+    box-sizing: border-box;
+  }
+
+  &.pl-logo--no-bg {
+    background: transparent;
+
+    img.pl-img {
+      background: transparent;
+    }
+  }
+
+  &.pl-logo--no-border {
+    border-color: transparent;
+  }
+
+  &.pl-logo--ring {
+    box-shadow:
+      0 0 0 2px var(--surface),
+      0 0 0 3px var(--brand-500);
+  }
+
+  &.pl-logo--shadow {
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+  }
+}
+
+/* shape variants */
+.pl-logo--square {
+  border-radius: 4px;
+
+  img.pl-img {
+    border-radius: 4px;
+  }
+}
+
+/* rounded keeps the --sz-r radius set on .pl-logo */
+.pl-logo--circle,
+.pl-logo--pill {
+  border-radius: 50%;
+
+  img.pl-img {
+    border-radius: 50%;
+  }
+}
+
+/* ── Fallbacks ─────────────────────────────────────────────────────────── */
+.pl-init {
+  font-size: var(--sz-f, 14px);
+  font-weight: 700;
+  color: var(--text-2);
+  line-height: 1;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.pl-fallback-ico {
+  font-size: calc(var(--sz-f, 14px) * 1.15);
+  color: var(--text-3);
+  line-height: 1;
+}
+
+/* ── Name ──────────────────────────────────────────────────────────────── */
+.pl-name {
+  color: var(--text);
+  font-weight: 600;
+  font-size: clamp(13px, calc(var(--sz, 44px) * 0.3), 24px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  letter-spacing: -0.1px;
+}
+
+.pl-name--bottom {
+  text-align: center;
+}
+
+.pl-name--overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 5px 6px;
+  font-size: clamp(10px, calc(var(--sz, 44px) * 0.18), 14px);
+  font-weight: 600;
+  color: #fff;
+  text-align: center;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.66), rgba(0, 0, 0, 0));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Wide wordmark mode ────────────────────────────────────────────────── */
+/* Borderless brand mark: the image itself is the logo (no surrounding box). */
+.pl-logo--wide {
+  width: auto;
+  max-width: 140px;
+  height: var(--sz, 26px);
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  overflow: visible;
+  place-items: center start;
+
+  img.pl-img {
+    width: auto;
+    max-width: 140px;
+    height: 100%;
+    padding: 0;
+    background: transparent;
+    object-fit: contain;
+    object-position: left center;
+  }
+
+  .pl-init {
+    font-size: calc(var(--sz, 26px) * 0.62);
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+    text-transform: none;
+  }
+}
+
+/* ── Badge overlay ─────────────────────────────────────────────────────── */
+.pl-badge {
+  position: absolute;
+  z-index: 2;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  color: #fff;
+  background: var(--brand-600);
+  border: 2px solid var(--surface);
+  box-sizing: content-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &.pl-badge--dot {
+    width: 10px;
+    height: 10px;
+    min-width: 0;
+    padding: 0;
+    border-radius: 50%;
+  }
+
+  &.pl-badge--top-left {
+    top: -2px;
+    left: -2px;
+  }
+  &.pl-badge--top-right {
+    top: -2px;
+    right: -2px;
+  }
+  &.pl-badge--bottom-left {
+    bottom: -2px;
+    left: -2px;
+  }
+  &.pl-badge--bottom-right {
+    bottom: -2px;
+    right: -2px;
+  }
+
+  &.pl-badge--ok {
+    background: var(--ok);
+  }
+  &.pl-badge--info {
+    background: var(--info);
+  }
+  &.pl-badge--warn {
+    background: var(--warn);
+  }
+  &.pl-badge--bad {
+    background: var(--bad);
+  }
+  &.pl-badge--muted {
+    background: var(--text-3);
+  }
+  &.pl-badge--violet {
+    background: #8b5cf6;
+  }
+  &.pl-badge--brand {
+    background: var(--brand-600);
+  }
+}
+
+/* ── Skeleton loading ──────────────────────────────────────────────────── */
+.pl-skeleton {
+  width: 100%;
+  height: 100%;
+  background: var(--surface-2);
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    rgba(148, 163, 184, 0.25),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: pl-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes pl-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

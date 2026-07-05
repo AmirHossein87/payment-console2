@@ -1,0 +1,224 @@
+<app-data-grid
+  title="Gateways"
+  [data]="gateways()"
+  [columns]="gridColumns"
+  [loading]="loading()"
+  [defaultPageSize]="10"
+  [showCount]="false"
+  [fill]="true"
+  [hideFilters]="true"
+  (refreshRequested)="loadGateways()"
+  (linkClicked)="onLinkClicked($event)"
+>
+  @if (canWrite()) {
+    <div toolbar-actions>
+      <button class="btn btn-sm btn-primary" (click)="openWizard()">
+        <span class="material-symbols-outlined">add</span>
+        New gateway
+      </button>
+    </div>
+  }
+</app-data-grid>
+
+
+<!-- Custom cell templates -->
+<ng-template #autoPayTpl let-value>
+  <span class="material-symbols-outlined auto-pay-ic" [class.supported]="value" [class.unsupported]="!value">
+    {{ value ? 'check_circle' : 'cancel' }}
+  </span>
+</ng-template>
+
+<!-- ── New Gateway Wizard ─────────────────────────────────────────────────── -->
+@if (wizardOpen()) {
+  <div class="overlay">
+    <div class="modal tall">
+
+      <!-- Header -->
+      <div class="mh">
+        <span class="material-symbols-outlined brand-ic">hub</span>
+        <h3>New gateway</h3>
+        <div class="spacer"></div>
+        <button class="icon-btn" (click)="closeWizard()" [disabled]="wizardSaving()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <!-- Step indicators (prototype style) -->
+      <div class="gw-steps">
+        @for (step of wizardSteps; track step.n; let i = $index) {
+          <div class="s"
+               [class.active]="wizardStep() === step.n"
+               [class.done]="wizardStep() > step.n">
+            <span class="n">{{ wizardStep() > step.n ? '✓' : step.n }}</span>
+            {{ step.label }}
+          </div>
+          @if (i < wizardSteps.length - 1) {
+            <span class="sep"></span>
+          }
+        }
+      </div>
+
+      <!-- ── STEP 1 : Provider ── -->
+      @if (wizardStep() === 1) {
+        <div class="mb">
+          @if (providersLoading()) {
+            <!-- Skeleton while loading -->
+            <div class="gw-prov">
+              @for (r of skeletonRows; track r) {
+                <div class="opt sk-opt">
+                  <span class="sk sk-prov-badge"></span>
+                  <span class="sk sk-prov-name"></span>
+                  <span class="sk sk-prov-cur"></span>
+                </div>
+              }
+            </div>
+          } @else if (availableProviders().length === 0) {
+            <p class="empty-msg">No providers available for this app.</p>
+          } @else {
+            <div class="gw-prov">
+              @for (p of availableProviders(); track p.provider) {
+                <div
+                  class="opt"
+                  [class.sel]="wizardProvider()?.provider === p.provider"
+                  (click)="selectProvider(p)"
+                >
+                  <app-provider-logo [provider]="p" [showName]="false" [size]="72" />
+                  <span class="opt-spacer"></span>
+                  @if (configuredCount(p.provider) > 0) {
+                    <span class="cfg-tag">{{ configuredCount(p.provider) }} configured</span>
+                  }
+                  <span class="ex">{{ currenciesNote(p) }}</span>
+                  @if (wizardProvider()?.provider === p.provider) {
+                    <span class="material-symbols-outlined sel-check">check_circle</span>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+        <div class="mf">
+          <button class="btn" (click)="closeWizard()">Cancel</button>
+          <div class="spacer"></div>
+          <button
+            class="btn btn-primary"
+            [disabled]="!wizardProvider() || providersLoading()"
+            (click)="proceedToStep2()"
+          >
+            Next
+          </button>
+        </div>
+      }
+
+      <!-- ── STEP 2 : API key ── -->
+      @if (wizardStep() === 2) {
+        <div class="mb">
+          <div class="field">
+            <label>Currency <span class="req">*</span></label>
+            <div class="select">
+              <select [(ngModel)]="wCurrency" [disabled]="wizardSaving()"
+                      [class.err]="invalidFields().has('__currency__')"
+                      (ngModelChange)="clearInvalid('__currency__')">
+                <option value="">— Select currency —</option>
+                @for (c of wizardProvider()!.currencies ?? []; track c) {
+                  <option [value]="c">{{ c }}</option>
+                }
+              </select>
+              <span class="material-symbols-outlined">expand_more</span>
+            </div>
+          </div>
+
+          @for (field of providerConfigFields(); track field.name) {
+            <div class="field">
+              <label>{{ field.label }} <span class="req">*</span></label>
+              @if (field.type === 'select') {
+                <div class="select">
+                  <select
+                    [value]="wConfigFields[field.name] ?? ''"
+                    (change)="updateConfigField(field.name, $event)"
+                    [disabled]="wizardSaving()"
+                    [class.err]="invalidFields().has(field.name)"
+                  >
+                    <option value="">— Select —</option>
+                    @for (opt of field.options ?? []; track opt.value) {
+                      <option [value]="opt.value">{{ opt.label }}</option>
+                    }
+                  </select>
+                  <span class="material-symbols-outlined">expand_more</span>
+                </div>
+              } @else {
+                <input
+                  class="input"
+                  [class.err]="invalidFields().has(field.name)"
+                  [type]="field.type === 'password' ? 'password' : (field.type === 'number' ? 'number' : 'text')"
+                  [value]="wConfigFields[field.name] ?? ''"
+                  (input)="updateConfigField(field.name, $event)"
+                  [placeholder]="field.label"
+                  [disabled]="wizardSaving()"
+                />
+              }
+            </div>
+          }
+
+        </div>
+        <div class="mf">
+          <button class="btn" (click)="backToStep(1)" [disabled]="wizardSaving()">
+            <span class="material-symbols-outlined">arrow_back</span> Back
+          </button>
+          <div class="spacer"></div>
+          <button class="btn" (click)="closeWizard()" [disabled]="wizardSaving()">Cancel</button>
+          <button class="btn btn-primary" (click)="proceedToStep3()" [disabled]="wizardSaving()">
+            Next
+          </button>
+        </div>
+      }
+
+      <!-- ── STEP 3 : Review ── -->
+      @if (wizardStep() === 3) {
+        <div class="mb">
+          <div class="kv-review">
+            <div class="rv-row">
+              <span class="rv-k">Provider</span>
+              <span class="rv-v">
+                <span class="with-icon">
+                  <app-provider-logo [provider]="wizardProvider()" [showName]="false" [size]="22" />
+                  {{ providerLabel(wizardProvider()!.provider) }}
+                </span>
+              </span>
+            </div>
+            <div class="rv-row">
+              <span class="rv-k">Currency</span>
+              <span class="rv-v">{{ wCurrency }}</span>
+            </div>
+            @for (field of providerConfigFields(); track field.name) {
+              <div class="rv-row">
+                <span class="rv-k">{{ field.label }}</span>
+                <span class="rv-v cell-mono">{{ maskConfigValue(field.name) }}</span>
+              </div>
+            }
+          </div>
+
+          @if (wizardError()) {
+            <div class="wizard-err" style="margin-top:12px">
+              <span class="material-symbols-outlined">error</span>
+              {{ wizardError() }}
+            </div>
+          }
+        </div>
+        <div class="mf">
+          <button class="btn" (click)="backToStep(2)" [disabled]="wizardSaving()">
+            <span class="material-symbols-outlined">arrow_back</span> Back
+          </button>
+          <div class="spacer"></div>
+          <button class="btn" (click)="closeWizard()" [disabled]="wizardSaving()">Cancel</button>
+          <button class="btn btn-primary" (click)="createGateway()" [disabled]="wizardSaving()">
+            <span class="material-symbols-outlined" [class.spin]="wizardSaving()">
+              {{ wizardSaving() ? 'progress_activity' : 'check' }}
+            </span>
+            {{ wizardSaving() ? 'Creating…' : 'Create gateway' }}
+          </button>
+        </div>
+      }
+
+    </div>
+  </div>
+}

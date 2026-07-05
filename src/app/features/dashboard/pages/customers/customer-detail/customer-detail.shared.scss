@@ -1,0 +1,410 @@
+/*
+ * Shared detail-page styles. Imported by the customer-detail shell and each
+ * tab component so the cards/tables/pills render consistently regardless of
+ * view encapsulation boundaries.
+ */
+
+/* ── Loading ───────────────────────────────────────────── */
+.cd-loading,
+.tab-loading {
+  display: grid;
+  place-items: center;
+  padding: 40px 0;
+}
+
+.cd-loading { padding: 60px 0; }
+
+.spinner {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  border-top-color: var(--brand-500);
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Avatar ────────────────────────────────────────────── */
+.avi {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 600;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+/* ── Info cards ────────────────────────────────────────── */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.info-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+
+  .h {
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 700;
+    font-size: 13.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface-2);
+
+    .material-symbols-outlined {
+      font-size: 19px;
+      color: var(--text-3);
+    }
+  }
+}
+
+.kv {
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+  }
+
+  .k {
+    color: var(--text-3);
+    font-size: 12.5px;
+    font-weight: 500;
+  }
+
+  .v {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    text-align: right;
+    word-break: break-word;
+  }
+}
+
+/* ── Editable rows in cards ────────────────────────────── */
+.editable-row {
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  padding: 3px 6px;
+  margin: -3px -6px;
+  transition: background 0.12s;
+
+  .edit-hint {
+    font-size: 15px;
+    color: var(--text-3);
+    flex-shrink: 0;
+    margin-left: 6px;
+  }
+
+  &:hover {
+    background: var(--surface-2);
+
+    .edit-hint { color: var(--brand-500); }
+  }
+}
+
+/* ── Tables ────────────────────────────────────────────── */
+.datacard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.dc-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+
+  .spacer { flex: 1; }
+}
+
+.dc-title {
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  .ti { color: var(--brand-600); font-size: 20px; }
+}
+
+.count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 99px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.dc-tablewrap { overflow-x: auto; }
+
+table.pdt {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+
+  thead th {
+    text-align: left;
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-3);
+    padding: 11px 18px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+
+    &.num { text-align: right; }
+  }
+
+  tbody td {
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-2);
+    vertical-align: middle;
+    white-space: nowrap;
+
+    &.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+      color: var(--text);
+    }
+  }
+
+  tbody tr { transition: 0.12s; }
+  tbody tr:hover { background: var(--surface-2); }
+  tbody tr:last-child td { border-bottom: none; }
+}
+
+/* ── Helpers ───────────────────────────────────────────── */
+.cell-mono { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 12.5px; }
+.cell-strong { color: var(--text); font-weight: 600; }
+.cell-sub { color: var(--text-3); font-size: 12px; }
+
+.idlink {
+  color: var(--brand-600);
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover { text-decoration: underline; }
+}
+
+.method-type {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  .material-symbols-outlined {
+    font-size: 17px;
+    color: var(--text-3);
+  }
+}
+
+.cd-empty {
+  text-align: center;
+  color: var(--text-3);
+  padding: 28px 18px !important;
+}
+
+.cd-empty-page {
+  text-align: center;
+  color: var(--text-3);
+  padding: 60px 0;
+  font-size: 14px;
+}
+
+/* ── Actions row ───────────────────────────────────────── */
+.cd-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+
+  .spacer { flex: 1; }
+
+  .cd-action-label {
+    font-size: 13px;
+    color: var(--text-2);
+    margin-right: 4px;
+  }
+}
+
+/* ── Raw info modal ────────────────────────────────────── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+  animation: fade 0.2s ease;
+}
+
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.raw-modal {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  width: 560px;
+  max-width: calc(100vw - 32px);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--sh-lg);
+  animation: pop 0.2s ease;
+}
+
+@keyframes pop {
+  from { transform: scale(0.96); opacity: 0.6; }
+  to { transform: none; opacity: 1; }
+}
+
+.raw-mh {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+
+  .material-symbols-outlined { font-size: 20px; color: var(--brand-600); }
+  h3 { font-size: 15px; font-weight: 700; }
+  .spacer { flex: 1; }
+}
+
+.raw-body {
+  padding: 16px 20px;
+  overflow: auto;
+
+  pre {
+    margin: 0;
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+}
+
+.raw-mf {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ── Row actions ───────────────────────────────────────── */
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.icon-btn.danger {
+  color: var(--bad);
+
+  &:hover {
+    background: rgba(var(--bad-rgb, 239, 68, 68), 0.1);
+  }
+}
+
+/* ── Pager ─────────────────────────────────────────────── */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+}
+
+.pager-info {
+  font-size: 12.5px;
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+/* ── Filter row ────────────────────────────────────────── */
+.filter-type {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.select {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+
+  select {
+    appearance: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    padding: 6px 30px 6px 10px;
+    font-size: 12.5px;
+    color: var(--text);
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  > .material-symbols-outlined {
+    position: absolute;
+    right: 6px;
+    pointer-events: none;
+    font-size: 18px;
+    color: var(--text-3);
+  }
+
+  // Matches .btn-sm's fixed height (32px) exactly, so this select lines up with
+  // the Refresh/Export buttons it sits beside in a grid toolbar.
+  &.sm select {
+    height: 32px;
+    padding: 0 28px 0 9px;
+    font-size: 12.5px;
+    box-sizing: border-box;
+  }
+}
+
+/* ── Responsive ────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .detail-grid { grid-template-columns: 1fr; }
+}

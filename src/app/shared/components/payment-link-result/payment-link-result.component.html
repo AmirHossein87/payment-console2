@@ -1,0 +1,26 @@
+<div class="plr">
+  <div class="plr-qr">
+    <qrcode
+      [qrdata]="url()"
+      [width]="188"
+      [errorCorrectionLevel]="'L'"
+      [margin]="2"
+    ></qrcode>
+  </div>
+
+  <div class="plr-url-row">
+    <a
+      class="plr-url"
+      [href]="url()"
+      target="_blank"
+      (click)="$event.preventDefault(); openLink()"
+      [title]="url()"
+    >{{ url() }}</a>
+    <button class="icon-btn" type="button" title="Open in new tab" (click)="openLink()">
+      <span class="material-symbols-outlined">open_in_new</span>
+    </button>
+    <button class="icon-btn" type="button" title="Copy link" (click)="copyLink()">
+      <span class="material-symbols-outlined">content_copy</span>
+    </button>
+  </div>
+</div>

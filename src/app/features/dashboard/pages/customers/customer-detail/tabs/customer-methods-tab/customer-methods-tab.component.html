@@ -1,0 +1,104 @@
+<div class="datacard">
+  <div class="dc-toolbar">
+    <div class="dc-title">
+      <span class="material-symbols-outlined ti">credit_card</span>
+      Payment methods
+      @if (!loading()) {
+        <span class="count">{{ methods().length }}</span>
+      }
+    </div>
+    <div class="spacer"></div>
+    <button
+      class="btn btn-sm btn-primary"
+      [disabled]="panelLinkLoading()"
+      (click)="getCustomerPanelLink()"
+    >
+      <span class="material-symbols-outlined" [class.spin]="panelLinkLoading()">link</span>
+      {{ panelLinkLoading() ? 'Generating…' : 'Customer panel link' }}
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="tab-loading"><div class="spinner"></div></div>
+  } @else {
+    <div class="dc-tablewrap">
+      <table class="pdt">
+        <thead>
+          <tr>
+            <th>Method Type</th>
+            <th>Number</th>
+            <th>Registered profile</th>
+            <th>State</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (m of methods(); track m.paymentMethodId) {
+            <tr>
+              <td>
+                <span class="method-type">
+                  <span class="material-symbols-outlined">{{ methodTypeIcon(m.paymentMethodType) }}</span>
+                  {{ m.paymentMethodType }}
+                </span>
+              </td>
+              <td class="cell-mono">{{ m.paymentMethodNumber || '—' }}</td>
+              <td>
+                @if (m.providerProfiles?.length) {
+                  <span class="profile-logos" style="display:inline-flex;align-items:center;gap:6px">
+                    @for (pr of m.providerProfiles; track pr.paymentMethodProviderProfileId) {
+                      <app-provider-logo
+                        [provider]="pr"
+                        [showName]="false"
+                        [size]="24"
+                        [titleText]="pr.profileName || pr.provider"
+                      />
+                    }
+                  </span>
+                } @else {
+                  —
+                }
+              </td>
+              <td>
+                <span class="pill plain" [ngClass]="verifyPill(m.verificationState)">
+                  <span class="dot"></span>{{ verifyLabel(m.verificationState) }}
+                </span>
+              </td>
+              <td>
+                <div class="row-actions">
+                  <button class="icon-btn danger" title="Delete" (click)="confirmDelete(m)">
+                    <span class="material-symbols-outlined">delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="5" class="cd-empty">No payment methods found.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+<app-confirm-modal #confirm />
+
+@if (panelLink()) {
+  <div class="overlay" (click)="closePanelLink()">
+    <div class="raw-modal" (click)="$event.stopPropagation()">
+      <div class="raw-mh">
+        <span class="material-symbols-outlined">link</span>
+        <h3>Customer panel link</h3>
+        <div class="spacer"></div>
+        <button class="icon-btn" (click)="closePanelLink()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="raw-body">
+        <app-payment-link-result [url]="panelLink()" />
+      </div>
+      <div class="raw-mf">
+        <button class="btn btn-primary" (click)="closePanelLink()">Done</button>
+      </div>
+    </div>
+  </div>
+}

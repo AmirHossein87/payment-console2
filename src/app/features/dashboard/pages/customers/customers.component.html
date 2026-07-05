@@ -1,0 +1,80 @@
+<app-data-grid
+  title="Customers"
+  [data]="rows()"
+  [columns]="gridColumns"
+  [loading]="loading()"
+  [defaultPageSize]="10"
+  [showCount]="false"
+  [fill]="true"
+  [searchInToolbar]="true"
+  [serverSearch]="true"
+  (filterChanged)="onSearchChanged($event)"
+  (refreshRequested)="load()"
+  (linkClicked)="onLinkClicked($event)"
+>
+  <div toolbar-actions class="grid-actions">
+    <button class="btn btn-sm" (click)="openAdvanced()">
+      <span class="material-symbols-outlined">filter_list</span>
+      Filters
+      @if (activeFilterCount() > 0) {
+        <span class="filter-badge">{{ activeFilterCount() }}</span>
+      }
+    </button>
+    <button class="btn btn-sm btn-primary" (click)="createModal.open()">
+      <span class="material-symbols-outlined">person_add</span>
+      New customer
+    </button>
+  </div>
+</app-data-grid>
+
+<ng-template #customerTemplate let-value let-row="row">
+  <span class="cell-strong">{{ displayName(row) }}</span>
+</ng-template>
+
+<!-- Advanced filter modal -->
+@if (advancedOpen()) {
+  <div class="overlay open">
+    <div class="modal">
+      <div class="mh">
+        <span class="material-symbols-outlined brand-ic">filter_list</span>
+        <h3>Filters</h3>
+        <div class="spacer"></div>
+        <button class="icon-btn" type="button" (click)="closeAdvanced()" title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="mb">
+        <div class="field">
+          <label>Fraud policy</label>
+          <div class="select">
+            <select [value]="fPolicy() ?? ''" (change)="setPolicyFilter($any($event.target).value)">
+              <option value="">All policies</option>
+              @for (p of policies(); track p.fraudPolicyId) {
+                <option [value]="p.fraudPolicyId">{{ p.fraudPolicyName }}</option>
+              }
+            </select>
+            <span class="material-symbols-outlined">expand_more</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Blocked status</label>
+          <div class="select">
+            <select [value]="fBlocked()" (change)="setBlockedFilter($any($event.target).value)">
+              <option value="">Any</option>
+              <option value="yes">Blocked</option>
+              <option value="no">Active</option>
+            </select>
+            <span class="material-symbols-outlined">expand_more</span>
+          </div>
+        </div>
+      </div>
+      <div class="mf">
+        <button class="btn" type="button" (click)="clearFilters()">Clear</button>
+        <div class="spacer"></div>
+        <button class="btn btn-primary" type="button" (click)="applyFilters()">Apply filter</button>
+      </div>
+    </div>
+  </div>
+}
+
+<app-create-customer-modal #createModal (created)="onCreated($event)" />

@@ -1,0 +1,213 @@
+<!-- Loading skeleton -->
+@if (loading()) {
+<div class="gd-skeleton">
+  <div class="sk-head">
+    <div class="sk sk-prov-badge"></div>
+    <div class="sk-title-area">
+      <span class="sk sk-title"></span>
+      <span class="sk sk-sub"></span>
+    </div>
+  </div>
+  <div class="sk-grid">
+    @for (c of [1,2]; track c) {
+    <div class="sk-card">
+      <div class="sk sk-card-h"></div>
+      @for (r of [1,2,3,4,5,6,7]; track r) {
+      <div class="sk-row">
+        <span class="sk sk-line md"></span>
+        <span class="sk sk-line lg"></span>
+      </div>
+      }
+    </div>
+    }
+  </div>
+</div>
+}
+
+@if (!loading() && !profile()) {
+<div class="not-found">
+  <span class="material-symbols-outlined">hub</span>
+  <h3>Gateway not found</h3>
+  <p>This gateway may have been removed or you don't have access to it.</p>
+  <button class="btn btn-sm" (click)="goBack()">
+    <span class="material-symbols-outlined">arrow_back</span>
+    Back to Gateways
+  </button>
+</div>
+}
+
+@if (!loading() && profile(); as p) {
+<!-- Page head -->
+<div class="page-head">
+  <div class="head-main">
+    <app-provider-logo [provider]="p.paymentProvider" [showName]="false" [size]="56" />
+    <span class="head-ccy">{{ p.currency }}</span>
+  </div>
+  <div class="head-actions">
+    <span class="pill" [ngClass]="p.isActive ? 'pill-ok' : 'pill-bad'">
+      <span class="dot"></span>
+      {{ p.isActive ? 'Active' : 'Inactive' }}
+    </span>
+  </div>
+</div>
+
+<!-- 2-column detail grid -->
+<div class="detail-grid">
+
+  <!-- ── General card ──────────────────────────────────────────────────── -->
+  <div class="info-card">
+    <div class="card-head">
+      <span class="material-symbols-outlined">tune</span>
+      General
+    </div>
+    <div class="kv-list">
+
+      <div class="kv-row">
+        <span class="kv-key">Gateway ID</span>
+        <div class="kv-val-edit">
+          <span class="kv-val mono">{{ p.paymentProfileId }}</span>
+          <button class="icon-btn sm" type="button" title="Copy ID" (click)="copyProfileId()">
+            <span class="material-symbols-outlined">content_copy</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="kv-row">
+        <span class="kv-key">Name</span>
+        <div class="kv-val-edit">
+          <span class="kv-val">{{ p.paymentProfileName || '—' }}</span>
+          <button class="icon-btn sm" type="button" title="Edit name" (click)="editName()">
+            <span class="material-symbols-outlined">edit</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="kv-row">
+        <span class="kv-key">Provider</span>
+        <div class="with-icon">
+          <app-provider-logo [provider]="p.paymentProvider" [showName]="false" [size]="22" />
+          <span class="kv-val">{{ providerLabel() }}</span>
+        </div>
+      </div>
+
+      <div class="kv-row">
+        <span class="kv-key">Currency</span>
+        <span class="kv-val">{{ p.currency }}</span>
+      </div>
+
+      @if (p.providerFlow) {
+      <div class="kv-row">
+        <span class="kv-key">Flow type</span>
+        <span class="kv-val">{{ p.providerFlow }}</span>
+      </div>
+      }
+
+      <div class="kv-row">
+        <span class="kv-key">Auto-pay</span>
+        <div class="with-icon">
+          <span class="material-symbols-outlined auto-ic" [class.ok]="p.paymentProvider.isSupportTokenizationPayment"
+            [class.off]="!p.paymentProvider.isSupportTokenizationPayment">
+            {{ p.paymentProvider.isSupportTokenizationPayment ? 'check_circle' : 'cancel' }}
+          </span>
+          <span class="kv-val">
+            {{ p.paymentProvider.isSupportTokenizationPayment ? 'Supported' : 'Not supported' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="kv-row">
+        <span class="kv-key">Status</span>
+        <div class="kv-val-edit">
+          <span class="pill" [ngClass]="p.isActive ? 'pill-ok' : 'pill-bad'">
+            <span class="dot"></span>
+            {{ p.isActive ? 'Active' : 'Inactive' }}
+          </span>
+          <button class="icon-btn sm" type="button" title="Edit status" (click)="editIsActive()">
+            <span class="material-symbols-outlined">edit</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="kv-divider"></div>
+
+      <div class="fee-section">
+        <span class="fee-section-title">
+          <span class="material-symbols-outlined">payments</span>
+          App Fees
+        </span>
+        <div class="fee-boxes">
+          <div class="fee-box">
+            <button class="icon-btn sm fee-box-edit" type="button" title="Edit percentage fee"
+              (click)="editAppPercentageFee()">
+              <span class="material-symbols-outlined">edit</span>
+            </button>
+            <span class="fee-box-val">{{ feeDisplay(p.appPercentageFee) }}</span>
+            <span class="fee-box-lbl">% Percentage fee</span>
+          </div>
+          <span class="fee-plus">+</span>
+          <div class="fee-box">
+            <button class="icon-btn sm fee-box-edit" type="button" title="Edit initial fee"
+              (click)="editAppInitialFee()">
+              <span class="material-symbols-outlined">edit</span>
+            </button>
+            <span class="fee-box-val">{{ feeDisplay(p.appInitialFee) }}</span>
+            <span class="fee-box-lbl">{{ p.currency }} Initial fee</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Provider API key card ─────────────────────────────────────────── -->
+  @if (configLoading()) {
+  <div class="info-card">
+    <div class="card-head">
+      <span class="sk sk-ic"></span>
+      <span class="sk sk-ch-title"></span>
+    </div>
+    <div class="kv-list">
+      @for (r of [1,2,3,4,5]; track r) {
+      <div class="kv-row">
+        <span class="sk sk-kv-key"></span>
+        <span class="sk sk-kv-val"></span>
+      </div>
+      }
+    </div>
+  </div>
+  } @else {
+  <div class="info-card">
+    <div class="card-head">
+      <span class="material-symbols-outlined">key</span>
+      Provider API key
+    </div>
+    <div class="kv-list">
+      @if (configFields().length === 0) {
+      <div class="empty-cfg">No API configuration fields for this provider.</div>
+      } @else {
+      @for (field of configFields(); track field.name) {
+      <div class="kv-row">
+        <span class="kv-key">{{ field.label }}</span>
+        <div class="kv-val-edit">
+          <span class="kv-val mono cred-masked">
+            {{ maskedValue(field.name) || '—' }}
+          </span>
+          <button class="icon-btn sm" type="button" [title]="'Edit ' + field.label" (click)="editConfigField(field)">
+            <span class="material-symbols-outlined">edit</span>
+          </button>
+        </div>
+      </div>
+      }
+      <div class="cred-warn">
+        <span class="material-symbols-outlined">warning</span>
+        Never share API keys. Rotate them immediately if compromised.
+      </div>
+      }
+    </div>
+  </div>
+  }
+
+</div>
+}
+
+<app-universal-edit-modal #editor />

@@ -1,0 +1,122 @@
+@if (isOpen()) {
+  <div class="overlay open">
+    <div class="modal tall">
+      <div class="mh">
+        <span class="material-symbols-outlined brand-ic">rule</span>
+        <h3>{{ isEdit() ? "Edit rule" : "Add rule" }}</h3>
+        <div class="spacer"></div>
+        <button class="icon-btn" type="button" (click)="close()" [disabled]="isSaving()" title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="mb">
+        <div class="field">
+          <label>Action</label>
+          <div class="select">
+            <select class="input" [(ngModel)]="action">
+              @for (a of actions; track a) {
+                <option [value]="a">{{ a }}</option>
+              }
+            </select>
+            <span class="material-symbols-outlined">expand_more</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Calculation type</label>
+          <div class="select">
+            <select class="input" [(ngModel)]="calcType">
+              @for (c of calcTypes; track c) {
+                <option [value]="c">{{ c }}</option>
+              }
+            </select>
+            <span class="material-symbols-outlined">expand_more</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Threshold value</label>
+          <input class="input" type="number" [(ngModel)]="calcTypeValue" />
+        </div>
+
+        <div class="field">
+          <label>Period</label>
+          <div class="select">
+            <select class="input" [(ngModel)]="periodType">
+              @for (p of periodTypes; track p) {
+                <option [value]="p">{{ p }}</option>
+              }
+            </select>
+            <span class="material-symbols-outlined">expand_more</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Period value</label>
+          <input class="input" type="number" [(ngModel)]="periodTypeValue" />
+        </div>
+
+        <div class="field">
+          <label>Currency</label>
+          <div class="select">
+            <select class="input" [(ngModel)]="currency">
+              <option value="">Any</option>
+              @for (cur of currencies; track cur) {
+                <option [value]="cur">{{ cur }}</option>
+              }
+            </select>
+            <span class="material-symbols-outlined">expand_more</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Profiles <span class="field-hint">(none = all profiles)</span></label>
+          @if (profileOptions().length === 0) {
+            <p class="hint">No payment gateways configured for this app.</p>
+          } @else {
+            <div class="profile-dropdown" (click)="$event.stopPropagation()">
+              <button class="profile-btn" type="button" (click)="toggleDropdown()">
+                <span>{{ profileSummary() }}</span>
+                <span class="material-symbols-outlined">expand_more</span>
+              </button>
+              @if (dropdownOpen()) {
+                <div class="profile-panel">
+                  <div class="profile-option" (click)="clearProfiles()">
+                    <input type="checkbox" [checked]="selectedProfiles().size === 0" (click)="$event.stopPropagation()" />
+                    <span class="all-label">All profiles</span>
+                  </div>
+                  @for (pr of profileOptions(); track pr.id) {
+                    <div class="profile-option" (click)="toggleProfile(pr.id, !isProfileChecked(pr.id))">
+                      <input type="checkbox" [checked]="isProfileChecked(pr.id)" (click)="$event.stopPropagation()" />
+                      @if (pr.provider) {
+                        <app-provider-logo [provider]="pr.provider" [showName]="false" [size]="44" />
+                      }
+                      <span class="profile-opt-name">{{ pr.name }}</span>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="field">
+          <label>Detection message to customer</label>
+          <input class="input" [(ngModel)]="detectionMessage" />
+        </div>
+      </div>
+
+      <div class="mf">
+        <button class="btn" type="button" (click)="close()" [disabled]="isSaving()">Cancel</button>
+        <button class="btn btn-primary" type="button" (click)="save()" [disabled]="isSaving()">
+          @if (isSaving()) {
+            <span class="material-symbols-outlined spin">refresh</span> Saving…
+          } @else {
+            Save
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

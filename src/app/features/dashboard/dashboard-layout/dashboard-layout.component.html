@@ -1,0 +1,19 @@
+<div class="app">
+  <app-sidebar />
+
+  <div class="nav-backdrop" [class.open]="sidebarOpen()" (click)="closeSidebar()"></div>
+
+  <div class="main">
+    <app-topbar />
+    <main class="content" [class.flush]="flush()">
+      <router-outlet />
+    </main>
+  </div>
+</div>
+
+@if (switching()) {
+  <div class="env-switch-overlay">
+    <span class="env-spinner"></span>
+    <span class="env-switch-msg">Switching to {{ switching() }}…</span>
+  </div>
+}
