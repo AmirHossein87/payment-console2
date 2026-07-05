@@ -12,6 +12,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 0️⃣ TEMP DEBUG: confirm MY_PAYMENT_APP is actually non-empty in this job.
+      # Never prints the value itself — only whether it's set and how long it is.
+      # Remove this step once the checkout issue is confirmed fixed.
+      - name: Debug secret presence
+        env:
+          TOKEN: ${{ secrets.MY_PAYMENT_APP }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "❌ MY_PAYMENT_APP resolved EMPTY in this job"
+          else
+            echo "✅ MY_PAYMENT_APP is set (length: ${#TOKEN} chars)"
+          fi
+
       # 1️⃣ Checkout personal repo
       - name: Checkout personal repo
         uses: actions/checkout@v4
