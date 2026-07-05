@@ -1,0 +1,66 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches:
+      - main
+
+jobs:
+  build_and_deploy:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    runs-on: ubuntu-latest
+    name: Build and Deploy Job
+
+    steps:
+      # 1️⃣ Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      # 2️⃣ Install dependencies & build Angular project directly to /www
+      - name: Build Angular project
+        run: |
+          npm install
+          npx ng build --configuration production --output-path=www --base-href=/
+          # Move inner browser folder (if created) contents up to www root
+          if [ -d "www/browser" ]; then
+            mv www/browser/* www/
+            rm -rf www/browser
+          fi
+          if [ ! -f "www/index.html" ]; then
+            echo "Error: index.html not found in build output"
+            exit 1
+          fi
+
+      # 3️⃣ Setup SSH key for deployment
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+
+      # 4️⃣ Deploy build output directly to /opt/console2
+      - name: Deploy to /opt/console2
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            "sudo mkdir -p /opt/console2 && sudo chown -R ${{ secrets.DEPLOY_USER }}:${{ secrets.DEPLOY_USER }} /opt/console2"
+
+          # Copy only the contents of www/, not the folder itself
+          rsync -avzr --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            www/ \
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/opt/console2/
+
+      # 5️⃣ Restart Caddy Service
+      - name: Restart Caddy Service
+        if: success()
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "sudo systemctl restart caddy || true"

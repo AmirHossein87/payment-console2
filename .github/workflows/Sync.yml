@@ -1,0 +1,127 @@
+name: Sync
+
+on:
+  workflow_dispatch: # Run manually
+
+permissions:
+  contents: write    # Required to push to repository
+  actions: read      # Required for workflow
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout personal repo
+      - name: Checkout personal repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history needed for overwrite/force push
+          token: ${{ secrets.MY_PAYMENT_APP }}  # Token for YOUR personal repo
+          
+      # 2️⃣ Configure git user
+      - name: Set Git user
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@users.noreply.github.com"
+          
+      # 3️⃣ Download and sync from trustcarft repository
+      - name: Sync from upstream
+        env:
+          PAYMENT_PAT: ${{ secrets.Payment_PAT }}
+        run: |
+          echo "Downloading repository archive from trustcarft/payment-console..."
+
+          curl -L --fail \
+               -H "Authorization: token $PAYMENT_PAT" \
+               -H "Accept: application/vnd.github.v3+json" \
+               https://api.github.com/repos/trustcarft/payment-console/zipball/main \
+               -o upstream.zip || { echo "❌ Archive download failed (HTTP error)"; exit 1; }
+          
+          if [ -f upstream.zip ]; then
+            echo "✅ Archive downloaded successfully"
+            echo "File size: $(ls -lh upstream.zip)"
+            
+            if ! unzip -t upstream.zip > /dev/null 2>&1; then
+              echo "❌ Downloaded file is not a valid zip archive. Response:"
+              cat upstream.zip
+              exit 1
+            fi
+            
+            echo "Extracting archive..."
+            unzip -q upstream.zip
+            
+            echo "Listing extracted contents..."
+            ls -la
+            
+            echo "Finding extracted directory..."
+            EXTRACTED_DIR=$(find . -maxdepth 1 -type d -name "trustcarft-payment-console-*" | head -1)
+            
+            if [ -n "$EXTRACTED_DIR" ] && [ -d "$EXTRACTED_DIR" ]; then
+              echo "Found extracted directory: $EXTRACTED_DIR"
+              echo "Contents of extracted directory:"
+              ls -la "$EXTRACTED_DIR"
+              
+              echo "Copying files (excluding .github)..."
+              # Remove everything except .github, .git and our working files
+              find . -mindepth 1 -maxdepth 1 ! -name '.github' ! -name '.git' ! -name 'upstream.zip' ! -name "$(basename "$EXTRACTED_DIR")" -exec rm -rf {} +
+              
+              # Copy everything from extracted directory EXCEPT .github folder
+              # Using rsync would be better but using cp with exclusion
+              for item in "$EXTRACTED_DIR"/*; do
+                basename_item=$(basename "$item")
+                if [ "$basename_item" != ".github" ]; then
+                  cp -r "$item" .
+                fi
+              done
+              
+              # Clean up
+              rm -rf upstream.zip "$EXTRACTED_DIR"
+              
+              echo "✅ Files synchronized using archive method"
+            else
+              echo "❌ Could not find extracted directory"
+              echo "Available directories:"
+              find . -maxdepth 1 -type d
+              exit 1
+            fi
+          else
+            echo "❌ Archive download failed"
+            exit 1
+          fi
+
+      # 4️⃣ Restore environment.prod and commit changes
+      - name: Finalize and commit
+        run: |
+          echo "Setting git identity explicitly..."
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          echo "Restoring .github directory to prevent workflow modifications..."
+          git checkout HEAD -- .github/ 2>/dev/null || echo "No .github directory to restore"
+          
+          echo "Restoring environment.prod.ts if it exists..."
+          git checkout HEAD -- src/environments/environment.prod.ts 2>/dev/null || echo "No environment.prod.ts to restore"
+          
+          echo "Restoring src/assets/icon directory if it exists..."
+          git checkout HEAD -- src/assets/icon/ 2>/dev/null || echo "No src/assets/icon directory to restore"
+          
+          echo "Restoring src/assets/img directory if it exists..."
+          git checkout HEAD -- src/assets/img/ 2>/dev/null || echo "No src/assets/img directory to restore"
+
+          echo "Restoring .gitignore if it exists (upstream mirror does not include one)..."
+          git checkout HEAD -- .gitignore 2>/dev/null || echo "No .gitignore to restore"
+
+          echo "Checking current git status..."
+          git status --porcelain
+          
+          echo "Adding all changes..."
+          git add .
+          
+          echo "Committing changes..."
+          git commit -m "Mirror from trustcarft/payment-console main branch (preserve environment.prod.ts, icons, and workflows)" || echo "No changes to commit"
+
+          echo "Pushing to personal repository with proper token..."
+          git push origin HEAD:main --force
+
+          echo "✅ Successfully pushed to AmirHossein87/payment-console2"
