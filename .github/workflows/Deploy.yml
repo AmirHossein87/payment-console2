@@ -16,6 +16,29 @@ jobs:
     name: Build and Deploy Job
 
     steps:
+      # 0️⃣ TEMP DEBUG: confirm deploy secrets are actually non-empty in this job.
+      # Never prints the values themselves — only whether each is set and how long it is.
+      # Remove this step once the deploy issue is confirmed fixed.
+      - name: Debug secret presence
+        env:
+          H: ${{ secrets.DEPLOY_HOST }}
+          U: ${{ secrets.DEPLOY_USER }}
+          P: ${{ secrets.DEPLOY_PATH }}
+          K: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          check() {
+            name="$1"; val="$2"
+            if [ -z "$val" ]; then
+              echo "❌ $name is EMPTY in this job"
+            else
+              echo "✅ $name is set (length: ${#val} chars)"
+            fi
+          }
+          check DEPLOY_HOST "$H"
+          check DEPLOY_USER "$U"
+          check DEPLOY_PATH "$P"
+          check DEPLOY_SSH_KEY "$K"
+
       # 1️⃣ Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v3
