@@ -382,3 +382,27 @@ table.pdt.invoice-items-table {
 
   &.sm { padding: 6px 8px; max-height: 160px; font-size: 11px; }
 }
+
+/* ── Mobile ─────────────────────────────────────────────────
+   This page had NO responsive handling: the two-up info cards stayed side by
+   side (crushing the key/value rows) and the fixed-layout tables shrank their
+   columns to unreadable widths on a phone. 700px matches the sibling detail
+   pages' collapse point (customer-detail). */
+@media (max-width: 700px) {
+  .detail-grid {
+    grid-template-columns: 1fr;   // stack the App/Provider and Policy/Fee cards
+  }
+
+  // Card header action buttons (Raw info / Link info / Pay link) wrap below the
+  // title instead of overflowing the narrow card.
+  .info-card .h {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  // `table-layout: fixed; width: 100%` makes columns crush rather than scroll.
+  // Give the tables a min-width so the .dc-tablewrap actually scrolls
+  // horizontally and every column stays readable.
+  table.pdt.state-log-table { min-width: 460px; }
+  table.pdt.invoice-items-table { min-width: 640px; }
+}

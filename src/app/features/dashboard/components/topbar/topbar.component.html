@@ -19,9 +19,10 @@
     }
   </div>
 
-  <div class="spacer"></div>
-
-  <!-- Standalone badge: shown when the active app is not part of any license -->
+  <!-- Standalone badge: shown when the active app is not part of any license.
+       Kept a DIRECT topbar child (not inside .topbar-right) so that on mobile it
+       can drop onto its own full-width row instead of being squeezed out of the
+       single right-side row. Positioning is handled by `order` in the SCSS. -->
   @if (!licenseStore.isLoadingLicenses() && isStandalone() && activeApp()) {
     <div class="standalone-card">
       <span class="material-symbols-outlined sa-ic">link_off</span>
@@ -32,57 +33,62 @@
     </div>
   }
 
-  <!-- License selection — always shown (skeleton while loading) -->
-  @if (licenseStore.isLoadingLicenses()) {
-    <div class="sk sk-env-toggle"></div>
-  } @else if (!hasMultipleLicenses()) {
-    @if (soloSandboxApp() && soloLiveApp()) {
-      <div class="env-toggle">
-        <button type="button" data-env="sandbox" [class.active]="isSandbox()"
-                (click)="switchEnv(soloSandboxApp())">Sandbox</button>
-        <button type="button" data-env="live" [class.active]="!isSandbox()"
-                (click)="switchEnv(soloLiveApp())">Live</button>
-      </div>
-    }
-  } @else {
-    <div class="lic-wrap">
-      <button type="button" class="lic-trigger" [class.open]="dropOpen()" (click)="toggleDrop($event)">
-        <span class="material-symbols-outlined">workspace_premium</span>
-        My Licenses
-        <span class="material-symbols-outlined drop-caret" [class.open]="dropOpen()">expand_more</span>
-      </button>
-
-      @if (dropOpen()) {
-        <div class="lic-menu" (click)="$event.stopPropagation()">
-          <div class="lic-menu-head">My Licenses</div>
-
-          @if (licenseStore.licenses().length === 0) {
-            <div class="lic-empty">No licenses found.</div>
-          } @else {
-            @for (row of licenseRows(); track row.license.licenseId) {
-              <div class="lic-row" [class.on]="row.isActive">
-                <span class="lic-name" [title]="row.name">{{ row.name }}</span>
-                <div class="env-select">
-                  @if (row.sandboxApp) {
-                    <button type="button" class="env-chip" data-env="sandbox"
-                            [class.selected]="row.activeEnv === 'sandbox'"
-                            (click)="selectEnv(row.sandboxApp, $event)">Sandbox</button>
-                  }
-                  @if (row.liveApp) {
-                    <button type="button" class="env-chip" data-env="live"
-                            [class.selected]="row.activeEnv === 'live'"
-                            (click)="selectEnv(row.liveApp, $event)">Live</button>
-                  }
-                </div>
-              </div>
-            }
-          }
+  <!-- Right cluster: env/license switch and the user menu. margin-left:auto keeps
+       it pinned to the right corner on every screen size (including the wrapped
+       mobile topbar, where the old .spacer was hidden). -->
+  <div class="topbar-right">
+    <!-- License selection — always shown (skeleton while loading) -->
+    @if (licenseStore.isLoadingLicenses()) {
+      <div class="sk sk-env-toggle"></div>
+    } @else if (!hasMultipleLicenses()) {
+      @if (soloSandboxApp() && soloLiveApp()) {
+        <div class="env-toggle">
+          <button type="button" data-env="sandbox" [class.active]="isSandbox()"
+                  (click)="switchEnv(soloSandboxApp())">Sandbox</button>
+          <button type="button" data-env="live" [class.active]="!isSandbox()"
+                  (click)="switchEnv(soloLiveApp())">Live</button>
         </div>
       }
-    </div>
-  }
+    } @else {
+      <div class="lic-wrap">
+        <button type="button" class="lic-trigger" [class.open]="dropOpen()" (click)="toggleDrop($event)">
+          <span class="material-symbols-outlined">workspace_premium</span>
+          My Licenses
+          <span class="material-symbols-outlined drop-caret" [class.open]="dropOpen()">expand_more</span>
+        </button>
 
-  <app-user-menu />
+        @if (dropOpen()) {
+          <div class="lic-menu" (click)="$event.stopPropagation()">
+            <div class="lic-menu-head">My Licenses</div>
+
+            @if (licenseStore.licenses().length === 0) {
+              <div class="lic-empty">No licenses found.</div>
+            } @else {
+              @for (row of licenseRows(); track row.license.licenseId) {
+                <div class="lic-row" [class.on]="row.isActive">
+                  <span class="lic-name" [title]="row.name">{{ row.name }}</span>
+                  <div class="env-select">
+                    @if (row.sandboxApp) {
+                      <button type="button" class="env-chip" data-env="sandbox"
+                              [class.selected]="row.activeEnv === 'sandbox'"
+                              (click)="selectEnv(row.sandboxApp, $event)">Sandbox</button>
+                    }
+                    @if (row.liveApp) {
+                      <button type="button" class="env-chip" data-env="live"
+                              [class.selected]="row.activeEnv === 'live'"
+                              (click)="selectEnv(row.liveApp, $event)">Live</button>
+                    }
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <app-user-menu />
+  </div>
 </header>
 
 <app-confirm-modal #confirmModal />

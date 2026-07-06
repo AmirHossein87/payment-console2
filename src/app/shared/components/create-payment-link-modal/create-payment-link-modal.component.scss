@@ -41,7 +41,13 @@
 
 .mb {
   flex: 1;
-  overflow: visible;
+  // Was overflow:visible (so the gateway dropdown could escape) — but on short
+  // screens the fields spilled OUT of the body and rendered over the footer,
+  // making the Create button unreachable. Scroll the body instead (min-height:0
+  // is required for a flex child to actually scroll). The gateway menu now opens
+  // within the scrollable body, which is the correct mobile-safe behaviour.
+  overflow-y: auto;
+  min-height: 0;
   padding: 20px;
   display: flex;
   flex-direction: column;

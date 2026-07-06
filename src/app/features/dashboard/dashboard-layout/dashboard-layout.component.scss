@@ -1,12 +1,14 @@
 :host {
   display: block;
-  height: 100vh;
+  height: 100vh;      // fallback for browsers without dvh
+  height: 100dvh;     // dynamic viewport height — excludes mobile browser chrome
 }
 
 .app {
   display: grid;
   grid-template-columns: var(--sidebar-w) 1fr;
   height: 100vh;
+  height: 100dvh;
 }
 
 .nav-backdrop {
@@ -72,6 +74,12 @@
 @media (max-width: 820px) {
   .app {
     grid-template-columns: 1fr;
+  }
+
+  // Tighter gutters on phones — 24/26px each side wastes ~1/6 of a 375px screen
+  // and adds overflow pressure on page internals.
+  .content {
+    padding: 16px 14px;
   }
 
   .nav-backdrop {

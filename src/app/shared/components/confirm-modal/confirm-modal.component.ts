@@ -93,6 +93,10 @@ export interface ConfirmConfig {
         border-radius: var(--r-lg);
         width: 400px;
         max-width: calc(100vw - 32px);
+        /* Cap height + scroll the body so a long message can never push the
+           Cancel/Confirm footer off a short (mobile) screen. */
+        max-height: calc(100vh - 32px);
+        max-height: calc(100dvh - 32px);
         display: flex;
         flex-direction: column;
         box-shadow: var(--sh-lg);
@@ -114,6 +118,7 @@ export interface ConfirmConfig {
         gap: 10px;
         padding: 18px 20px;
         border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
       }
       .mh .material-symbols-outlined {
         font-size: 20px;
@@ -131,6 +136,9 @@ export interface ConfirmConfig {
       }
       .mb {
         padding: 20px;
+        flex: 1 1 auto;
+        overflow-y: auto;
+        min-height: 0;
       }
       .confirm-text {
         color: var(--text-2);
@@ -143,6 +151,7 @@ export interface ConfirmConfig {
         display: flex;
         align-items: center;
         gap: 10px;
+        flex-shrink: 0;
       }
       .mf .spacer {
         flex: 1;

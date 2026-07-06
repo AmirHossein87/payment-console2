@@ -72,6 +72,11 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    // Wrap the button group (Refresh/Export/Filter/Payment link) instead of
+    // overflowing off the right edge on narrow screens. display:contents on the
+    // projected [toolbar-actions] makes those buttons direct children here.
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 }
 
@@ -954,93 +959,156 @@ table.dc {
 @media (max-width: 820px) {
   .dc-tablewrap {
     overflow-x: visible;
+    // Match the card gutter so empty space below the last card isn't a
+    // different colour from the card-list background.
+    background: var(--app-bg);
+  }
+
+  .datacard { min-width: 0; }
+
+  // In card mode the table becomes a vertical stack of full-width blocks.
+  // Neutralize the desktop fixed/equal-cols sizing (table-layout:fixed +
+  // per-cell overflow:hidden) which otherwise kept each cell at a fixed table
+  // width and pushed its value off-screen — leaving only the truncated column
+  // label (AM… ST… DA…) visible, exactly the reported breakage.
+  :host.equal-cols table.dc,
+  :host.fixed-layout table.dc {
+    table-layout: auto;
+  }
+  :host.equal-cols tbody td,
+  :host.fixed-layout tbody td {
+    overflow: visible;
   }
 
   table.dc {
+    display: block;
+    width: 100%;
+    min-width: 0;
+
     thead {
       display: none;
     }
 
-    tbody,
-    tr,
-    td {
+    // ── Card layout ──────────────────────────────────────────────────────────
+    // CRITICAL specificity note: the desktop cell rule is `table.dc tbody td`
+    // (3 elements) and hard-sets height:66px, max-width:0, overflow:hidden and
+    // white-space:nowrap. A mobile rule written as `table.dc td` (2 elements)
+    // LOSES to it, so the cells kept their 66px height and 0 max-width and
+    // clipped every value down to ~2 characters ("GA", "PR"…). We therefore
+    // qualify the row/cell rules below with `tbody` so they match that
+    // specificity and win by source order — and we explicitly reset every one
+    // of those desktop properties.
+    tbody {
       display: block;
       width: 100%;
-    }
+      // Gutter around the card list so each card (surface) stands out against
+      // the app background.
+      padding: 12px;
+      background: var(--app-bg);
 
-    tr {
-      border-bottom: 6px solid var(--app-bg);
-      position: relative;
-      padding-top: 10px;
-      padding-bottom: 10px;
+      // Each row renders as a distinct, self-contained card.
+      tr {
+        display: block;
+        width: 100%;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r-md);
+        box-shadow: var(--sh-sm);
+        padding: 4px 0;
+        margin-bottom: 10px;
+        position: relative;
 
-      &.editing-row {
-        background: var(--brand-weak);
-      }
-    }
+        &:last-child { margin-bottom: 0; }
+        &:hover { background: var(--surface); }
 
-    tbody tr:hover {
-      background: transparent;
-    }
-
-    td {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 8px 18px;
-      border: none;
-      white-space: normal;
-      text-align: right;
-      /* Card layout stacks each cell full-width — undo the desktop truncation. */
-      max-width: none;
-      overflow: visible;
-
-      &::before {
-        content: attr(data-label);
-        color: var(--text-3);
-        font-weight: 600;
-        font-size: 12.5px;
-        text-align: left;
-        flex: 0 0 auto;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        &.editing-row {
+          border-color: var(--brand-500);
+          background: var(--brand-weak);
+        }
       }
 
-      &:empty {
-        display: none;
-      }
-
-      .with-icon {
-        justify-content: flex-end;
+      td {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        width: 100%;
+        padding: 9px 14px;
         text-align: right;
-      }
+        // Undo the desktop fixed-cell sizing (height:66px, max-width:0,
+        // overflow:hidden, nowrap, ellipsis, bottom border) so the value is
+        // fully visible and the label isn't clipped.
+        height: auto;
+        min-height: 0;
+        max-width: none;
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal;
+        border: none;
+        border-bottom: none;
+        // Long unbreakable values (transaction/customer IDs, links) must wrap
+        // instead of pushing the card wider than the viewport.
+        min-width: 0;
+        overflow-wrap: anywhere;
+        word-break: break-word;
 
-      &.num {
-        text-align: right;
-      }
-
-      &.select-col {
-        justify-content: flex-start;
-        padding-left: 18px;
         &::before {
-          content: "Select";
+          content: attr(data-label);
+          color: var(--text-3);
+          font-weight: 600;
+          font-size: 12.5px;
+          text-align: left;
+          flex: 0 0 auto;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        &:empty {
+          display: none;
+        }
+
+        .with-icon {
+          justify-content: flex-end;
+          text-align: right;
+        }
+
+        &.num {
+          text-align: right;
+        }
+
+        &.select-col {
+          justify-content: flex-start;
+          padding-left: 18px;
+          &::before {
+            content: "Select";
+          }
         }
       }
     }
   }
 
+  // Action buttons sit in a divided footer at the bottom of each card.
   .row-actions {
     justify-content: flex-end;
     width: 100%;
-    padding: 8px 18px 0;
+    padding: 8px 14px 4px;
     border-top: 1px solid var(--border);
-    margin-top: 6px;
+    margin-top: 4px;
   }
 
+  // The desktop dropdown (absolute, anchored to the button) can't reliably fit a
+  // 480px panel on a phone — the old `right:-100px` hack pushed it off-screen.
+  // Present it as a bottom sheet pinned to the viewport edges instead: always
+  // fully visible, scrollable, no horizontal overflow regardless of button x.
   .adv-filter-panel {
-    width: calc(100vw - 32px);
-    right: -100px; /* shift offset to fit screen */
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    top: auto;
+    width: auto;
+    max-height: 70vh;
+    overflow-y: auto;
   }
 }
 

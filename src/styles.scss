@@ -40,6 +40,9 @@ a {
 .content > *:not(router-outlet) {
   flex: 1;
   min-height: 0;
+  /* min-width:0 lets nested row-flex (e.g. a page-head) shrink below its
+     content width instead of forcing horizontal overflow on narrow screens. */
+  min-width: 0;
   display: flex;
   flex-direction: column;
 }

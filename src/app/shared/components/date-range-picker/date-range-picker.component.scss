@@ -204,3 +204,24 @@
     &.clear-act { color: var(--text-3); &:hover { background: var(--surface-2); color: var(--text-2); } }
   }
 }
+
+@media (max-width: 820px) {
+  // The 290px popup, absolutely anchored to its trigger, ran off the right edge
+  // when the trigger sat right-of-center (pure CSS can't reposition to fit).
+  // Pin it to the viewport as a bottom sheet so it's always fully visible.
+  .drp-dropdown,
+  .drp-dropdown.open-up {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    top: auto;
+    width: auto;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  // Bigger tap targets for the calendar controls on touch screens.
+  .nav-btn { width: 40px; height: 40px; }
+  .day-btn { height: 42px; }
+}

@@ -30,8 +30,16 @@
   }
 }
 
-.spacer {
-  flex: 1;
+/* Right-hand cluster — always pinned to the right corner. margin-left:auto
+   consumes all free space to its left, so it works on the desktop row AND on
+   the wrapped mobile topbar (where a flex:1 spacer used to be hidden). */
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+  min-width: 0;
+  order: 2;
 }
 
 .lic-wrap {
@@ -115,10 +123,16 @@
   font-size: 13px;
   font-weight: 600;
   color: var(--text);
-  flex-shrink: 0;
+  // Was flex-shrink:0 → a long friendlyName ran past the viewport and got
+  // clipped by .main{overflow:hidden}. Allow it to shrink and ellipsize.
+  min-width: 0;
+  // Sits just left of the right cluster on desktop; margin-left:auto shoves the
+  // badge + cluster together into the right corner.
+  order: 1;
+  margin-left: auto;
 
   .sa-ic { font-size: 16px; color: var(--warn); flex-shrink: 0; }
-  .sa-name { white-space: nowrap; }
+  .sa-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 }
 
 /* ── B) My Licenses trigger + menu ──────────────────────────────────────────── */
@@ -290,7 +304,32 @@
     display: none;
   }
 
-  .spacer {
-    display: none;
+  // Keep the cluster tight on narrow screens; margin-left:auto (base rule)
+  // still holds it in the right corner as the topbar wraps.
+  .topbar-right {
+    gap: 10px;
+    min-width: 0;
   }
+
+  // Row 1 = hamburger + right cluster (env toggle + user). The standalone badge
+  // gets pushed to its OWN full-width row below (order:3 + 100% basis) so it's
+  // never squeezed out of the cluster row.
+  .standalone-card {
+    order: 3;
+    flex: 1 1 100%;
+    margin-left: 0;
+    justify-content: flex-start;
+  }
+
+  // Hamburger is the primary mobile nav trigger — give it a proper 40px tap area.
+  .hamburger { width: 40px; height: 40px; }
+
+  // Sandbox/Live switches are easy to mis-tap (a wrong tap changes environment).
+  // Enlarge both the single-license toggle and the in-menu chips to ~40px tall.
+  .env-toggle button { padding: 9px 16px; }
+  .env-chip { padding: 9px 14px; }
+
+  // A wrapped topbar can push the license menu off-screen — anchor it to the
+  // viewport edges and let it size responsively instead of a fixed 288px.
+  .lic-menu { left: auto; right: 0; min-width: 0; width: min(288px, calc(100vw - 24px)); }
 }

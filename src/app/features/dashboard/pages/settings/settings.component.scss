@@ -572,3 +572,22 @@
   border-top-color: #fff;
   animation: spin 0.7s linear infinite;
 }
+
+// ── Mobile ──────────────────────────────────────────────────
+@media (max-width: 640px) {
+  // The tab bar was a non-wrapping inline-flex; "General / Checkout /
+  // Personalization" could exceed a narrow phone width and push horizontal
+  // page overflow. Let it scroll horizontally within its own rounded track
+  // instead (pills stay full-size; only the strip scrolls).
+  .seg.tabs {
+    display: flex;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar { display: none; }
+
+    button { flex-shrink: 0; white-space: nowrap; }
+  }
+}
