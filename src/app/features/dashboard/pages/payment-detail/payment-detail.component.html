@@ -111,7 +111,7 @@
         </span>
       </div>
       <div class="kv">
-        @if (p.paymentProfiles?.[0]?.paymentProvider; as prov) {
+        @if (p.payInfo?.paymentProfile?.paymentProvider; as prov) {
           <div class="provider-row">
             <app-provider-logo [provider]="prov" [showName]="true" [size]="64" />
           </div>
