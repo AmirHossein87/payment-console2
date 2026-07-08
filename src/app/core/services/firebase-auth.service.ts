@@ -74,9 +74,11 @@ export class FirebaseAuthService {
     );
     this.authStore.setSession(result.accessToken.value, result.userId);
     this.startBackgroundTokenRefresh();
-    // Google Ads conversion signal — only fires when the visitor arrived via
-    // an ad click (Google + email/password). Token refresh bypasses this method.
-    this.tagManager.trackConversion('sign_in', { user_id: result.userId });
+    // Google Ads conversion signal — the activation goal. Fires only on the
+    // user's FIRST successful sign in (once per user), and only when the visitor
+    // arrived via an ad click. Repeat sign-ins and token refresh never convert
+    // (refresh bypasses this method via reconnect()).
+    this.tagManager.trackFirstSignInConversion(result.userId);
     return result;
   }
 
@@ -86,9 +88,8 @@ export class FirebaseAuthService {
     );
     this.authStore.setSession(result.accessToken.value, result.userId);
     this.startBackgroundTokenRefresh();
-    // Google Ads conversion signal — only fires when the visitor arrived via
-    // an ad click (new account provisioned via Google or email/password).
-    this.tagManager.trackConversion('sign_up', { user_id: result.userId });
+    // No conversion on sign-up: the activation goal is the user's first
+    // successful sign in (see callSignIn), not account registration.
     return result;
   }
 

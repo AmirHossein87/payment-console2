@@ -44,6 +44,15 @@ export class TagManagerService {
   private static readonly AD_CLICK_PARAMS = ['gclid', 'gbraid', 'wbraid'];
 
   /**
+   * localStorage key holding the JSON array of user ids that have already
+   * reported their "first successful sign in" conversion. Persisted (and kept
+   * across signout via StorageService.PRESERVED_KEYS) so the conversion is sent
+   * to Google Ads at most ONCE per user — not on every sign in, and not on
+   * signout → signin again. Keep this string in sync with StorageService.
+   */
+  static readonly FIRST_SIGNIN_KEY = 'gtm_first_signin_users';
+
+  /**
    * Injects the GTM loader (gtm.js) for the current environment as high in the
    * page lifecycle as possible. Call this from main.ts BEFORE Angular bootstraps
    * so the tag loads near the top of page load — which is what Google Tag
@@ -149,6 +158,28 @@ export class TagManagerService {
     window.dataLayer.push({ event: action, ...params });
   }
 
+  /**
+   * Reports the `sign_in` conversion the FIRST time a given user signs in on
+   * this browser, then never again for that user. This is the activation goal:
+   * we deliberately do NOT count sign-up (registration) or repeat sign-ins.
+   *
+   * Still gated by ad-click attribution (via trackConversion), so organic /
+   * direct sign-ins never report a conversion. The ad-attribution check runs
+   * BEFORE the marker is written, so a non-ad first sign in does not "use up"
+   * the once-per-user slot — a later ad-attributed sign in can still convert.
+   */
+  trackFirstSignInConversion(userId: string, params: Record<string, unknown> = {}): void {
+    if (!this.enabled || !userId || !this.hasAdClickAttribution) {
+      return;
+    }
+    if (this.hasReportedSignIn(userId)) {
+      this.log.info('Skipping "sign_in" conversion — first sign in already reported for this user.');
+      return;
+    }
+    this.markSignInReported(userId);
+    this.trackConversion('sign_in', { user_id: userId, ...params });
+  }
+
   /** Whether GTM is actually active in this environment. */
   get isEnabled(): boolean {
     return this.enabled;
@@ -179,6 +210,36 @@ export class TagManagerService {
       }
     } catch {
       // sessionStorage / URL parsing unavailable — silently skip attribution.
+    }
+  }
+
+  /** Whether this user has already reported their first-sign-in conversion. */
+  private hasReportedSignIn(userId: string): boolean {
+    return this.getReportedSignIns().includes(userId);
+  }
+
+  /** Records that this user's first-sign-in conversion has now been reported. */
+  private markSignInReported(userId: string): void {
+    try {
+      const users = this.getReportedSignIns();
+      if (!users.includes(userId)) {
+        users.push(userId);
+        localStorage.setItem(TagManagerService.FIRST_SIGNIN_KEY, JSON.stringify(users));
+      }
+    } catch {
+      // localStorage unavailable — fail open. A rare duplicate conversion is
+      // preferable to throwing inside the sign-in flow.
+    }
+  }
+
+  private getReportedSignIns(): string[] {
+    try {
+      const raw = localStorage.getItem(TagManagerService.FIRST_SIGNIN_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
+    } catch {
+      return [];
     }
   }
 }

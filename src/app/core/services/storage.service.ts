@@ -9,7 +9,10 @@ export class StorageService {
     'login', 'register', 'app', 'licenses', 'rules', 'fraud'
   ]);
 
-  private static readonly PRESERVED_KEYS = ['app-theme', 'tc-theme'];
+  // 'gtm_first_signin_users' must survive signout so the first-sign-in Google
+  // Ads conversion is reported once per user, not again after every signout.
+  // Keep in sync with TagManagerService.FIRST_SIGNIN_KEY.
+  private static readonly PRESERVED_KEYS = ['app-theme', 'tc-theme', 'gtm_first_signin_users'];
 
   static isValidAppId(appId: any): boolean {
     if (typeof appId !== 'string') return false;
