@@ -88,8 +88,13 @@ export class FirebaseAuthService {
     );
     this.authStore.setSession(result.accessToken.value, result.userId);
     this.startBackgroundTokenRefresh();
-    // No conversion on sign-up: the activation goal is the user's first
-    // successful sign in (see callSignIn), not account registration.
+    // Sign-up authenticates the user immediately (it returns an access token and
+    // sets the session above) — so registration IS the user's first successful
+    // sign in. Fire the same activation conversion as callSignIn. The
+    // once-per-user marker inside trackFirstSignInConversion guarantees a later
+    // real sign in won't double-count, and it's still gated by ad-click
+    // attribution, so organic/direct sign-ups never convert.
+    this.tagManager.trackFirstSignInConversion(result.userId);
     return result;
   }
 
