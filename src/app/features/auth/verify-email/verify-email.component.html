@@ -1,0 +1,65 @@
+@if (!settingsStore.isLoaded() || settingsStore.activeLogoUri() || settingsStore.hasBrand()) {
+  <div class="brand">
+    @if (settingsStore.isLoaded()) {
+      @if (settingsStore.activeLogoUri()) {
+        <div class="brand-icon no-bg">
+          <img [src]="settingsStore.activeLogoUri()" alt="Logo" class="logo-img" />
+        </div>
+      }
+      @if (settingsStore.hasBrand()) {
+        <span class="nm">{{ settingsStore.appName() }}</span>
+      }
+    } @else {
+      <div class="brand-icon-skeleton"></div>
+      <div class="brand-name-skeleton"></div>
+    }
+  </div>
+}
+
+<div class="mail-badge" aria-hidden="true">
+  <span class="material-symbols-outlined">mark_email_unread</span>
+</div>
+
+<h1>Verify your email</h1>
+
+@if (noActiveUser()) {
+  <p class="subtitle">
+    Your session has expired, so there's nothing to verify. Please
+    <a class="link" routerLink="/auth/signup" queryParamsHandling="preserve">start sign up</a>
+    again.
+  </p>
+} @else {
+  <p class="subtitle">
+    We sent a verification link to
+    <strong>{{ email() || 'your email address' }}</strong>. Open it, then come
+    back here and continue.
+  </p>
+
+  <button class="submit-btn" type="button" [disabled]="checking()" (click)="checkVerification()">
+    @if (checking()) {
+      <span class="btn-spinner"></span> Checking…
+    } @else {
+      I've verified my email
+    }
+  </button>
+
+  <button
+    class="social-btn resend-btn"
+    type="button"
+    [disabled]="resending() || resendCooldown() > 0"
+    (click)="resend()"
+  >
+    @if (resendCooldown() > 0) {
+      Resend available in {{ resendCooldown() }}s
+    } @else if (resending()) {
+      Sending…
+    } @else {
+      Resend verification email
+    }
+  </button>
+
+  <p class="toggle-text">
+    Wrong address?
+    <a class="link" href="#" (click)="$event.preventDefault(); useDifferentEmail()">Use a different email</a>
+  </p>
+}

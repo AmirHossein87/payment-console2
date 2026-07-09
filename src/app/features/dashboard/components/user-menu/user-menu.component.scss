@@ -84,6 +84,15 @@
     .e {
       font-size: 12px;
       color: var(--text-3);
+
+      // When the account has no display name, the email is the only identifier
+      // in the header — give it primary weight/colour so the header isn't a lone
+      // muted line (but it's still the email, shown exactly once).
+      &.only {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+      }
     }
 
     .lic {

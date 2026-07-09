@@ -54,6 +54,17 @@ export class UserMenuComponent {
     return u?.displayName || u?.email || this.activeApp()?.friendlyName || 'User';
   });
 
+  /**
+   * The user's *real* display name, or null when they signed up with just an
+   * email (no displayName). The dropdown header uses this to avoid printing the
+   * email twice — once as the "name" line and once as the email line — when the
+   * account has no name.
+   */
+  readonly displayName = computed(() => this.fbUser()?.displayName?.trim() || null);
+
+  /** Email shown in the dropdown header (same fallback the header used before). */
+  readonly userEmail = computed(() => this.fbUser()?.email || this.activeApp()?.appId || '');
+
   readonly userInitials = computed(() => {
     const name = this.userName();
     return name.substring(0, 2).toUpperCase();

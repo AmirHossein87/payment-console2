@@ -1,0 +1,182 @@
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-weight: 700;
+  margin-bottom: 28px;
+}
+
+.brand-icon {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--brand-500), #5260ff);
+  color: #fff;
+  border-radius: 16px;
+  font-weight: 800;
+  font-size: 1.6rem;
+  box-shadow: var(--sh-md);
+  overflow: hidden;
+
+  &.no-bg {
+    width: auto;
+    height: auto;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+  }
+}
+
+.brand .nm {
+  font-size: 1.3rem;
+  letter-spacing: 0.2px;
+}
+
+.logo-img {
+  display: block;
+  width: auto;
+  height: 52px;
+  max-width: 220px;
+  object-fit: contain;
+}
+
+/* Envelope badge */
+.mail-badge {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: var(--brand-weak);
+  color: var(--brand-600);
+  margin-bottom: 18px;
+
+  .material-symbols-outlined {
+    font-size: 30px;
+  }
+}
+
+h1 {
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  color: var(--text-2);
+  margin-bottom: 24px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+
+  strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+}
+
+.social-btn,
+.submit-btn {
+  width: 100%;
+  border: 0;
+  border-radius: var(--r-md);
+  font: inherit;
+  cursor: pointer;
+  outline: none;
+  transition: 0.18s ease;
+}
+
+.submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--brand-500);
+  color: #fff;
+  padding: 13px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(56, 128, 255, 0.25);
+
+  &:hover:not(:disabled) {
+    background: var(--brand-600);
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+}
+
+.social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--surface-2);
+  color: var(--text);
+  padding: 13px;
+  font-weight: 600;
+  border: 1px solid var(--border-strong);
+
+  &:hover:not(:disabled) {
+    background: var(--border);
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.resend-btn {
+  margin-top: 12px;
+}
+
+a.link {
+  color: var(--brand-600);
+  text-decoration: none;
+  font-weight: 600;
+
+  &:hover {
+    color: var(--brand-700);
+    text-decoration: underline;
+  }
+}
+
+.toggle-text {
+  text-align: center;
+  color: var(--text-2);
+  margin-top: 24px;
+  font-size: 0.9rem;
+}
+
+/* Button spinner (matches the app's other in-button spinners) */
+.btn-spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-top-color: #fff;
+  border-radius: 50%;
+  display: inline-block;
+  animation: ve-spin 0.7s linear infinite;
+}
+
+@keyframes ve-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

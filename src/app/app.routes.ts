@@ -5,6 +5,7 @@ import { appRedirectGuard } from '@core/guards/app-redirect.guard';
 import { AuthLayoutComponent } from '@features/auth/auth-layout/auth-layout.component';
 import { SigninComponent } from '@features/auth/signin/signin.component';
 import { AgreementComponent } from '@features/auth/agreement/agreement.component';
+import { VerifyEmailComponent } from '@features/auth/verify-email/verify-email.component';
 import { ForgetPasswordComponent } from '@features/auth/forget-password/forget-password.component';
 import { ConfirmForgetPassComponent } from '@features/auth/confirm-forget-pass/confirm-forget-pass.component';
 import { GrantAccessComponent } from '@features/auth/grant-access/grant-access.component';
@@ -84,6 +85,7 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'signin' },
       { path: 'signin', component: SigninComponent },
       { path: 'signup', component: AgreementComponent },
+      { path: 'verify-email', component: VerifyEmailComponent },
       { path: 'forget-password', component: ForgetPasswordComponent },
       { path: 'confirm', component: ConfirmForgetPassComponent },
     ],

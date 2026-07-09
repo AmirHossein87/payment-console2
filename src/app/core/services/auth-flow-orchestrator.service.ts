@@ -30,8 +30,12 @@ export class AuthFlowOrchestratorService {
   private readonly licenseStore = inject(LicenseStore);
   private readonly workspaceStore = inject(WorkspaceStore);
 
-  async initiateFirebaseSession(idToken: string): Promise<void> {
-    const isSignup = this.router.url.includes('signup');
+  async initiateFirebaseSession(idToken: string, isSignupOverride?: boolean): Promise<void> {
+    // Normally sign-up vs sign-in is inferred from the URL ("/auth/signup"). But
+    // the verify-email page provisions a just-verified NEW account while sitting
+    // on "/auth/verify-email" (no "signup" segment), so it passes an explicit
+    // flag. Fall back to URL sniffing for the in-form Google/email flows.
+    const isSignup = isSignupOverride ?? this.router.url.includes('signup');
     this.authStore.signupAlreadyRegistered.set(false);
     this.authStore.signinUnregistered.set(false);
 

@@ -22,8 +22,10 @@
   @if (isOpen()) {
     <div class="user-menu">
       <div class="uhead">
-        <div class="n">{{ userName() }}</div>
-        <div class="e">{{ fbUser()?.email || activeApp()?.appId || '' }}</div>
+        @if (displayName()) {
+          <div class="n">{{ displayName() }}</div>
+        }
+        <div class="e" [class.only]="!displayName()">{{ userEmail() }}</div>
       </div>
       <div class="sep"></div>
       @for (item of menuItems(); track item.label) {

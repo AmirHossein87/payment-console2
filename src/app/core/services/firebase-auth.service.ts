@@ -8,6 +8,8 @@ import {
   signInWithPopup,
   signOut,
   sendPasswordResetEmail,
+  sendEmailVerification,
+  reload,
 } from '@angular/fire/auth';
 import { Auth } from '@angular/fire/auth';
 import { Router } from '@angular/router';
@@ -48,6 +50,49 @@ export class FirebaseAuthService {
 
   async signUpWithEmail(email: string, password: string): Promise<UserCredential> {
     return await createUserWithEmailAndPassword(this.auth, email, password);
+  }
+
+  /**
+   * Sends Firebase's built-in verification email to the currently signed-in user.
+   * A brand-new email/password account is unverified, and the backend signup API
+   * rejects an unverified ID token ("email is not verified"), so email/password
+   * registration must gate provisioning on this. (Google accounts arrive already
+   * verified, so they skip this path.)
+   */
+  async sendEmailVerification(): Promise<void> {
+    const user = this.auth.currentUser;
+    if (!user) throw new Error('No authenticated user to verify.');
+    await sendEmailVerification(user);
+  }
+
+  /**
+   * Reloads the current Firebase user so `emailVerified` reflects the latest
+   * state after the user clicks the link in their inbox.
+   */
+  async reloadCurrentUser(): Promise<void> {
+    const user = this.auth.currentUser;
+    if (user) await reload(user);
+  }
+
+  /** Whether the current Firebase user's email address is verified. */
+  isCurrentUserEmailVerified(): boolean {
+    return this.auth.currentUser?.emailVerified ?? false;
+  }
+
+  /** Email address of the current Firebase user (null when signed out). */
+  getCurrentUserEmail(): string | null {
+    return this.auth.currentUser?.email ?? null;
+  }
+
+  /**
+   * ID token for the current Firebase user. Pass `forceRefresh = true` right
+   * after verification so the freshly minted token carries the updated
+   * `email_verified: true` claim the backend checks.
+   */
+  async getCurrentUserIdToken(forceRefresh = false): Promise<string> {
+    const user = this.auth.currentUser;
+    if (!user) throw new Error('No authenticated user.');
+    return await user.getIdToken(forceRefresh);
   }
 
   async sendPasswordResetEmail(email: string): Promise<void> {

@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, ActivatedRoute } from '@angular/router';
+import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { AuthStore } from '@core/stores/auth.store';
 import { SettingsStore } from '@core/stores/settings.store';
@@ -22,6 +22,7 @@ export class AgreementComponent implements OnInit, OnDestroy {
   private readonly orchestrator = inject(AuthFlowOrchestratorService);
   private readonly notificationService = inject(NotificationService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   readonly authStore = inject(AuthStore);
   readonly settingsStore = inject(SettingsStore);
 
@@ -98,8 +99,25 @@ export class AgreementComponent implements OnInit, OnDestroy {
           this.email,
           this.password
         );
+
+        // A brand-new email/password account is unverified. Firebase issues an
+        // ID token with email_verified:false, which the backend signup API
+        // rejects ("email is not verified"). Send the verification email and
+        // route to the verify-email page — the backend is provisioned only
+        // AFTER the user verifies (see VerifyEmailComponent.checkVerification).
+        if (!userCredential.user.emailVerified) {
+          await this.firebaseAuth.sendEmailVerification();
+          this.authStore.isGoogleLoading.set(false);
+          this.router.navigate(['/auth/verify-email'], {
+            queryParams: { ...this.queryParams, email: this.email },
+          });
+          return;
+        }
+
+        // Already verified (e.g. a pre-existing verified credential) — provision
+        // immediately. isSignup=true because we're on the sign-up path.
         const idToken = await userCredential.user.getIdToken();
-        await this.orchestrator.initiateFirebaseSession(idToken);
+        await this.orchestrator.initiateFirebaseSession(idToken, true);
       } catch (error: any) {
         this.authStore.isGoogleLoading.set(false);
         this.notificationService.showError(this.getFirebaseErrorMessage(error));
