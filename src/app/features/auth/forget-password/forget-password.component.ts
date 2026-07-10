@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
@@ -14,7 +14,7 @@ import { NotificationService } from '@core/services/notification.service';
   templateUrl: './forget-password.component.html',
   styleUrls: ['./forget-password.component.scss'],
 })
-export class ForgetPasswordComponent {
+export class ForgetPasswordComponent implements OnInit {
   private readonly firebaseAuth = inject(FirebaseAuthService);
   private readonly notificationService = inject(NotificationService);
   private readonly router = inject(Router);
@@ -23,6 +23,13 @@ export class ForgetPasswordComponent {
   readonly settingsStore = inject(SettingsStore);
 
   email = '';
+
+  ngOnInit(): void {
+    // Pre-fill from ?email= — e.g. when arriving from the sign-up page's
+    // "already registered → reset it" link, so the user doesn't retype it.
+    const emailParam = this.route.snapshot.queryParamMap.get('email');
+    if (emailParam) this.email = emailParam;
+  }
 
   async onForgetPass(): Promise<void> {
     if (!this.email) return;
@@ -52,6 +59,8 @@ export class ForgetPasswordComponent {
           return 'Please enter your email address.';
         case 'auth/too-many-requests':
           return 'Too many attempts. Please try again later.';
+        case 'auth/network-request-failed':
+          return 'Network error — we couldn\'t reach the service. Check your connection (and any ad blocker or VPN), then try again.';
         default:
           return error.message || 'An unexpected error occurred. Please try again.';
       }

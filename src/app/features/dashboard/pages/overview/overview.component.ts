@@ -10,7 +10,7 @@ import { DateRangePickerComponent, DateRange } from '@shared/components/date-ran
 import { ProviderLogoComponent } from '@shared/components/provider-logo/provider-logo.component';
 
 type DashboardState = 'setup' | 'gateway' | 'completed' | 'completed-expired' | 'expired';
-type OvPreset = 'today' | '7d' | '30d';
+type OvPreset = 'today' | '7d' | 'month';
 type OvRange = OvPreset | 'custom';
 
 interface KpiValue {
@@ -68,7 +68,7 @@ const OV: Record<OvPreset, RangeData> = {
     rejected: [['USD', 31, '$8,120'], ['EUR', 12, '€2,940'], ['GBP', 5, '£640']],
     fraud: { blocked: 28, customersBlocked: 6 },
   },
-  '30d': {
+  month: {
     kpis: {
       approval: { v: '90.4%', sub: '1,847 of 2,043 attempts', d: -0.6 },
       tx: { v: '1,847', sub: 'captured', d: 16.1 },
@@ -154,7 +154,7 @@ export class OverviewComponent implements OnInit {
   readonly ranges: { key: OvPreset; label: string }[] = [
     { key: 'today', label: 'Today' },
     { key: '7d', label: 'Last 7 days' },
-    { key: '30d', label: 'Last 30 days' },
+    { key: 'month', label: 'This month' },
   ];
   readonly kpiMeta = KPI_META;
 
@@ -167,7 +167,7 @@ export class OverviewComponent implements OnInit {
     if (live) return this.mapToRangeData(live);
     // No live data yet (loading / error) — show sample data for the selected preset.
     const r = this.ovRange();
-    return r === 'custom' ? OV['30d'] : OV[r];
+    return r === 'custom' ? OV['month'] : OV[r];
   });
 
   setRange(r: OvPreset): void {
@@ -391,7 +391,11 @@ export class OverviewComponent implements OnInit {
     }
     if (r === 'today') return { begin: startOfDay(now), end };
     if (r === '7d') return { begin: this.daysAgo(now, 6), end };
-    return { begin: this.daysAgo(now, 29), end }; // '30d'
+    // 'month' — from the first day of the current month (00:00:00) through the
+    // last second of today (23:59:59).
+    const monthBegin = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    return { begin: monthBegin, end: endOfToday };
   }
 
   private daysAgo(from: Date, days: number): Date {

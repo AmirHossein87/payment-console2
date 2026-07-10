@@ -106,7 +106,19 @@ export class AgreementComponent implements OnInit, OnDestroy {
         // route to the verify-email page — the backend is provisioned only
         // AFTER the user verifies (see VerifyEmailComponent.checkVerification).
         if (!userCredential.user.emailVerified) {
-          await this.firebaseAuth.sendEmailVerification();
+          // The account now EXISTS in Firebase and the user is signed in. A
+          // failure to *send* the verification email must NOT look like a signup
+          // failure — otherwise the account is stranded and the next attempt hits
+          // "email already in use". Route to the verify-email page regardless (it
+          // has a Resend button); only surface the send failure as a hint. This
+          // is the root cause of the "errored but was created" scenario.
+          try {
+            await this.firebaseAuth.sendEmailVerification();
+          } catch {
+            this.notificationService.showError(
+              'We couldn\'t send the verification email. Use "Resend" on the next screen.'
+            );
+          }
           this.authStore.isGoogleLoading.set(false);
           this.router.navigate(['/auth/verify-email'], {
             queryParams: { ...this.queryParams, email: this.email },
@@ -120,7 +132,15 @@ export class AgreementComponent implements OnInit, OnDestroy {
         await this.orchestrator.initiateFirebaseSession(idToken, true);
       } catch (error: any) {
         this.authStore.isGoogleLoading.set(false);
-        this.notificationService.showError(this.getFirebaseErrorMessage(error));
+        // A duplicate email means the account already exists — often the user's
+        // OWN account, created by an earlier attempt that errored *after* the
+        // account was made. Surface the inline box (sign in / forgot password)
+        // instead of a dead-end toast so they can recover.
+        if (error?.code === 'auth/email-already-in-use') {
+          this.authStore.signupAlreadyRegistered.set(true);
+        } else {
+          this.notificationService.showError(this.getFirebaseErrorMessage(error));
+        }
       } finally {
         this.password = '';
         this.confirmPassword = '';
@@ -139,6 +159,8 @@ export class AgreementComponent implements OnInit, OnDestroy {
         case 'auth/email-already-in-use': return 'Email address is already in use.';
         case 'auth/weak-password': return 'Password should be at least 6 characters.';
         case 'auth/operation-not-allowed': return 'Email/password accounts are not enabled.';
+        case 'auth/network-request-failed': return 'Network error — we couldn\'t reach the sign-up service. Check your connection (and any ad blocker or VPN), then try again.';
+        case 'auth/too-many-requests': return 'Too many attempts. Please wait a moment and try again.';
         default: return error.message || 'An unexpected registration error occurred.';
       }
     }

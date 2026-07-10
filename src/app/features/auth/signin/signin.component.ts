@@ -67,6 +67,8 @@ export class SigninComponent {
         case 'auth/email-already-in-use': return 'Email address is already in use.';
         case 'auth/weak-password': return 'Password should be at least 6 characters.';
         case 'auth/invalid-credential': return 'Invalid credentials provided.';
+        case 'auth/network-request-failed': return 'Network error — we couldn\'t reach the sign-in service. Check your connection (and any ad blocker or VPN), then try again.';
+        case 'auth/too-many-requests': return 'Too many attempts. Please wait a moment and try again.';
         default: return error.message || 'An unexpected authentication error occurred.';
       }
     }

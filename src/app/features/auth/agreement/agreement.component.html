@@ -39,8 +39,10 @@
 @if (authStore.signupAlreadyRegistered()) {
   <div class="warning-box">
     <span>
-      A user with this Email has already registered. Please use the
-      <a class="link" routerLink="/auth/signin" queryParamsHandling="preserve">sign in</a> page.
+      This email is already registered. Please
+      <a class="link" routerLink="/auth/signin" queryParamsHandling="preserve">sign in</a>.
+      If it's your account and you don't remember the password, you can
+      <a class="link" routerLink="/auth/forget-password" [queryParams]="{ email }" queryParamsHandling="merge">reset it</a>.
     </span>
   </div>
 }
