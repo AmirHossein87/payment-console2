@@ -10,6 +10,7 @@ import {
 } from '@proxy/payment-app-proxy';
 import {
   Customer,
+  CustomersClient,
   PaymentsClient,
   PaymentCreateByHostedPageRequest,
   PaymentProviderCustomerOrder,
@@ -33,6 +34,7 @@ export class CreatePaymentLinkModalComponent {
   private readonly profilesClient = inject(PaymentProfilesClient);
   private readonly fraudClient = inject(FraudPoliciesClient);
   private readonly paymentsClient = inject(PaymentsClient);
+  private readonly customersClient = inject(CustomersClient);
   private readonly workspaceStore = inject(WorkspaceStore);
   private readonly notify = inject(NotificationService);
 
@@ -83,7 +85,47 @@ export class CreatePaymentLinkModalComponent {
       this.customerLabel = name || customer.customerId;
     }
     this.isOpen.set(true);
-    await Promise.all([this.loadGateways(), this.loadPolicies()]);
+    await Promise.all([
+      this.loadGateways(),
+      this.loadPolicies(),
+      this.maybeAutoSelectFirstCustomer(),
+    ]);
+  }
+
+  /**
+   * Onboarding aid: in a SANDBOX app that hasn't completed setup yet, pre-fill
+   * the customer field with the first available customer so the merchant can try
+   * "create a payment link" without hunting for a customer first. Only runs when
+   * NO customer was already supplied to open() and the app is sandbox AND
+   * !isSetupCompleted. Silent on failure — the field simply stays empty.
+   */
+  private async maybeAutoSelectFirstCustomer(): Promise<void> {
+    if (this.customerId) return; // a customer was passed to open() — respect it
+
+    const app = this.workspaceStore.selectedApp() ?? this.workspaceStore.activeAppMetadata();
+    if (!app || !this.workspaceStore.isSandbox() || app.isSetupCompleted) return;
+
+    const appId = this.workspaceStore.currentAppId();
+    if (!appId) return;
+
+    try {
+      const rows = await firstValueFrom(
+        this.customersClient.list(
+          appId,
+          undefined, // searchCriteria
+          undefined, // isBlocked
+          undefined, // fraudPolicyId
+          undefined, // isCheckAccountBalanceActivated
+          1, // pageNumber
+          1, // pageSize — we only need the first
+        ),
+      );
+      const first = rows?.[0];
+      // Guard against a customer having been picked while this request was in flight.
+      if (first && !this.customerId) this.onCustomerSelected(first);
+    } catch {
+      // Non-critical onboarding convenience — leave the field empty on failure.
+    }
   }
 
   /** Loads the app's fraud policies and auto-picks when there's only one (shown

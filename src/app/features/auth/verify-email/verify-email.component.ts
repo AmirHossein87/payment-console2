@@ -45,12 +45,20 @@ export class VerifyEmailComponent implements OnInit, OnDestroy {
   private queryParams: Record<string, any> = {};
   private cooldownHandle: ReturnType<typeof setInterval> | null = null;
   private readonly resendCooldownSeconds = 60;
+  /**
+   * Which backend call to make once verified. 'signup' provisions a NEW account
+   * (arriving from the sign-up form); 'signin' retries an EXISTING account's
+   * sign-in (arriving here because the backend blocked it with "Email has not
+   * been verified."). Defaults to 'signup' for backwards compatibility.
+   */
+  private mode: 'signin' | 'signup' = 'signup';
 
   ngOnInit(): void {
     // Clear any lingering loader from the sign-up page.
     this.authStore.isGoogleLoading.set(false);
 
     this.queryParams = { ...this.route.snapshot.queryParams };
+    this.mode = this.queryParams['mode'] === 'signin' ? 'signin' : 'signup';
     this.email.set(this.queryParams['email'] || this.firebaseAuth.getCurrentUserEmail());
 
     // No Firebase session → nothing to verify (start sign-up again).
@@ -81,10 +89,12 @@ export class VerifyEmailComponent implements OnInit, OnDestroy {
       }
 
       // Verified — force-refresh the ID token so it carries email_verified:true,
-      // then provision the account (explicit isSignup=true: the URL is
-      // /auth/verify-email, which the orchestrator would otherwise read as sign-in).
+      // then run the backend call the user came here for. Explicit isSignup flag:
+      // the URL is /auth/verify-email, which the orchestrator would otherwise
+      // read as sign-in. 'signup' → callSignUp (new account); 'signin' → callSignIn
+      // (existing account that was blocked for being unverified).
       const idToken = await this.firebaseAuth.getCurrentUserIdToken(true);
-      await this.orchestrator.initiateFirebaseSession(idToken, true);
+      await this.orchestrator.initiateFirebaseSession(idToken, this.mode === 'signup');
     } catch (error: any) {
       this.notify.showError(
         error?.message || 'Failed to check verification status. Please try again.'

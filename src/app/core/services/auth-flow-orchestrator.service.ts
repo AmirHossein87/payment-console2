@@ -102,7 +102,27 @@ export class AuthFlowOrchestratorService {
         messageText.includes('UnregisteredUserException') ||
         messageText.includes('UnregsistredUserException');
 
-      if (isSignup && (is409 || (is403 && !isUnregisteredException))) {
+      // The backend rejects auth for an account whose email was never verified
+      // (AuthenticationException "Email has not been verified.") — a user who
+      // registered with email/password but never completed verification. Recover
+      // by routing to the verify-email page (Resend + continue) instead of a
+      // dead-end error. Checked FIRST: the backend may return this as a 403,
+      // which would otherwise be misread as "unregistered" below.
+      const hay = `${responseText} ${messageText}`;
+      const isEmailNotVerified =
+        /not been verified/i.test(hay) ||
+        ((error?.typeName === 'AuthenticationException' ||
+          error?.exceptionTypeName === 'AuthenticationException' ||
+          hay.includes('AuthenticationException')) &&
+          /verif/i.test(hay));
+
+      if (isEmailNotVerified) {
+        this.log.info('Auth blocked — email not verified. Routing to verify-email.');
+        this.authStore.isGoogleLoading.set(false);
+        this.router.navigate(['/auth/verify-email'], {
+          queryParams: { ...this.getQueryParams(), mode: isSignup ? 'signup' : 'signin' },
+        });
+      } else if (isSignup && (is409 || (is403 && !isUnregisteredException))) {
         // Account already exists — surface the "already registered, please sign in"
         // box on the sign-up page (via signupAlreadyRegistered) instead of a toast,
         // mirroring the sign-in unregistered prompt. No signup retry.
