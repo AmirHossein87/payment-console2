@@ -106,19 +106,10 @@ export class AgreementComponent implements OnInit, OnDestroy {
         // route to the verify-email page — the backend is provisioned only
         // AFTER the user verifies (see VerifyEmailComponent.checkVerification).
         if (!userCredential.user.emailVerified) {
-          // The account now EXISTS in Firebase and the user is signed in. A
-          // failure to *send* the verification email must NOT look like a signup
-          // failure — otherwise the account is stranded and the next attempt hits
-          // "email already in use". Route to the verify-email page regardless (it
-          // has a Resend button); only surface the send failure as a hint. This
-          // is the root cause of the "errored but was created" scenario.
-          try {
-            await this.firebaseAuth.sendEmailVerification();
-          } catch {
-            this.notificationService.showError(
-              'We couldn\'t send the verification email. Use "Resend" on the next screen.'
-            );
-          }
+          // The account now EXISTS in Firebase and the user is signed in. Don't
+          // send the verification email here — the verify-email page sends it on
+          // arrival (single source of truth), so every path that lands there gets
+          // an email uniformly and a send failure can't strand the account.
           this.authStore.isGoogleLoading.set(false);
           this.router.navigate(['/auth/verify-email'], {
             queryParams: { ...this.queryParams, email: this.email },
@@ -131,14 +122,15 @@ export class AgreementComponent implements OnInit, OnDestroy {
         const idToken = await userCredential.user.getIdToken();
         await this.orchestrator.initiateFirebaseSession(idToken, true);
       } catch (error: any) {
-        this.authStore.isGoogleLoading.set(false);
-        // A duplicate email means the account already exists — often the user's
-        // OWN account, created by an earlier attempt that errored *after* the
-        // account was made. Surface the inline box (sign in / forgot password)
-        // instead of a dead-end toast so they can recover.
         if (error?.code === 'auth/email-already-in-use') {
-          this.authStore.signupAlreadyRegistered.set(true);
+          // The account already exists — most often the user's OWN account from
+          // an earlier attempt that created it but errored before verification.
+          // Telling them to "sign in" is a dead end (the backend rejects an
+          // unverified account), so instead sign them in with the credentials
+          // they just typed and route them to verify-email to resend/continue.
+          await this.recoverExistingEmail(this.email, this.password);
         } else {
+          this.authStore.isGoogleLoading.set(false);
           this.notificationService.showError(this.getFirebaseErrorMessage(error));
         }
       } finally {
@@ -149,6 +141,60 @@ export class AgreementComponent implements OnInit, OnDestroy {
     }
 
     await this.orchestrator.completeAgreement();
+  }
+
+  /**
+   * Handles "email already in use" on sign-up. Usually the SAME user, whose
+   * earlier attempt created the Firebase account but errored before verification
+   * — leaving them unverified and unable to sign in (the backend rejects
+   * unverified tokens). Sign in with the credentials they just typed, then:
+   *   • not verified → resend + go to the verify-email page (sign-in mode).
+   *   • verified     → they already have a usable account → continue the sign-in flow.
+   *   • sign-in fails (different password / not their account) → show the inline
+   *     "already registered — sign in / reset password" box.
+   */
+  private async recoverExistingEmail(email: string, password: string): Promise<void> {
+    try {
+      const cred = await this.firebaseAuth.signInWithEmail(email, password);
+
+      if (!cred.user.emailVerified) {
+        // Existing but unverified — the session is now established. This is the
+        // SIGN-UP flow, so after verification the backend call must be signUp
+        // (create the account): a first-time user signs up, THEN signs in. Route
+        // to verify-email WITHOUT a mode → it defaults to 'signup'.
+        this.authStore.isGoogleLoading.set(false);
+        this.router.navigate(['/auth/verify-email'], {
+          queryParams: { ...this.queryParams, email },
+        });
+        return;
+      }
+
+      // Verified account whose password matches — they meant to sign in. Continue
+      // the normal sign-in flow (isSignup=false). initiateFirebaseSession manages
+      // the loader / navigation from here.
+      const idToken = await cred.user.getIdToken();
+      await this.orchestrator.initiateFirebaseSession(idToken, false);
+    } catch {
+      // Couldn't establish a session with the typed password. Never show an
+      // inline box — always route to a PAGE. If a Firebase session for this email
+      // is still active (e.g. an earlier attempt in this same tab), the
+      // verify-email/confirmation page can resend; otherwise send them to the
+      // sign-in page (email preserved), which also offers "forgot password".
+      this.authStore.isGoogleLoading.set(false);
+      const active = this.firebaseAuth.getCurrentUserEmail();
+      if (active && active.toLowerCase() === email.toLowerCase()) {
+        // Still the SIGN-UP flow → verify-email WITHOUT a mode (defaults to
+        // 'signup') so verification is followed by signUp, not signIn.
+        this.router.navigate(['/auth/verify-email'], {
+          queryParams: { ...this.queryParams, email },
+        });
+      } else {
+        this.notificationService.showError('This email is already registered. Please sign in.');
+        this.router.navigate(['/auth/signin'], {
+          queryParams: { ...this.queryParams, email },
+        });
+      }
+    }
   }
 
   private getFirebaseErrorMessage(error: any): string {

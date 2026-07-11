@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal, HostListener, ElementRef } from '@angular/core';
+import { Component, computed, inject, signal, HostListener, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Auth, authState } from '@angular/fire/auth';
@@ -6,12 +6,13 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { WorkspaceStore } from '@core/stores/workspace.store';
 import { PermissionStore } from '@core/stores/permission.store';
 import { FirebaseAuthService } from '@core/services/firebase-auth.service';
+import { ConfirmModalComponent } from '@shared/components/confirm-modal/confirm-modal.component';
 import { buildUserMenuItems } from '../nav-config';
 
 @Component({
   selector: 'app-user-menu',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ConfirmModalComponent],
   templateUrl: './user-menu.component.html',
   styleUrls: ['./user-menu.component.scss'],
 })
@@ -22,6 +23,8 @@ export class UserMenuComponent {
   private readonly firebaseAuth = inject(FirebaseAuthService);
   private readonly router = inject(Router);
   private readonly elementRef = inject(ElementRef);
+
+  @ViewChild('signoutConfirm') private signoutConfirm!: ConfirmModalComponent;
 
   readonly isOpen = signal(false);
   readonly activeApp = this.workspaceStore.activeAppMetadata;
@@ -87,7 +90,16 @@ export class UserMenuComponent {
     event?.preventDefault();
     this.isOpen.set(false);
     if (item.action === 'signout') {
-      this.firebaseAuth.signout();
+      // Confirm before signing out — an accidental click shouldn't drop the session.
+      this.signoutConfirm.open({
+        title: 'Sign out?',
+        message: 'You’ll be signed out and returned to the sign-in page.',
+        confirmLabel: 'Sign out',
+        icon: 'logout',
+        confirm: async () => {
+          await this.firebaseAuth.signout();
+        },
+      });
     } else if (item.route) {
       this.router.navigate([item.route]);
     }

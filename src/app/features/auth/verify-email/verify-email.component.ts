@@ -64,7 +64,40 @@ export class VerifyEmailComponent implements OnInit, OnDestroy {
     // No Firebase session → nothing to verify (start sign-up again).
     if (!this.firebaseAuth.getCurrentUserEmail()) {
       this.noActiveUser.set(true);
+      return;
     }
+
+    // Send the verification link on ARRIVAL so every flow that routes here
+    // (sign-up, existing-unverified recovery, or a backend "email not verified")
+    // produces an email without the user having to click Resend. This is the
+    // single source of truth — the callers no longer send it themselves.
+    this.autoSendOnArrival();
+  }
+
+  /** sessionStorage key recording when we last sent a link for this email. */
+  private sentKey(): string {
+    return `ve_sent_${(this.email() ?? '').toLowerCase()}`;
+  }
+
+  /**
+   * Sends the verification link once on arrival, unless one was sent moments ago
+   * (e.g. the user refreshed the page) — in which case we just show the remaining
+   * cooldown instead of emailing again.
+   */
+  private autoSendOnArrival(): void {
+    let lastSent = 0;
+    try {
+      lastSent = Number(sessionStorage.getItem(this.sentKey()) || 0);
+    } catch {
+      // sessionStorage unavailable — fall through and just send.
+    }
+    const remainingMs = this.resendCooldownSeconds * 1000 - (Date.now() - lastSent);
+    if (lastSent && remainingMs > 0) {
+      this.resendCooldown.set(Math.ceil(remainingMs / 1000));
+      this.runCooldownTimer();
+      return;
+    }
+    void this.resend(); // sends, toasts, stamps sentKey, starts the cooldown
   }
 
   ngOnDestroy(): void {
@@ -109,6 +142,11 @@ export class VerifyEmailComponent implements OnInit, OnDestroy {
     this.resending.set(true);
     try {
       await this.firebaseAuth.sendEmailVerification();
+      try {
+        sessionStorage.setItem(this.sentKey(), String(Date.now()));
+      } catch {
+        // Non-fatal — the refresh guard just won't persist.
+      }
       this.notify.showSuccess('Verification email sent. Please check your inbox.');
       this.startResendCooldown();
     } catch (error: any) {
@@ -128,6 +166,10 @@ export class VerifyEmailComponent implements OnInit, OnDestroy {
 
   private startResendCooldown(): void {
     this.resendCooldown.set(this.resendCooldownSeconds);
+    this.runCooldownTimer();
+  }
+
+  private runCooldownTimer(): void {
     if (this.cooldownHandle) clearInterval(this.cooldownHandle);
     this.cooldownHandle = setInterval(() => {
       this.resendCooldown.update((v) => v - 1);

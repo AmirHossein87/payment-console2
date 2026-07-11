@@ -1,7 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { AuthStore } from '@core/stores/auth.store';
 import { SettingsStore } from '@core/stores/settings.store';
 import { AuthFlowOrchestratorService } from '@core/services/auth-flow-orchestrator.service';
@@ -15,15 +15,23 @@ import { NotificationService } from '@core/services/notification.service';
   templateUrl: './signin.component.html',
   styleUrls: ['./signin.component.scss'],
 })
-export class SigninComponent {
+export class SigninComponent implements OnInit {
   private readonly firebaseAuth = inject(FirebaseAuthService);
   private readonly orchestrator = inject(AuthFlowOrchestratorService);
   private readonly notificationService = inject(NotificationService);
+  private readonly route = inject(ActivatedRoute);
   readonly authStore = inject(AuthStore);
   readonly settingsStore = inject(SettingsStore);
 
   email = '';
   password = '';
+
+  ngOnInit(): void {
+    // Pre-fill from ?email= — e.g. when redirected here from the sign-up page
+    // because the email already exists, so the user doesn't retype it.
+    const emailParam = this.route.snapshot.queryParamMap.get('email');
+    if (emailParam) this.email = emailParam;
+  }
 
   async signinWithGoogle(): Promise<void> {
     this.authStore.isGoogleLoading.set(true);
