@@ -72,6 +72,27 @@
     }
   </div>
 
+  <!-- money by currency — one Stripe/PayPal-style stat card per currency, leading
+       with the amount. Placed right under the KPI strip: per-currency income is a
+       top business metric. Amounts are never FX-converted across currencies. -->
+  <div class="cur-section">
+    <div class="cur-shead">
+      <h3><span class="material-symbols-outlined">payments</span> Money by currency</h3>
+      <span class="sub">Amounts are never converted across currencies</span>
+    </div>
+    <div class="cur-grid">
+      @for (c of ov().currencies; track c[0]) {
+        <div class="cur-card">
+          <span class="cc-cur">{{ c[0] }}</span>
+          <div class="cc-amount">{{ c[1] }}</div>
+          <div class="cc-sub">{{ c[2] | number }} payments · {{ c[3] }} in fees</div>
+        </div>
+      } @empty {
+        <div class="cur-empty">No payments in this period.</div>
+      }
+    </div>
+  </div>
+
   <!-- volume over time + payment lifecycle -->
   <div class="grid-2 ov-mid">
     <div class="panel">
@@ -127,31 +148,6 @@
               <td class="num">{{ p.fee }}</td>
               <td><div class="minibar"><div class="track"><div class="fill" [ngClass]="p.ac" [style.width.%]="p.appr"></div></div><span class="apr-tag" [ngClass]="p.ac">{{ p.appr }}%</span></div></td>
               <td><div class="minibar"><div class="track"><div class="fill" [style.width.%]="p.share"></div></div><span class="pct">{{ p.share }}%</span></div></td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- money by currency (each row is a single currency — no FX) -->
-  <div class="datacard ov-card">
-    <div class="dc-toolbar">
-      <div class="dc-title"><span class="material-symbols-outlined" style="color:var(--brand-600)">payments</span> Money by currency</div>
-      <div class="spacer"></div>
-      <span class="cell-sub">Amounts are never converted across currencies</span>
-    </div>
-    <div class="dc-tablewrap">
-      <table class="dc">
-        <thead><tr><th>Currency</th><th class="num">Payments</th><th class="num">Volume</th><th class="num">Fees</th><th class="num">Fraud protected</th></tr></thead>
-        <tbody>
-          @for (c of ov().currencies; track c[0]) {
-            <tr>
-              <td class="cell-strong">{{ c[0] }}</td>
-              <td class="num">{{ c[2] | number }}</td>
-              <td class="num">{{ c[1] }}</td>
-              <td class="num">{{ c[3] }}</td>
-              <td class="num">{{ c[4] }}</td>
             </tr>
           }
         </tbody>

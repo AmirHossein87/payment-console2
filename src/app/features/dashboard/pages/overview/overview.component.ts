@@ -391,10 +391,16 @@ export class OverviewComponent implements OnInit {
     }
     if (r === 'today') return { begin: startOfDay(now), end };
     if (r === '7d') return { begin: this.daysAgo(now, 6), end };
-    // 'month' — from the first day of the current month (00:00:00) through the
-    // last second of today (23:59:59).
-    const monthBegin = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    // 'month' — the current calendar month, from the FIRST day (00:00:00) through
+    // the last second of today (23:59:59). Built with Date.UTC so the value the
+    // API receives (Date.toISOString(), i.e. UTC) is EXACTLY the first of the
+    // month: a local `new Date(y, m, 1)` serializes to the previous month's last
+    // day in any timezone ahead of UTC.
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    const d = now.getDate();
+    const monthBegin = new Date(Date.UTC(y, m, 1, 0, 0, 0));
+    const endOfToday = new Date(Date.UTC(y, m, d, 23, 59, 59));
     return { begin: monthBegin, end: endOfToday };
   }
 
@@ -491,10 +497,12 @@ export class OverviewComponent implements OnInit {
   private money(amount: number | null | undefined, currency: string): string {
     const cur = currency || 'USD';
     try {
+      // Show the currency's natural decimal places (2 for USD/EUR/AED/GBP, 0 for
+      // JPY, …) instead of rounding to whole units — the exact income, including
+      // cents/fils, must be visible in the overview.
       return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: cur,
-        maximumFractionDigits: 0,
       }).format(amount ?? 0);
     } catch {
       return `${amount ?? 0}`;
