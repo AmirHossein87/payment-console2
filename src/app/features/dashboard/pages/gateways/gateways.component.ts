@@ -65,6 +65,21 @@ export class GatewaysComponent implements OnInit {
   readonly availableProviders = signal<PaymentProvider[]>([]);
   readonly providersLoading = signal(false);
   readonly wizardProvider = signal<PaymentProvider | null>(null);
+
+  /** Step-1 provider search box. */
+  readonly providerSearch = signal('');
+  /** Providers filtered by the search box — matches the friendly NAME or the
+      provider id/type (e.g. "authorize" or "AuthorizeNet"). */
+  readonly filteredProviders = computed(() => {
+    const q = this.providerSearch().trim().toLowerCase();
+    const list = this.availableProviders();
+    if (!q) return list;
+    return list.filter((p) => {
+      const id = String(p.provider ?? '').toLowerCase();
+      const name = this.providerLabel(p.provider as string).toLowerCase();
+      return id.includes(q) || name.includes(q);
+    });
+  });
   readonly providerConfigFields = signal<ConfigField[]>([]);
   readonly wizardSaving = signal(false);
   readonly wizardError = signal("");
@@ -207,7 +222,12 @@ export class GatewaysComponent implements OnInit {
     this.wConfigFields = {};
     this.invalidFields.set(new Set());
     this.wizardError.set("");
+    this.providerSearch.set('');
     await this.loadProviders();
+  }
+
+  onProviderSearch(event: Event): void {
+    this.providerSearch.set((event.target as HTMLInputElement).value);
   }
 
   async loadProviders(): Promise<void> {

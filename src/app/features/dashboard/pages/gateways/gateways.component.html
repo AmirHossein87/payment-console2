@@ -75,14 +75,25 @@
           } @else if (availableProviders().length === 0) {
             <p class="empty-msg">No providers available for this app.</p>
           } @else {
+            <!-- Search providers by name or id -->
+            <div class="gw-search">
+              <span class="material-symbols-outlined">search</span>
+              <input
+                type="text"
+                [value]="providerSearch()"
+                (input)="onProviderSearch($event)"
+                placeholder="Search by provider name or id…"
+              />
+            </div>
             <div class="gw-prov">
-              @for (p of availableProviders(); track p.provider) {
+              @for (p of filteredProviders(); track p.provider) {
                 <div
                   class="opt"
                   [class.sel]="wizardProvider()?.provider === p.provider"
                   (click)="selectProvider(p)"
                 >
-                  <app-provider-logo [provider]="p" [showName]="false" [size]="72" />
+                  <app-provider-logo [provider]="p" [showName]="false" [size]="52" />
+                  <span class="opt-name">{{ providerLabel(p.provider) }}</span>
                   <span class="opt-spacer"></span>
                   @if (configuredCount(p.provider) > 0) {
                     <span class="cfg-tag">{{ configuredCount(p.provider) }} configured</span>
@@ -92,6 +103,8 @@
                     <span class="material-symbols-outlined sel-check">check_circle</span>
                   }
                 </div>
+              } @empty {
+                <p class="empty-msg">No providers match “{{ providerSearch() }}”.</p>
               }
             </div>
           }
