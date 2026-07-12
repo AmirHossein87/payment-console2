@@ -27,7 +27,8 @@ export interface GridColumn {
   // tab); a plain left-click is intercepted and emits (linkClicked) instead.
   linkHref?: (row: any) => string;
   badgeMap?: { [key: string]: string }; // maps cell value to pill class e.g. { 'Captured': 'ok', 'Pending': 'warn' }
-  iconSize?: number; // pixel size override for a 'provider' column's logo (default 52)
+  iconSize?: number; // pixel size override for a 'provider' column's logo (default 52). In wide mode this is the logo HEIGHT.
+  iconWide?: boolean; // render a 'provider' logo as a borderless wordmark (fills width, no box) instead of a padded square
   editOptions?: (string | { label: string; value: any })[]; // options for the quick column-filter dropdown
   valueFormatter?: (value: any, row: any) => string;
   customTemplate?: TemplateRef<any>;

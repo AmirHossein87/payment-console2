@@ -416,12 +416,17 @@
                 {{ formatCellText(row, col) }}
               </span>
 
-              <!-- Provider logo only (no name) in grid cells -->
+              <!-- Provider logo only (no name) in grid cells. Rendered as a
+                   compact borderless wordmark by DEFAULT (legible, no padded box,
+                   no row-height inflation) — handled globally here so grids don't
+                   configure it per-column. A column may still override with
+                   iconWide:false (boxed) or iconSize (custom height). -->
               <app-provider-logo
                 *ngSwitchCase="'provider'"
                 [provider]="getCellValue(row, col.field)"
                 [showName]="false"
-                [size]="col.iconSize || 52"
+                [wide]="col.iconWide ?? true"
+                [size]="col.iconSize || 26"
               ></app-provider-logo>
 
               <!-- Icon display -->

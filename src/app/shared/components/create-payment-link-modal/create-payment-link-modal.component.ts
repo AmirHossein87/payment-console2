@@ -279,7 +279,12 @@ export class CreatePaymentLinkModalComponent {
       amount: this.amount!,
       currency: this.currency() as PaymentProviderCurrency,
       autoCapture: true,
-      registerAutoPayment: this.recurring,
+      // The "Recurring payment" toggle only decides whether the recurring option
+      // is OFFERED on the checkout page — it must NOT force-register an auto-pay
+      // mandate at link creation. So it drives showPayRecurringInCheckout, not
+      // registerAutoPayment (which stays false).
+      registerAutoPayment: false,
+      showPayRecurringInCheckout: this.recurring,
       expirationTime,
       fraudPolicyId: this.fraudPolicyId,
       returnUrl: this.returnUrl?.trim() || null,

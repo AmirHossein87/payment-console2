@@ -252,7 +252,6 @@ export class PaymentsComponent implements OnInit {
         header: "Provider",
         field: "paymentProvider",
         type: "provider",
-        iconSize: 72,
       },
       {
         id: "amount",

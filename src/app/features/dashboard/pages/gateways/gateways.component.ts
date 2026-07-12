@@ -124,7 +124,6 @@ export class GatewaysComponent implements OnInit {
         type: "provider",
         isSortable: true,
         width: "190px",
-        iconSize: 72,
       },
       {
         id: "currency",

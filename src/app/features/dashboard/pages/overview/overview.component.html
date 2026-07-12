@@ -142,7 +142,7 @@
         <tbody>
           @for (p of providerRows(); track $index) {
             <tr>
-              <td><app-provider-logo [provider]="p.paymentProvider || { name: p.name }" [showName]="true" [size]="52" /></td>
+              <td><app-provider-logo [provider]="p.paymentProvider || { name: p.name }" [showName]="false" [wide]="true" [size]="28" /></td>
               <td class="num">{{ p.tx | number }}</td>
               <td class="num">{{ p.gross }}</td>
               <td class="num">{{ p.fee }}</td>
