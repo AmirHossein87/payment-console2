@@ -58,6 +58,9 @@
     pattern="[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
     placeholder="you@example.com"
   />
+  @if (getEmailError()) {
+    <div class="error-container"><span class="error-message">{{ getEmailError() }}</span></div>
+  }
 
   <label for="password">Password</label>
   <input
@@ -68,8 +71,13 @@
     required
     placeholder="Enter your password"
   />
+  @if (getPasswordError()) {
+    <div class="error-container"><span class="error-message">{{ getPasswordError() }}</span></div>
+  }
 
-  <button class="submit-btn" type="submit" [disabled]="!signInForm.form.valid">
+  <!-- Always clickable so a submit attempt always explains itself; disabled ONLY
+       during an in-flight sign-in (the auth card shows a loader then). -->
+  <button class="submit-btn" type="submit" [disabled]="authStore.isGoogleLoading()">
     Sign In
   </button>
 </form>

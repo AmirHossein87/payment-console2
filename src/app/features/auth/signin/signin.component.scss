@@ -171,6 +171,16 @@ input:focus {
   box-shadow: 0 0 0 3px var(--brand-weak-2);
 }
 
+.error-container {
+  margin-top: -4px;
+}
+
+.error-message {
+  font-size: 0.82rem;
+  color: var(--bad);
+  font-weight: 500;
+}
+
 .row-between {
   display: flex;
   align-items: center;

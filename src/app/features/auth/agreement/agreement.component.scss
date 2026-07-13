@@ -213,6 +213,18 @@ input:focus {
     accent-color: var(--brand-500);
     flex-shrink: 0;
   }
+
+  /* Flag the unaccepted-terms row after a submit attempt so the blocker is obvious. */
+  &.invalid {
+    color: var(--bad);
+
+    input[type='checkbox'] {
+      accent-color: var(--bad);
+      outline: 2px solid var(--bad);
+      outline-offset: 1px;
+      border-radius: 3px;
+    }
+  }
 }
 
 a.link {

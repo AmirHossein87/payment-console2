@@ -58,8 +58,13 @@
     [(ngModel)]="email"
     required
     pattern="[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
-    placeholder="Jane Doe"
+    placeholder="you@example.com"
   />
+  @if (getEmailError()) {
+    <div class="error-container">
+      <span class="error-message">{{ getEmailError() }}</span>
+    </div>
+  }
 
   <label for="signup-password">Password</label>
   <input
@@ -88,7 +93,7 @@
   }
 
   <div class="checkbox-stack">
-    <label class="checkbox-row">
+    <label class="checkbox-row" [class.invalid]="getTermsError()">
       <input
         type="checkbox"
         name="agreeToTerms"
@@ -110,9 +115,16 @@
         }
       </span>
     </label>
+    @if (getTermsError()) {
+      <div class="error-container">
+        <span class="error-message">{{ getTermsError() }}</span>
+      </div>
+    }
   </div>
 
-  <button class="submit-btn" type="submit" [disabled]="!signUpForm.form.valid || !isFormValid()">
+  <!-- Always clickable so a submit attempt always explains itself (no silent dead
+       clicks). Disabled ONLY during active submission, when the card shows a loader. -->
+  <button class="submit-btn" type="submit" [disabled]="authStore.isGoogleLoading()">
     Create Account
   </button>
 </form>

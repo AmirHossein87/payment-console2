@@ -23,6 +23,8 @@ export class ForgetPasswordComponent implements OnInit {
   readonly settingsStore = inject(SettingsStore);
 
   email = '';
+  /** Set on submit so the email error appears — no silent dead button. */
+  tried = false;
 
   ngOnInit(): void {
     // Pre-fill from ?email= — e.g. when arriving from the sign-up page's
@@ -31,8 +33,17 @@ export class ForgetPasswordComponent implements OnInit {
     if (emailParam) this.email = emailParam;
   }
 
+  getEmailError(): string | null {
+    if (!this.tried) return null;
+    if (!this.email) return 'Email is required.';
+    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[A-Za-z]{2,}$/;
+    if (!emailPattern.test(this.email)) return 'Enter a valid email address.';
+    return null;
+  }
+
   async onForgetPass(): Promise<void> {
-    if (!this.email) return;
+    this.tried = true;
+    if (this.getEmailError()) return;
     try {
       this.authStore.isGoogleLoading.set(true);
       await this.firebaseAuth.sendPasswordResetEmail(this.email);

@@ -25,12 +25,26 @@ export class SigninComponent implements OnInit {
 
   email = '';
   password = '';
+  /** Set on submit so validation messages appear — every click now explains itself. */
+  tried = false;
 
   ngOnInit(): void {
     // Pre-fill from ?email= — e.g. when redirected here from the sign-up page
     // because the email already exists, so the user doesn't retype it.
     const emailParam = this.route.snapshot.queryParamMap.get('email');
     if (emailParam) this.email = emailParam;
+  }
+
+  getEmailError(): string | null {
+    if (!this.tried) return null;
+    if (!this.email) return 'Email is required.';
+    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[A-Za-z]{2,}$/;
+    if (!emailPattern.test(this.email)) return 'Enter a valid email address.';
+    return null;
+  }
+
+  getPasswordError(): string | null {
+    return this.tried && !this.password ? 'Password is required.' : null;
   }
 
   async signinWithGoogle(): Promise<void> {
@@ -50,7 +64,9 @@ export class SigninComponent implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
-    if (!this.email || !this.password) return;
+    // Reveal validation messages instead of silently doing nothing on click.
+    this.tried = true;
+    if (this.getEmailError() || this.getPasswordError()) return;
     try {
       this.authStore.isGoogleLoading.set(true);
       const userCredential = await this.firebaseAuth.signInWithEmail(this.email, this.password);

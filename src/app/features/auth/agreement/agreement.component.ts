@@ -31,6 +31,9 @@ export class AgreementComponent implements OnInit, OnDestroy {
   confirmPassword = '';
   agreeToTerms = false;
   queryParams: any = {};
+  /** Set once the user attempts to submit — gates the validation messages so the
+      form isn't red before they've tried, but every dead click now explains itself. */
+  tried = false;
 
   ngOnInit(): void {
     this.authStore.signupAlreadyRegistered.set(false);
@@ -57,14 +60,32 @@ export class AgreementComponent implements OnInit, OnDestroy {
     return true;
   }
 
+  /** Email error — shown only after a submit attempt so the field isn't red early. */
+  getEmailError(): string | null {
+    if (!this.tried) return null;
+    if (!this.email) return 'Email is required.';
+    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[A-Za-z]{2,}$/;
+    if (!emailPattern.test(this.email)) return 'Enter a valid email address.';
+    return null;
+  }
+
   getPasswordError(): string | null {
+    if (this.tried && !this.password) return 'Password is required.';
     if (this.password && this.password.length < 6) {
       return 'Password must be at least 6 characters long';
+    }
+    if (this.tried && this.password && !this.confirmPassword) {
+      return 'Please confirm your password.';
     }
     if (this.password && this.confirmPassword && this.password !== this.confirmPassword) {
       return 'Passwords do not match';
     }
     return null;
+  }
+
+  /** Terms error — the #1 silent blocker: the button was disabled with no message. */
+  getTermsError(): string | null {
+    return this.tried && !this.agreeToTerms ? 'Please accept the terms to continue.' : null;
   }
 
   async onLeave(): Promise<void> {
@@ -84,12 +105,17 @@ export class AgreementComponent implements OnInit, OnDestroy {
       }
     } catch (error: any) {
       this.authStore.isGoogleLoading.set(false);
-      this.notificationService.showError(this.getFirebaseErrorMessage(error));
+      const msg = this.getFirebaseErrorMessage(error);
+      if (msg) this.notificationService.showError(msg);
     }
   }
 
   async onSignUp(): Promise<void> {
     this.authStore.signupAlreadyRegistered.set(false);
+    // Mark as attempted so the template reveals exactly WHY it can't proceed
+    // (missing/invalid email, password, or unaccepted terms) — no more silent
+    // dead clicks on a disabled button.
+    this.tried = true;
     if (!this.isFormValid()) return;
 
     if (!this.firebaseAuth.isUserAuthenticated()) {
@@ -207,6 +233,8 @@ export class AgreementComponent implements OnInit, OnDestroy {
         case 'auth/operation-not-allowed': return 'Email/password accounts are not enabled.';
         case 'auth/network-request-failed': return 'Network error — we couldn\'t reach the sign-up service. Check your connection (and any ad blocker or VPN), then try again.';
         case 'auth/too-many-requests': return 'Too many attempts. Please wait a moment and try again.';
+        case 'auth/popup-blocked': return 'Your browser blocked the Google sign-in popup. Please allow popups for this site and try again.';
+        case 'auth/cancelled-popup-request': return '';
         default: return error.message || 'An unexpected registration error occurred.';
       }
     }
