@@ -80,7 +80,13 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
             type: error.statusText,
             typeName: errorResponse?.TypeName,
             status: error.status,
-            response: errorResponse,
+            // A bare 2FA exception serialises to "Exception of type '…' was thrown".
+            // Callers' extractError() reads response.Message/response.message BEFORE
+            // .message, so overwrite those with the friendly text too — otherwise the
+            // ugly .NET string would win.
+            response: friendlyTwoFa
+              ? { ...errorResponse, Message: friendlyTwoFa, message: friendlyTwoFa }
+              : errorResponse,
           };
 
           return throwError(() => normalizedError);
