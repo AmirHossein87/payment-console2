@@ -22,10 +22,12 @@
           <span class="material-symbols-outlined" [class.spin]="loading()">refresh</span>
           Refresh
         </button>
-        <button class="btn btn-sm" (click)="onExport()" [disabled]="loading() || data().length === 0">
-          <span class="material-symbols-outlined">download</span>
-          Export
-        </button>
+        @if (!hideExport()) {
+          <button class="btn btn-sm" (click)="onExport()" [disabled]="loading() || data().length === 0">
+            <span class="material-symbols-outlined">download</span>
+            Export
+          </button>
+        }
       </ng-container>
       <!-- Custom Projected Actions -->
       <ng-container *ngIf="actionsTemplate(); else defaultProjection">

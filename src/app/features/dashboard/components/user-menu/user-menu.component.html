@@ -13,6 +13,9 @@
         } @else {
           {{ userInitials() }}
         }
+        @if (needsTwoFaSetup()) {
+          <span class="alarm-dot" title="Two-factor authentication setup required"></span>
+        }
       </div>
       <div class="nm">{{ userName() }}</div>
       <span class="material-symbols-outlined chevron">expand_more</span>
@@ -25,7 +28,12 @@
         @if (displayName()) {
           <div class="n">{{ displayName() }}</div>
         }
-        <div class="e" [class.only]="!displayName()">{{ userEmail() }}</div>
+        @if (userEmail()) {
+          <div class="e" [class.only]="!displayName()">{{ userEmail() }}</div>
+        } @else if (!displayName()) {
+          <!-- No Firebase identity resolved — neutral label, never the app name. -->
+          <div class="n">{{ userName() }}</div>
+        }
       </div>
       <div class="sep"></div>
       @for (item of menuItems(); track item.label) {
@@ -33,6 +41,11 @@
           <a class="mi" [href]="item.route" (click)="onItemClick(item, $event)">
             <span class="material-symbols-outlined">{{ item.icon }}</span>
             {{ item.label }}
+            @if (isProfileItem(item) && needsTwoFaSetup()) {
+              <span class="mi-alarm" title="Two-factor authentication setup required">
+                <span class="dot"></span>
+              </span>
+            }
           </a>
         } @else {
           <div class="mi" (click)="onItemClick(item)">

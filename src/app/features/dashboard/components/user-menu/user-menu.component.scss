@@ -21,6 +21,7 @@
   }
 
   .av {
+    position: relative;
     width: 30px;
     height: 30px;
     border-radius: 50%;
@@ -31,13 +32,28 @@
     font-weight: 600;
     font-size: 12px;
     flex-shrink: 0;
-    overflow: hidden;
+    // overflow stays visible so the 2FA alarm dot can sit on the corner; the
+    // avatar image is self-rounded (border-radius: 50%) so nothing leaks.
 
     .av-img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       border-radius: 50%;
+    }
+
+    // 2FA "action required" alarm — a bold yellow dot on the avatar corner,
+    // visible without opening the menu.
+    .alarm-dot {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #f59e0b;
+      border: 2px solid var(--surface, #fff);
+      box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.4);
     }
   }
 
@@ -137,6 +153,21 @@
     .material-symbols-outlined {
       font-size: 19px;
       color: var(--text-3);
+    }
+
+    // 2FA "setup required" badge on the My Profile item — a bold yellow dot.
+    .mi-alarm {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+
+      .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #f59e0b;
+        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
+      }
     }
   }
 }

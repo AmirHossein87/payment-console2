@@ -99,6 +99,8 @@
 
 // ── Pane wrapper ───────────────────────────────────────────
 .set-pane { max-width: 680px; }
+// Developer panes (API keys, Webhook) hold grids/logs — let them use the full page.
+.set-pane.wide { max-width: none; }
 
 // ── Form card ─────────────────────────────────────────────
 .form-card {
@@ -135,6 +137,32 @@
       font-weight: 400;
       margin-top: 2px;
     }
+  }
+}
+
+// ── Section divider inside a form-card (e.g. "Personalization") ──
+.form-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+
+  span {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--text-3);
+    white-space: nowrap;
+  }
+
+  &::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
   }
 }
 
@@ -485,6 +513,7 @@
   border-radius: var(--r-lg);
   width: 480px;
   max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
   border: 1px solid var(--border);
   display: flex;
   flex-direction: column;
@@ -499,6 +528,7 @@
   gap: 10px;
   padding: 18px 20px;
   border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 
   h3 { font-size: 15px; font-weight: 700; }
   .spacer { flex: 1; }
@@ -511,6 +541,9 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .dns-info {
@@ -572,6 +605,269 @@
   border-top-color: #fff;
   animation: spin 0.7s linear infinite;
 }
+
+// ── API Integration + feature panes (API keys / 2FA / HMAC) ──
+.mf {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  .spacer { flex: 1; }
+}
+
+.modal.sm { width: 420px; }
+.modal.lg { width: 760px; max-width: calc(100vw - 32px); }
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  label { font-size: 12.5px; font-weight: 600; color: var(--text-2); }
+}
+
+.err-hint { font-size: 12px; color: var(--bad); font-weight: 500; }
+.ok-ic { color: var(--ok); font-size: 20px; }
+.warn-ic { color: var(--warn); font-size: 20px; }
+
+.token-msg { font-size: 13px; color: var(--text-2); margin-bottom: 12px; }
+.token-row {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 8px 10px;
+}
+.token-val {
+  flex: 1;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12.5px; color: var(--text); word-break: break-all;
+}
+.conf-msg { font-size: 13.5px; color: var(--text-2); line-height: 1.5; }
+
+// API keys grid cells
+.with-icon { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+.key-avi {
+  width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+  display: grid; place-items: center; color: #fff;
+  background: linear-gradient(135deg, var(--brand-500), #5260ff);
+}
+.row-actions { display: flex; justify-content: flex-end; gap: 4px; }
+.row-btn {
+  width: 30px; height: 30px; border-radius: var(--r-sm);
+  display: grid; place-items: center; border: none; background: transparent;
+  color: var(--text-3); cursor: pointer; transition: 0.12s;
+  .material-symbols-outlined { font-size: 18px; }
+  &:hover { background: var(--surface-2); color: var(--text); }
+  &.del:hover { background: rgba(239, 68, 68, 0.1); color: var(--bad); }
+}
+
+// API Integration intro row
+.pane-intro {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px; margin-bottom: 14px; flex-wrap: wrap;
+  h3 {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 15px; font-weight: 700; color: var(--text);
+    .material-symbols-outlined { font-size: 19px; color: var(--brand-600); }
+  }
+  p { font-size: 13px; color: var(--text-3); margin-top: 4px; max-width: 620px; line-height: 1.5; }
+}
+.api-grid-wrap { display: flex; flex-direction: column; min-height: 360px; }
+
+// Feature card (2FA / HMAC design panes)
+.feature-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-md); box-shadow: var(--sh-sm);
+  padding: 22px 24px; max-width: 640px;
+}
+// HMAC card merged under the webhook-delivery form-card — full width, spaced.
+.feature-card.wk-hmac { max-width: none; margin-top: 16px; }
+.fc-head { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.fc-ic {
+  width: 46px; height: 46px; border-radius: 12px; flex-shrink: 0;
+  display: grid; place-items: center;
+  .material-symbols-outlined { font-size: 24px; }
+  &.tf { background: var(--brand-weak); color: var(--brand-600); }
+  &.hm { background: rgba(139, 92, 246, 0.12); color: #8b5cf6; }
+}
+.fc-title {
+  flex: 1; min-width: 0;
+  h3 { font-size: 15.5px; font-weight: 700; color: var(--text); }
+  p { font-size: 12.5px; color: var(--text-3); margin-top: 2px; }
+}
+.fc-desc { font-size: 13.5px; color: var(--text-2); line-height: 1.55; margin-bottom: 16px;
+  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+}
+.fc-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+.fc-hint {
+  display: flex; align-items: center; gap: 7px; margin-top: 16px;
+  font-size: 12px; color: var(--text-3);
+  .material-symbols-outlined { font-size: 16px; }
+}
+
+// 2FA critical-actions note
+.crit-note {
+  display: flex; gap: 12px;
+  background: var(--warn-weak); border: 1px solid var(--warn);
+  border-radius: var(--r-sm); padding: 14px 16px;
+  .ci { color: var(--warn); font-size: 22px; flex-shrink: 0; }
+  .crit-body strong { display: block; font-size: 13px; color: var(--text); margin-bottom: 8px; }
+}
+.crit-list {
+  display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 0;
+  li {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-pill); padding: 4px 12px;
+    font-size: 12.5px; font-weight: 600; color: var(--text);
+    .material-symbols-outlined { font-size: 16px; color: var(--warn); }
+  }
+}
+
+// 2FA: "not required" info note + "setup required" message
+.info-note {
+  display: flex; gap: 12px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 14px 16px;
+  font-size: 13.5px; color: var(--text-2); line-height: 1.5;
+  .material-symbols-outlined { color: var(--text-3); font-size: 20px; flex-shrink: 0; }
+  strong { color: var(--text); }
+}
+.setup-msg { font-size: 12.5px; color: var(--text-2); line-height: 1.5; margin: 4px 0 0; b { color: var(--text); } }
+
+// Same yellow "setup required" sign as the profile menu — on the 2FA tab button.
+.tab-alarm {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f59e0b;
+  margin-left: 7px;
+  vertical-align: middle;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
+}
+
+// 2FA enrollment modal (scan QR → enter code)
+.tfa-enroll {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  .tfa-steps {
+    margin: 0;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.5;
+    b { color: var(--text); }
+  }
+
+  .qr-wrap {
+    display: flex;
+    justify-content: center;
+  }
+
+  .qr-box {
+    width: 190px;
+    height: 190px;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--border);
+    background: #fff;               // QR must stay on white to scan in dark mode
+    padding: 8px;
+    object-fit: contain;
+    display: grid;
+    place-items: center;
+
+    &.loading,
+    &.err {
+      background: var(--surface-2);
+      .material-symbols-outlined { font-size: 34px; color: var(--text-3); }
+    }
+    &.err .material-symbols-outlined { color: #ef4444; }
+  }
+
+  .tfa-otp-lbl {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-2);
+    margin-bottom: -6px;
+  }
+
+  .tfa-otp {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 8px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    color: var(--text);
+
+    &:focus { outline: none; border-color: var(--primary, #6366f1); }
+    &.err { border-color: #ef4444; }
+    &::placeholder { color: var(--text-3); letter-spacing: 8px; }
+  }
+
+  .tfa-err {
+    font-size: 12px;
+    color: #ef4444;
+    margin-top: -6px;
+  }
+}
+
+// HMAC signing secret
+.secret-row {
+  display: flex; flex-direction: column; gap: 7px;
+  label { font-size: 12.5px; font-weight: 600; color: var(--text-2); }
+}
+.secret-field {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 8px 10px;
+}
+.secret-val {
+  flex: 1;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12.5px; color: var(--text); word-break: break-all;
+}
+
+// Webhook delivery-attempt detail modal
+.wh-detail { display: flex; flex-direction: column; gap: 18px; }
+.wh-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 22px; }
+.wh-field {
+  display: flex; flex-direction: column; gap: 3px; min-width: 0;
+  &.wide { grid-column: 1 / -1; }
+  .k { font-size: 11px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; }
+  .v { font-size: 13.5px; color: var(--text); word-break: break-word; }
+  .v.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; }
+}
+.wh-block { display: flex; flex-direction: column; gap: 7px; }
+.wh-lbl {
+  font-size: 12px; font-weight: 700; color: var(--text-2);
+  display: flex; align-items: center; gap: 6px;
+  &.err { color: var(--bad); .material-symbols-outlined { font-size: 16px; } }
+}
+.payload-view {
+  margin: 0;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12.5px; line-height: 1.5; color: var(--text);
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 14px;
+  max-height: 42vh; overflow: auto; white-space: pre-wrap; word-break: break-word;
+
+  &.err {
+    color: var(--bad);
+    background: rgba(239, 68, 68, 0.06);
+    border-color: var(--bad);
+    max-height: 26vh;
+  }
+}
+.mf { flex-shrink: 0; }
 
 // ── Mobile ──────────────────────────────────────────────────
 @media (max-width: 640px) {

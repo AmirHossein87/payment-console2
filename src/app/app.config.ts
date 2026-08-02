@@ -7,6 +7,7 @@ import { environment } from "@environments/environment";
 import { routes } from "./app.routes";
 import { authInterceptor } from "@core/interceptors/auth.interceptor";
 import { errorInterceptor } from "@core/interceptors/error.interceptor";
+import { twoFactorInterceptor } from "@core/interceptors/two-factor.interceptor";
 import { API_BASE_URL } from "@proxy/payment-app-proxy";
 import {
   AuthenticationClient,
@@ -18,6 +19,7 @@ import {
   PaymentsClient,
   CustomersClient,
   FraudPoliciesClient,
+  TwoFactorClient,
 } from "@proxy/payment-app-proxy";
 import {
   PaymentsClient as BasePaymentsClient,
@@ -29,7 +31,9 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes, withComponentInputBinding()),
-    provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])),
+    // twoFactorInterceptor is innermost: it catches a 2FA-gated response, prompts
+    // for the code, and retries — so the error interceptor only sees genuine failures.
+    provideHttpClient(withInterceptors([authInterceptor, errorInterceptor, twoFactorInterceptor])),
 
     provideFirebaseApp(() => initializeApp(environment.firebaseConfig)),
     provideAuth(() => getAuth()),
@@ -46,6 +50,7 @@ export const appConfig: ApplicationConfig = {
     PaymentsClient,
     CustomersClient,
     FraudPoliciesClient,
+    TwoFactorClient,
     BasePaymentsClient,
     BaseCustomersClient,
   ],

@@ -49,10 +49,12 @@ export interface UserMenuItem {
 
 export function buildUserMenuItems(appId: string): UserMenuItem[] {
   return [
-    { label: 'Team',     icon: 'badge',         route: `/${appId}/team`,        permission: 'RoleRead'       },
-    { label: 'Billing',  icon: 'request_quote', route: `/${appId}/billing`                                   },
-    { label: 'Settings', icon: 'settings',      route: `/${appId}/app-setting`, permission: 'AppSettingRead' },
-    { label: 'Sign out', icon: 'logout',        action: 'signout'                                            },
+    { label: 'My Profile', icon: 'account_circle', route: `/${appId}/my-profile`                                     },
+    { label: 'Team',       icon: 'badge',         route: `/${appId}/team`,              permission: 'RoleRead'       },
+    { label: 'Billing',    icon: 'request_quote', route: `/${appId}/billing`                                        },
+    { label: 'Settings',   icon: 'settings',      route: `/${appId}/app-setting`,       permission: 'AppSettingRead' },
+    { label: 'Developer',  icon: 'code',          route: `/${appId}/developer-setting`, permission: 'AppSettingRead' },
+    { label: 'Sign out',   icon: 'logout',        action: 'signout'                                                 },
   ];
 }
 

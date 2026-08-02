@@ -100,6 +100,8 @@ export class TopbarComponent implements OnInit {
     team: 'Team',
     billing: 'Billing',
     'app-setting': 'Settings',
+    'developer-setting': 'Developer Settings',
+    'my-profile': 'My Profile',
     dashboard: 'Dashboard',
   };
 

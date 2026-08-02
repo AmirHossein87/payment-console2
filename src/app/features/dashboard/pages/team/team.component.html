@@ -11,10 +11,6 @@
 >
   @if (canWrite()) {
     <div toolbar-actions style="display: contents">
-      <button class="btn btn-sm" (click)="openAddBot()">
-        <span class="material-symbols-outlined">smart_toy</span>
-        New bot
-      </button>
       <button class="btn btn-sm btn-primary" (click)="openAddMember()">
         <span class="material-symbols-outlined">person_add</span>
         New member
@@ -126,72 +122,6 @@
           {{ addMemberSaving() ? 'Adding…' : 'Add member' }}
         </button>
       </div>
-    </div>
-  </div>
-}
-
-<!-- Add Bot Modal -->
-@if (addBotOpen()) {
-  <div class="overlay open" (click)="closeAddBot()">
-    <div class="modal" (click)="$event.stopPropagation()">
-      @if (!botToken()) {
-        <div class="mh">
-          <span class="material-symbols-outlined brand-ic">smart_toy</span>
-          <h3>Add new bot</h3>
-          <div class="spacer"></div>
-          <button class="icon-btn" (click)="closeAddBot()" [disabled]="addBotSaving()" title="Close">
-            <span class="material-symbols-outlined">close</span>
-          </button>
-        </div>
-        <div class="mb">
-          <div class="field">
-            <label>Bot name *</label>
-            <input
-              class="input"
-              [class.invalid]="addBotTried && !addBotName.trim()"
-              [(ngModel)]="addBotName"
-              placeholder="e.g. Reporting Bot"
-              [disabled]="addBotSaving()"
-            />
-            @if (addBotTried && !addBotName.trim()) {
-              <span class="err-hint">Bot name is required.</span>
-            }
-          </div>
-        </div>
-        <div class="mf">
-          <div class="spacer"></div>
-          <button class="btn" (click)="closeAddBot()" [disabled]="addBotSaving()">Cancel</button>
-          <button class="btn btn-primary" (click)="confirmAddBot()" [disabled]="addBotSaving()">
-            <span class="material-symbols-outlined" [class.spin]="addBotSaving()">smart_toy</span>
-            {{ addBotSaving() ? 'Creating…' : 'Create bot' }}
-          </button>
-        </div>
-      } @else {
-        <div class="mh">
-          <span class="material-symbols-outlined ok-ic">check_circle</span>
-          <h3>Bot created</h3>
-          <div class="spacer"></div>
-          <button class="icon-btn" (click)="closeAddBot()" title="Close">
-            <span class="material-symbols-outlined">close</span>
-          </button>
-        </div>
-        <div class="mb">
-          <p class="token-msg">Copy this API token now — it won't be shown again.</p>
-          <div class="field">
-            <label>API Token</label>
-            <div class="token-row">
-              <code class="token-val">{{ botToken() }}</code>
-              <button class="icon-btn" (click)="copyBotToken()" title="Copy token">
-                <span class="material-symbols-outlined">content_copy</span>
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="mf">
-          <div class="spacer"></div>
-          <button class="btn btn-primary" (click)="closeAddBot()">Done</button>
-        </div>
-      }
     </div>
   </div>
 }

@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { Subscription, filter } from 'rxjs';
 import { LoadingOverlayComponent } from '@shared/components/loading-overlay/loading-overlay.component';
 import { ToastContainerComponent } from '@shared/components/toast-container/toast-container.component';
+import { TwoFactorPromptComponent } from '@shared/components/two-factor-prompt/two-factor-prompt.component';
 import { SettingsStore } from '@core/stores/settings.store';
 import { Logger } from '@core/services/logger.service';
 import { TagManagerService } from '@core/services/tag-manager.service';
@@ -16,11 +17,13 @@ import { TagManagerService } from '@core/services/tag-manager.service';
     RouterOutlet,
     LoadingOverlayComponent,
     ToastContainerComponent,
+    TwoFactorPromptComponent,
   ],
   template: `
     <router-outlet />
     <app-loading-overlay />
     <app-toast-container />
+    <app-two-factor-prompt />
   `,
   styles: [`
     :host {

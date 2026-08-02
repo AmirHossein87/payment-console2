@@ -75,6 +75,8 @@ export class DataGridComponent {
   hasMore = input<boolean>(false);
   // When true, the Refresh and Export buttons in the toolbar are hidden.
   hideDefaultActions = input<boolean>(false);
+  // Hide ONLY the Export button (keeps Refresh). Useful for read-only log grids.
+  hideExport = input<boolean>(false);
   // Optional Material icon name rendered before the title in dc-title.
   titleIcon = input<string>('');
   // When true, the entire dc-filters bar (search, dropdowns, date, advanced) is hidden.

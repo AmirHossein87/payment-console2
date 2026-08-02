@@ -28,7 +28,7 @@ import { SettingsPageComponent } from '@features/dashboard/pages/settings/settin
 const RESERVED_KEYWORDS = new Set([
   'forbidden', 'undefined', 'null', 'app', 'login', 'register', 'auth',
   'dashboard', 'licenses', 'notfound', 'apps', 'billing', 'overview',
-  'payments', 'gateways', 'app-setting', 'policies', 'fraud-activities',
+  'payments', 'gateways', 'app-setting', 'developer-setting', 'my-profile', 'policies', 'fraud-activities',
   'customers', 'team', 'personalization', 'rules', 'fraud'
 ]);
 
@@ -124,7 +124,9 @@ export const routes: Routes = [
       { path: 'policies/:policyId', component: PolicyDetailComponent },
       { path: 'team', component: TeamComponent },
       { path: 'billing', component: BillingComponent },
-      { path: 'app-setting', component: SettingsPageComponent },
+      { path: 'app-setting', component: SettingsPageComponent, data: { mode: 'app' } },
+      { path: 'developer-setting', component: SettingsPageComponent, data: { mode: 'developer' } },
+      { path: 'my-profile', component: SettingsPageComponent, data: { mode: 'profile' } },
       { path: 'dashboard', redirectTo: 'overview', pathMatch: 'full' },
     ],
   },

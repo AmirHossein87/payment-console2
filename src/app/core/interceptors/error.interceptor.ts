@@ -55,10 +55,24 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
             return EMPTY;
           }
 
-          // Surface the backend's `Message` (capital M, .NET ResponseErrorDto)
-          // first, then any lowercase `message`, then the HTTP failure text.
+          // Two-factor exceptions carry no server message (bare .NET exceptions
+          // serialise to "Exception of type '…' was thrown"), so map them to a
+          // clear message here — this covers 2FA enrollment and any caller that
+          // surfaces the error text.
+          const twoFaMessages: Record<string, string> = {
+            Invalid2FaException: 'The two-factor code is incorrect or has expired. Please try again.',
+            Need2FaException: 'Two-factor authentication is required for this action.',
+            NeedToActive2FaException:
+              'You need to set up two-factor authentication before you can do this.',
+          };
+          const friendlyTwoFa = twoFaMessages[errorResponse?.TypeName];
+
+          // Surface the friendly 2FA message first, then the backend's `Message`
+          // (capital M, .NET ResponseErrorDto), then any lowercase `message`, then
+          // the HTTP failure text.
           const normalizedError = {
             message:
+              friendlyTwoFa ||
               errorResponse?.Message ||
               errorResponse?.message ||
               error.message ||

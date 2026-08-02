@@ -3012,6 +3012,177 @@ export class PaymentsClient {
     return _observableOf(null as any);
   }
 
+  /**
+   * Sent-webhook log for the app. Manually added to mirror GET /api/apps/{appId}/webhooks
+   * — keep in sync if the proxy is regenerated. Returns the queued/sent webhook items.
+   */
+  getWebhooks(appId: string, httpContext?: HttpContext): Observable<WebhookReportItem[]> {
+    let url_ = this.baseUrl + "/api/apps/{appId}/webhooks";
+    if (appId === undefined || appId === null)
+      throw new globalThis.Error("The parameter 'appId' must be defined.");
+    url_ = url_.replace("{appId}", encodeURIComponent("" + appId));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: any = {
+      observe: "response",
+      responseType: "blob",
+      withCredentials: false,
+      context: httpContext,
+      headers: new HttpHeaders({
+        "Accept": "application/json"
+      })
+    };
+
+    return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_: any) => {
+      return this.processGetWebhooks(response_);
+    })).pipe(_observableCatch((response_: any) => {
+      if (response_ instanceof HttpResponseBase) {
+        try {
+          return this.processGetWebhooks(response_ as any);
+        } catch (e) {
+          return _observableThrow(e) as any as Observable<WebhookReportItem[]>;
+        }
+      } else
+        return _observableThrow(response_) as any as Observable<WebhookReportItem[]>;
+    }));
+  }
+
+  protected processGetWebhooks(response: HttpResponseBase): Observable<WebhookReportItem[]> {
+    const status = response.status;
+    const responseBlob =
+      response instanceof HttpResponse ? response.body :
+        (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+    let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); } }
+    if (status === 200) {
+      return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+        let result200: any = null;
+        let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+        if (Array.isArray(resultData200)) {
+          result200 = [] as any;
+          for (let item of resultData200)
+            result200!.push(WebhookReportItem.fromJS(item));
+        } else {
+          result200 = [];
+        }
+        return _observableOf(result200);
+      }));
+    } else if (status !== 200 && status !== 204) {
+      return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      }));
+    }
+    return _observableOf(null as any);
+  }
+
+  /**
+   * Enable / rotate webhook HMAC signing. POST returns the new signing secret
+   * (shown once). Manually added — keep in sync if the proxy is regenerated.
+   * Assumed route: POST /api/apps/{appId}/webhook-signing-secret.
+   */
+  rotateWebhookSigningSecret(appId: string, httpContext?: HttpContext): Observable<string> {
+    let url_ = this.baseUrl + "/api/apps/{appId}/webhook-signing-secret";
+    if (appId === undefined || appId === null)
+      throw new globalThis.Error("The parameter 'appId' must be defined.");
+    url_ = url_.replace("{appId}", encodeURIComponent("" + appId));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: any = {
+      observe: "response",
+      responseType: "blob",
+      withCredentials: false,
+      context: httpContext,
+      headers: new HttpHeaders({
+        "Accept": "application/json"
+      })
+    };
+
+    return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_: any) => {
+      return this.processRotateWebhookSigningSecret(response_);
+    })).pipe(_observableCatch((response_: any) => {
+      if (response_ instanceof HttpResponseBase) {
+        try {
+          return this.processRotateWebhookSigningSecret(response_ as any);
+        } catch (e) {
+          return _observableThrow(e) as any as Observable<string>;
+        }
+      } else
+        return _observableThrow(response_) as any as Observable<string>;
+    }));
+  }
+
+  protected processRotateWebhookSigningSecret(response: HttpResponseBase): Observable<string> {
+    const status = response.status;
+    const responseBlob =
+      response instanceof HttpResponse ? response.body :
+        (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+    let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); } }
+    if (status === 200) {
+      return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+        let result200: any = null;
+        let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = resultData200 !== undefined ? resultData200 : null as any;
+        return _observableOf(result200);
+      }));
+    } else if (status !== 200 && status !== 204) {
+      return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      }));
+    }
+    return _observableOf(null as any);
+  }
+
+  /** Disable webhook signing. Assumed route: DELETE /api/apps/{appId}/webhook-signing-secret. */
+  deleteWebhookSigningSecret(appId: string, httpContext?: HttpContext): Observable<void> {
+    let url_ = this.baseUrl + "/api/apps/{appId}/webhook-signing-secret";
+    if (appId === undefined || appId === null)
+      throw new globalThis.Error("The parameter 'appId' must be defined.");
+    url_ = url_.replace("{appId}", encodeURIComponent("" + appId));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: any = {
+      observe: "response",
+      responseType: "blob",
+      withCredentials: false,
+      context: httpContext,
+      headers: new HttpHeaders({
+      })
+    };
+
+    return this.http.request("delete", url_, options_).pipe(_observableMergeMap((response_: any) => {
+      return this.processDeleteWebhookSigningSecret(response_);
+    })).pipe(_observableCatch((response_: any) => {
+      if (response_ instanceof HttpResponseBase) {
+        try {
+          return this.processDeleteWebhookSigningSecret(response_ as any);
+        } catch (e) {
+          return _observableThrow(e) as any as Observable<void>;
+        }
+      } else
+        return _observableThrow(response_) as any as Observable<void>;
+    }));
+  }
+
+  protected processDeleteWebhookSigningSecret(response: HttpResponseBase): Observable<void> {
+    const status = response.status;
+    const responseBlob =
+      response instanceof HttpResponse ? response.body :
+        (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+    let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); } }
+    if (status === 200 || status === 204) {
+      return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+        return _observableOf<void>(null as any);
+      }));
+    } else if (status !== 200 && status !== 204) {
+      return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      }));
+    }
+    return _observableOf<void>(null as any);
+  }
+
   markAsDispute(appId: string, paymentId: number, description: string, httpContext?: HttpContext): Observable<Payment> {
     let url_ = this.baseUrl + "/api/apps/{appId}/payments/{paymentId}/mark-as-dispute?";
     if (appId === undefined || appId === null)
@@ -5499,6 +5670,10 @@ export class App implements IApp {
   hasFirstCapturePayment!: boolean;
   isConnectFirstGateway!: boolean;
   showFraudPolicyInDashboard?: boolean | null;
+  /** App-level master switch: gated actions on this app require the acting user to have 2FA set up. */
+  isTwoFactorAuthenticationEnabled?: boolean | null;
+  /** Whether the CURRENT user has activated their own 2FA for this app — only populated on users/current/apps. */
+  is2faActivate?: boolean | null;
 
   constructor(data?: IApp) {
     if (data) {
@@ -5560,6 +5735,8 @@ export class App implements IApp {
       this.hasFirstCapturePayment = _data["hasFirstCapturePayment"] !== undefined ? _data["hasFirstCapturePayment"] : null as any;
       this.isConnectFirstGateway = _data["isConnectFirstGateway"] !== undefined ? _data["isConnectFirstGateway"] : null as any;
       this.showFraudPolicyInDashboard = _data["showFraudPolicyInDashboard"] !== undefined ? _data["showFraudPolicyInDashboard"] : null as any;
+      this.isTwoFactorAuthenticationEnabled = _data["isTwoFactorAuthenticationEnabled"] !== undefined ? _data["isTwoFactorAuthenticationEnabled"] : null as any;
+      this.is2faActivate = _data["is2faActivate"] !== undefined ? _data["is2faActivate"] : null as any;
     }
   }
 
@@ -5608,6 +5785,8 @@ export class App implements IApp {
     data["hasFirstCapturePayment"] = this.hasFirstCapturePayment !== undefined ? this.hasFirstCapturePayment : null as any;
     data["isConnectFirstGateway"] = this.isConnectFirstGateway !== undefined ? this.isConnectFirstGateway : null as any;
     data["showFraudPolicyInDashboard"] = this.showFraudPolicyInDashboard !== undefined ? this.showFraudPolicyInDashboard : null as any;
+    data["isTwoFactorAuthenticationEnabled"] = this.isTwoFactorAuthenticationEnabled !== undefined ? this.isTwoFactorAuthenticationEnabled : null as any;
+    data["is2faActivate"] = this.is2faActivate !== undefined ? this.is2faActivate : null as any;
     return data;
   }
 }
@@ -5637,6 +5816,8 @@ export interface IApp {
   hasFirstCapturePayment: boolean;
   isConnectFirstGateway: boolean;
   showFraudPolicyInDashboard?: boolean | null;
+  isTwoFactorAuthenticationEnabled?: boolean | null;
+  is2faActivate?: boolean | null;
 }
 
 export class Email implements IEmail {
@@ -5679,6 +5860,7 @@ export class WebhookSettings implements IWebhookSettings {
   paymentWebhookUrl?: string | null;
   webhookAuthorizationHeaderScheme?: string | null;
   webhookAuthorizationHeaderParameter?: string | null;
+  isSigningEnabled?: boolean;
 
   constructor(data?: IWebhookSettings) {
     if (data) {
@@ -5694,6 +5876,7 @@ export class WebhookSettings implements IWebhookSettings {
       this.paymentWebhookUrl = _data["paymentWebhookUrl"] !== undefined ? _data["paymentWebhookUrl"] : null as any;
       this.webhookAuthorizationHeaderScheme = _data["webhookAuthorizationHeaderScheme"] !== undefined ? _data["webhookAuthorizationHeaderScheme"] : null as any;
       this.webhookAuthorizationHeaderParameter = _data["webhookAuthorizationHeaderParameter"] !== undefined ? _data["webhookAuthorizationHeaderParameter"] : null as any;
+      this.isSigningEnabled = _data["isSigningEnabled"] !== undefined ? _data["isSigningEnabled"] : null as any;
     }
   }
 
@@ -5709,6 +5892,7 @@ export class WebhookSettings implements IWebhookSettings {
     data["paymentWebhookUrl"] = this.paymentWebhookUrl !== undefined ? this.paymentWebhookUrl : null as any;
     data["webhookAuthorizationHeaderScheme"] = this.webhookAuthorizationHeaderScheme !== undefined ? this.webhookAuthorizationHeaderScheme : null as any;
     data["webhookAuthorizationHeaderParameter"] = this.webhookAuthorizationHeaderParameter !== undefined ? this.webhookAuthorizationHeaderParameter : null as any;
+    data["isSigningEnabled"] = this.isSigningEnabled !== undefined ? this.isSigningEnabled : null as any;
     return data;
   }
 }
@@ -5717,6 +5901,7 @@ export interface IWebhookSettings {
   paymentWebhookUrl?: string | null;
   webhookAuthorizationHeaderScheme?: string | null;
   webhookAuthorizationHeaderParameter?: string | null;
+  isSigningEnabled?: boolean;
 }
 
 export class DefaultRoutedProfile implements IDefaultRoutedProfile {
@@ -5995,6 +6180,7 @@ export class AppSettingsUpdateRequest implements IAppSettingsUpdateRequest {
   refundProcessReceiverEmails?: PatchOfEmailOf | null;
   logo?: PatchOfUri | null;
   defaultRoutedProfile?: SetDefaultRoutedProfileRequest | null;
+  isTwoFactorAuthenticationEnabled?: PatchOfBoolean | null;
 
   constructor(data?: IAppSettingsUpdateRequest) {
     if (data) {
@@ -6016,6 +6202,7 @@ export class AppSettingsUpdateRequest implements IAppSettingsUpdateRequest {
       this.refundProcessReceiverEmails = _data["refundProcessReceiverEmails"] ? PatchOfEmailOf.fromJS(_data["refundProcessReceiverEmails"]) : null as any;
       this.logo = _data["logo"] ? PatchOfUri.fromJS(_data["logo"]) : null as any;
       this.defaultRoutedProfile = _data["defaultRoutedProfile"] ? SetDefaultRoutedProfileRequest.fromJS(_data["defaultRoutedProfile"]) : null as any;
+      this.isTwoFactorAuthenticationEnabled = _data["isTwoFactorAuthenticationEnabled"] ? PatchOfBoolean.fromJS(_data["isTwoFactorAuthenticationEnabled"]) : null as any;
     }
   }
 
@@ -6037,6 +6224,7 @@ export class AppSettingsUpdateRequest implements IAppSettingsUpdateRequest {
     data["refundProcessReceiverEmails"] = this.refundProcessReceiverEmails ? this.refundProcessReceiverEmails.toJSON() : null as any;
     data["logo"] = this.logo ? this.logo.toJSON() : null as any;
     data["defaultRoutedProfile"] = this.defaultRoutedProfile ? this.defaultRoutedProfile.toJSON() : null as any;
+    data["isTwoFactorAuthenticationEnabled"] = this.isTwoFactorAuthenticationEnabled ? this.isTwoFactorAuthenticationEnabled.toJSON() : null as any;
     return data;
   }
 }
@@ -6051,6 +6239,7 @@ export interface IAppSettingsUpdateRequest {
   refundProcessReceiverEmails?: PatchOfEmailOf | null;
   logo?: PatchOfUri | null;
   defaultRoutedProfile?: SetDefaultRoutedProfileRequest | null;
+  isTwoFactorAuthenticationEnabled?: PatchOfBoolean | null;
 }
 
 export class PatchOfUri implements IPatchOfUri {
@@ -11024,6 +11213,87 @@ export interface IPaymentWebhookItem {
   retryCount: number;
 }
 
+/** One webhook delivery attempt (GET /api/apps/{appId}/webhooks). */
+export class WebhookReportItem implements IWebhookReportItem {
+  webhookDeliveryAttemptId!: number;
+  webhookQueueItemId!: number;
+  paymentId!: number;
+  referenceId?: string | null;
+  paymentState?: PaymentState | null;
+  webhookUrl!: string;
+  payload!: string;
+  attemptedAt!: Date;
+  isSuccess!: boolean;
+  statusCode?: number | null;
+  error?: string | null;
+  retryCount!: number;
+
+  constructor(data?: IWebhookReportItem) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.webhookDeliveryAttemptId = _data["webhookDeliveryAttemptId"] !== undefined ? _data["webhookDeliveryAttemptId"] : null as any;
+      this.webhookQueueItemId = _data["webhookQueueItemId"] !== undefined ? _data["webhookQueueItemId"] : null as any;
+      this.paymentId = _data["paymentId"] !== undefined ? _data["paymentId"] : null as any;
+      this.referenceId = _data["referenceId"] !== undefined ? _data["referenceId"] : null as any;
+      this.paymentState = _data["paymentState"] !== undefined ? _data["paymentState"] : null as any;
+      this.webhookUrl = _data["webhookUrl"] !== undefined ? _data["webhookUrl"] : null as any;
+      this.payload = _data["payload"] !== undefined ? _data["payload"] : null as any;
+      this.attemptedAt = _data["attemptedAt"] ? new Date(_data["attemptedAt"].toString()) : null as any;
+      this.isSuccess = _data["isSuccess"] !== undefined ? _data["isSuccess"] : null as any;
+      this.statusCode = _data["statusCode"] !== undefined ? _data["statusCode"] : null as any;
+      this.error = _data["error"] !== undefined ? _data["error"] : null as any;
+      this.retryCount = _data["retryCount"] !== undefined ? _data["retryCount"] : null as any;
+    }
+  }
+
+  static fromJS(data: any): WebhookReportItem {
+    data = typeof data === 'object' ? data : {};
+    let result = new WebhookReportItem();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === 'object' ? data : {};
+    data["webhookDeliveryAttemptId"] = this.webhookDeliveryAttemptId !== undefined ? this.webhookDeliveryAttemptId : null as any;
+    data["webhookQueueItemId"] = this.webhookQueueItemId !== undefined ? this.webhookQueueItemId : null as any;
+    data["paymentId"] = this.paymentId !== undefined ? this.paymentId : null as any;
+    data["referenceId"] = this.referenceId !== undefined ? this.referenceId : null as any;
+    data["paymentState"] = this.paymentState !== undefined ? this.paymentState : null as any;
+    data["webhookUrl"] = this.webhookUrl !== undefined ? this.webhookUrl : null as any;
+    data["payload"] = this.payload !== undefined ? this.payload : null as any;
+    data["attemptedAt"] = this.attemptedAt ? this.attemptedAt.toISOString() : null as any;
+    data["isSuccess"] = this.isSuccess !== undefined ? this.isSuccess : null as any;
+    data["statusCode"] = this.statusCode !== undefined ? this.statusCode : null as any;
+    data["error"] = this.error !== undefined ? this.error : null as any;
+    data["retryCount"] = this.retryCount !== undefined ? this.retryCount : null as any;
+    return data;
+  }
+}
+
+export interface IWebhookReportItem {
+  webhookDeliveryAttemptId: number;
+  webhookQueueItemId: number;
+  paymentId: number;
+  referenceId?: string | null;
+  paymentState?: PaymentState | null;
+  webhookUrl: string;
+  payload: string;
+  attemptedAt: Date;
+  isSuccess: boolean;
+  statusCode?: number | null;
+  error?: string | null;
+  retryCount: number;
+}
+
 export class SettingUpdateRequest implements ISettingUpdateRequest {
   signinImageUri?: PatchOfUri | null;
   signinImageUri2?: PatchOfUri | null;
@@ -13964,6 +14234,198 @@ export interface IPaymentProviderMetadata {
   provider: PaymentProviderType;
   iconUri1?: string | null;
   iconUri2?: string | null;
+}
+
+@Injectable()
+export class TwoFactorClient {
+  private http: HttpClient;
+  private baseUrl: string;
+  protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+  constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(API_BASE_URL) baseUrl?: string) {
+    this.http = http;
+    this.baseUrl = baseUrl ?? "";
+  }
+
+  /** POST /api/apps/{appId}/twofactor/qr-code — returns a QR image (data URI) to scan into an authenticator app. */
+  generateQrCode(appId: string, httpContext?: HttpContext): Observable<string> {
+    let url_ = this.baseUrl + "/api/apps/{appId}/twofactor/qr-code";
+    if (appId === undefined || appId === null)
+      throw new globalThis.Error("The parameter 'appId' must be defined.");
+    url_ = url_.replace("{appId}", encodeURIComponent("" + appId));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: any = {
+      observe: "response",
+      responseType: "blob",
+      withCredentials: false,
+      context: httpContext,
+      headers: new HttpHeaders({
+        "Accept": "application/json"
+      })
+    };
+
+    return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_: any) => {
+      return this.processGenerateQrCode(response_);
+    })).pipe(_observableCatch((response_: any) => {
+      if (response_ instanceof HttpResponseBase) {
+        try {
+          return this.processGenerateQrCode(response_ as any);
+        } catch (e) {
+          return _observableThrow(e) as any as Observable<string>;
+        }
+      } else
+        return _observableThrow(response_) as any as Observable<string>;
+    }));
+  }
+
+  protected processGenerateQrCode(response: HttpResponseBase): Observable<string> {
+    const status = response.status;
+    const responseBlob =
+      response instanceof HttpResponse ? response.body :
+        (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+    let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); } }
+    if (status === 200) {
+      return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+        let result200: any = null;
+        let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = resultData200 !== undefined ? resultData200 : null as any;
+        return _observableOf(result200);
+      }));
+    } else if (status !== 200 && status !== 204) {
+      return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      }));
+    }
+    return _observableOf(null as any);
+  }
+
+  /** POST /api/apps/{appId}/twofactor/activate?otpCode=… — activates after verifying a code from the authenticator. */
+  activate(appId: string, otpCode: string, httpContext?: HttpContext): Observable<TwoFactorStatus> {
+    let url_ = this.baseUrl + "/api/apps/{appId}/twofactor/activate?";
+    if (appId === undefined || appId === null)
+      throw new globalThis.Error("The parameter 'appId' must be defined.");
+    url_ = url_.replace("{appId}", encodeURIComponent("" + appId));
+    if (otpCode === undefined || otpCode === null)
+      throw new globalThis.Error("The parameter 'otpCode' must be defined and cannot be null.");
+    else
+      url_ += "otpCode=" + encodeURIComponent("" + otpCode) + "&";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: any = {
+      observe: "response",
+      responseType: "blob",
+      withCredentials: false,
+      context: httpContext,
+      headers: new HttpHeaders({
+        "Accept": "application/json"
+      })
+    };
+
+    return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_: any) => {
+      return this.processTwoFactorStatus(response_);
+    })).pipe(_observableCatch((response_: any) => {
+      if (response_ instanceof HttpResponseBase) {
+        try {
+          return this.processTwoFactorStatus(response_ as any);
+        } catch (e) {
+          return _observableThrow(e) as any as Observable<TwoFactorStatus>;
+        }
+      } else
+        return _observableThrow(response_) as any as Observable<TwoFactorStatus>;
+    }));
+  }
+
+  /** POST /api/apps/{appId}/twofactor/deactivate — turns 2FA off for the caller on this app. */
+  deactivate(appId: string, httpContext?: HttpContext): Observable<TwoFactorStatus> {
+    let url_ = this.baseUrl + "/api/apps/{appId}/twofactor/deactivate";
+    if (appId === undefined || appId === null)
+      throw new globalThis.Error("The parameter 'appId' must be defined.");
+    url_ = url_.replace("{appId}", encodeURIComponent("" + appId));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: any = {
+      observe: "response",
+      responseType: "blob",
+      withCredentials: false,
+      context: httpContext,
+      headers: new HttpHeaders({
+        "Accept": "application/json"
+      })
+    };
+
+    return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_: any) => {
+      return this.processTwoFactorStatus(response_);
+    })).pipe(_observableCatch((response_: any) => {
+      if (response_ instanceof HttpResponseBase) {
+        try {
+          return this.processTwoFactorStatus(response_ as any);
+        } catch (e) {
+          return _observableThrow(e) as any as Observable<TwoFactorStatus>;
+        }
+      } else
+        return _observableThrow(response_) as any as Observable<TwoFactorStatus>;
+    }));
+  }
+
+  protected processTwoFactorStatus(response: HttpResponseBase): Observable<TwoFactorStatus> {
+    const status = response.status;
+    const responseBlob =
+      response instanceof HttpResponse ? response.body :
+        (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+    let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); } }
+    if (status === 200) {
+      return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+        let result200: any = null;
+        let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = TwoFactorStatus.fromJS(resultData200);
+        return _observableOf(result200);
+      }));
+    } else if (status !== 200 && status !== 204) {
+      return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      }));
+    }
+    return _observableOf(null as any);
+  }
+}
+
+export class TwoFactorStatus implements ITwoFactorStatus {
+  isActive!: boolean;
+
+  constructor(data?: ITwoFactorStatus) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.isActive = _data["isActive"] !== undefined ? _data["isActive"] : null as any;
+    }
+  }
+
+  static fromJS(data: any): TwoFactorStatus {
+    data = typeof data === 'object' ? data : {};
+    let result = new TwoFactorStatus();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === 'object' ? data : {};
+    data["isActive"] = this.isActive !== undefined ? this.isActive : null as any;
+    return data;
+  }
+}
+
+export interface ITwoFactorStatus {
+  isActive: boolean;
 }
 
 export class User implements IUser {

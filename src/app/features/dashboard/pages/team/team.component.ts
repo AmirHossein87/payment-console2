@@ -71,13 +71,6 @@ export class TeamComponent implements OnInit {
   addMemberRoleId = '';
   addMemberTried = false;
 
-  // Add bot
-  readonly addBotOpen = signal(false);
-  readonly addBotSaving = signal(false);
-  readonly botToken = signal('');
-  addBotName = '';
-  addBotTried = false;
-
   // Delete
   readonly confirmDeleteRow = signal<TeamRow | null>(null);
   readonly deleting = signal(false);
@@ -145,7 +138,13 @@ export class TeamComponent implements OnInit {
         firstValueFrom(this.teamClient.getRoles(appId)),
       ]);
       this.roles.set(rolesResult ?? []);
-      this.rows.set((membersResult?.items ?? []).map(m => this.toRow(m)));
+      // Team lists real people ONLY. API keys (bots) are managed in
+      // Settings → API Integration, so they're filtered out here.
+      this.rows.set(
+        (membersResult?.items ?? [])
+          .filter(m => !(m.user?.isBot))
+          .map(m => this.toRow(m))
+      );
     } catch (err: any) {
       this.notify.showError(this.extractError(err, 'Failed to load team members.'));
       this.rows.set([]);
@@ -213,48 +212,6 @@ export class TeamComponent implements OnInit {
     } finally {
       this.addMemberSaving.set(false);
     }
-  }
-
-  // --- Add Bot ---
-  openAddBot(): void {
-    this.addBotName = '';
-    this.botToken.set('');
-    this.addBotTried = false;
-    this.addBotOpen.set(true);
-  }
-
-  closeAddBot(): void {
-    if (this.addBotSaving()) return;
-    this.addBotOpen.set(false);
-    this.botToken.set('');
-  }
-
-  async confirmAddBot(): Promise<void> {
-    this.addBotTried = true;
-    const appId = this.workspaceStore.currentAppId();
-    if (!appId || !this.addBotName.trim()) return;
-
-    this.addBotSaving.set(true);
-    try {
-      const apiKey = await firstValueFrom(
-        this.teamClient.addBot(appId, this.addBotName.trim())
-      );
-      const scheme = apiKey?.accessToken?.scheme ?? '';
-      const value = apiKey?.accessToken?.value ?? '';
-      this.botToken.set(scheme ? `${scheme} ${value}` : value);
-      await this.loadTeam();
-    } catch (err: any) {
-      this.notify.showError(this.extractError(err, 'Failed to create bot.'));
-    } finally {
-      this.addBotSaving.set(false);
-    }
-  }
-
-  async copyBotToken(): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(this.botToken());
-      this.notify.showSuccess('Token copied to clipboard');
-    } catch { /* clipboard unavailable */ }
   }
 
   // --- Delete ---

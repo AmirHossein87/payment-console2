@@ -1,6 +1,6 @@
 <div class="page-head">
   <div>
-    <h1>Settings</h1>
+    <h1>{{ mode() === 'developer' ? 'Developer Settings' : mode() === 'profile' ? 'My Profile' : 'Settings' }}</h1>
   </div>
 </div>
 
@@ -27,29 +27,86 @@
   </div>
 } @else {
 
-  <!-- Tab navigation -->
+  <!-- Tab navigation — app vs developer -->
   <div class="seg tabs">
-    <button [class.active]="activeTab() === 'general'" (click)="setTab('general')">General</button>
-    @if (isSupportCustomizeCheckout()) {
-      <button [class.active]="activeTab() === 'checkout'" (click)="setTab('checkout')">Checkout</button>
+    @if (mode() === 'app') {
+      <button [class.active]="activeTab() === 'general'" (click)="setTab('general')">General</button>
+      @if (isSupportCustomizeCheckout()) {
+        <button [class.active]="activeTab() === 'checkout'" (click)="setTab('checkout')">Checkout</button>
+      }
+    } @else if (mode() === 'profile') {
+      <button [class.active]="activeTab() === 'personalize'" (click)="setTab('personalize')">Personalization</button>
+      <button [class.active]="activeTab() === 'twofa'" (click)="setTab('twofa')">
+        Two-factor authentication
+        @if (needsTwoFaSetup()) {
+          <span class="tab-alarm" title="Two-factor authentication setup required"></span>
+        }
+      </button>
+    } @else {
+      <button [class.active]="activeTab() === 'api'" (click)="setTab('api')">API Integration</button>
+      <button [class.active]="activeTab() === 'webhook'" (click)="setTab('webhook')">Webhook</button>
     }
-    <button [class.active]="activeTab() === 'personalize'" (click)="setTab('personalize')">Personalization</button>
   </div>
 
   <!-- ── GENERAL (each field edited via the pencil modal) ── -->
+  <!-- ── GENERAL (app) — activate app-wide 2FA ── -->
   @if (activeTab() === 'general') {
     <div class="set-pane">
       <div class="form-card">
         <div class="form-row">
-          <div class="lab">Default fraud policy</div>
+          <div class="lab">Two-factor authentication
+            <small>Require a 2FA code for refunds, mark-as-refund and mark-as-dispute in this app.</small>
+          </div>
           <div class="val-edit">
-            <span class="val">{{ fraudPolicyName() }}</span>
-            <button class="icon-btn" type="button" title="Edit" (click)="editFraudPolicy()">
+            <span class="pill plain" [ngClass]="appTwoFaEnabled() ? 'ok' : 'muted'">
+              <span class="dot"></span>{{ appTwoFaEnabled() ? 'Active' : 'Inactive' }}
+            </span>
+            <button class="icon-btn" type="button" title="Edit" (click)="editAppTwoFa()">
+              <span class="material-symbols-outlined">edit</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── PERSONALIZATION (My Profile) ── -->
+  @if (activeTab() === 'personalize') {
+    <div class="set-pane">
+      <div class="form-card">
+        <div class="form-row">
+          <div class="lab">Theme</div>
+          <div class="val-edit">
+            <span class="val">{{ themeLabel() }}</span>
+            <button class="icon-btn" type="button" title="Edit theme" (click)="editTheme()">
               <span class="material-symbols-outlined">edit</span>
             </button>
           </div>
         </div>
 
+        <div class="form-row">
+          <div class="lab">Time zone</div>
+          <div class="val-edit">
+            <span class="val">{{ timezone }}</span>
+            <button class="icon-btn" type="button" title="Edit time zone" (click)="editTimezone()">
+              <span class="material-symbols-outlined">edit</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── WEBHOOK (developer) — delivery + HMAC signing merged ── -->
+  @if (activeTab() === 'webhook') {
+    <div class="set-pane wide">
+      <div class="pane-intro">
+        <div>
+          <h3><span class="material-symbols-outlined">webhook</span> Webhook delivery</h3>
+          <p>Where we POST payment events, and the Authorization header we attach to each call.</p>
+        </div>
+      </div>
+      <div class="form-card">
         <div class="form-row">
           <div class="lab">Webhook URL</div>
           <div class="val-edit">
@@ -79,6 +136,83 @@
             </button>
           </div>
         </div>
+      </div>
+
+      <!-- Signing (HMAC) — merged into the Webhook tab -->
+      <div class="feature-card wk-hmac">
+        <div class="fc-head">
+          <div class="fc-ic hm"><span class="material-symbols-outlined">fingerprint</span></div>
+          <div class="fc-title">
+            <h3>Webhook signing (HMAC)</h3>
+            <p>Verify every webhook really came from us.</p>
+          </div>
+          <span class="pill plain" [ngClass]="hmacEnabled() ? 'ok' : 'muted'">
+            <span class="dot"></span>{{ hmacEnabled() ? 'Active' : 'Inactive' }}
+          </span>
+        </div>
+
+        <p class="fc-desc">
+          Each webhook payload is signed with an <strong>HMAC-SHA256</strong> signature derived from your secret and sent in the
+          <code>X-Signature</code> header.
+        </p>
+        <p class="fc-desc">
+          Recompute it on your server and compare to confirm the request's authenticity and integrity.
+        </p>
+
+        @if (hmacEnabled() && hmacSecret()) {
+          <div class="secret-row">
+            <label>Signing secret</label>
+            <div class="secret-field">
+              <code class="secret-val">{{ hmacSecretRevealed() ? hmacSecret() : '••••••••••••••••••••••••••••••••' }}</code>
+              <button class="icon-btn" (click)="toggleHmacReveal()" [title]="hmacSecretRevealed() ? 'Hide' : 'Reveal'">
+                <span class="material-symbols-outlined">{{ hmacSecretRevealed() ? 'visibility_off' : 'visibility' }}</span>
+              </button>
+              <button class="icon-btn" (click)="copyHmacSecret()" title="Copy">
+                <span class="material-symbols-outlined">content_copy</span>
+              </button>
+            </div>
+            <p class="fc-hint"><span class="material-symbols-outlined">info</span> Copy this now — for security it won't be shown again once you leave this page.</p>
+          </div>
+        }
+
+        <div class="fc-actions">
+          @if (hmacEnabled()) {
+            <button class="btn btn-danger" [disabled]="hmacSaving()" (click)="askDisableHmac()">
+              <span class="material-symbols-outlined" [class.spin]="hmacSaving()">{{ hmacSaving() ? 'progress_activity' : 'gpp_bad' }}</span>
+              Disable webhook signing
+            </button>
+            <button class="btn" [disabled]="hmacSaving()" (click)="askRegenerateHmac()">
+              <span class="material-symbols-outlined" [class.spin]="hmacSaving()">autorenew</span>
+              Regenerate secret
+            </button>
+          } @else {
+            <button class="btn btn-primary" [disabled]="hmacSaving()" (click)="askEnableHmac()">
+              <span class="material-symbols-outlined" [class.spin]="hmacSaving()">{{ hmacSaving() ? 'progress_activity' : 'verified_user' }}</span>
+              Enable webhook signing
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Recent webhook retries (GET /api/apps/{appId}/webhooks) -->
+      <div class="pane-intro" style="margin-top:22px">
+        <div>
+          <h3><span class="material-symbols-outlined">history</span> Recent retries</h3>
+        </div>
+      </div>
+      <div class="api-grid-wrap">
+        <app-data-grid
+          title="Retries"
+          titleIcon="history"
+          [data]="webhookLogs()"
+          [columns]="webhookLogColumns"
+          [loading]="webhookLogsLoading()"
+          [defaultPageSize]="10"
+          [searchInToolbar]="true"
+          [hideExport]="true"
+          (linkClicked)="onWebhookPaymentLink($event)"
+          (refreshRequested)="loadWebhookLogs()"
+        />
       </div>
     </div>
   }
@@ -166,35 +300,214 @@
     </div>
   }
 
-  <!-- ── PERSONALIZATION ────────────────────────────── -->
-  @if (activeTab() === 'personalize') {
-    <div class="set-pane">
-      <div class="form-card">
-        <div class="h">Personalization</div>
-
-        <div class="form-row">
-          <div class="lab">Theme</div>
-          <div class="val-edit">
-            <span class="val">{{ themeLabel() }}</span>
-            <button class="icon-btn" type="button" title="Edit theme" (click)="editTheme()">
-              <span class="material-symbols-outlined">edit</span>
-            </button>
-          </div>
+  <!-- ── API INTEGRATION ─────────────────────────────── -->
+  @if (activeTab() === 'api') {
+    <div class="set-pane wide">
+      <div class="pane-intro">
+        <div>
+          <h3><span class="material-symbols-outlined">vpn_key</span> API keys</h3>
+          <p>Create keys to authenticate your server-to-server calls. Treat a key like a password — it carries full programmatic access, and is shown only once at creation.</p>
         </div>
+        <button class="btn btn-primary btn-sm" (click)="openCreateKey()">
+          <span class="material-symbols-outlined">add</span> Create API key
+        </button>
+      </div>
 
-        <div class="form-row">
-          <div class="lab">Time zone</div>
-          <div class="val-edit">
-            <span class="val">{{ timezone }}</span>
-            <button class="icon-btn" type="button" title="Edit time zone" (click)="editTimezone()">
-              <span class="material-symbols-outlined">edit</span>
-            </button>
-          </div>
-        </div>
+      <div class="api-grid-wrap">
+        <app-data-grid
+          title="API keys"
+          titleIcon="key"
+          [data]="apiKeys()"
+          [columns]="apiKeyColumns"
+          [loading]="apiKeysLoading()"
+          [defaultPageSize]="10"
+          [searchInToolbar]="true"
+          (refreshRequested)="loadApiKeys()"
+        />
       </div>
     </div>
   }
 
+  <!-- ── TWO-FACTOR AUTHENTICATION (design) ──────────── -->
+  @if (activeTab() === 'twofa') {
+    <div class="set-pane">
+      <div class="feature-card">
+        <div class="fc-head">
+          <div class="fc-ic tf"><span class="material-symbols-outlined">encrypted</span></div>
+          <div class="fc-title">
+            <h3>Two-factor authentication</h3>
+            <p>Secure your account with Google Authenticator.</p>
+          </div>
+          @if (!appTwoFaEnabled()) {
+            <span class="pill plain muted"><span class="dot"></span>Not required</span>
+          } @else if (twoFaEnabled()) {
+            <span class="pill plain ok"><span class="dot"></span>Enabled</span>
+          } @else {
+            <span class="pill plain bad"><span class="dot"></span>Action required</span>
+          }
+        </div>
+
+        @if (!appTwoFaEnabled()) {
+          <!-- Admin hasn't required 2FA → nothing to set up here. -->
+          <div class="info-note">
+            <span class="material-symbols-outlined">info</span>
+            <div>Two-factor authentication isn't required for this app, so there's nothing to set up. If an admin enables it in <strong>Settings → General</strong>, you'll set up your authenticator here.</div>
+          </div>
+        } @else {
+          <p class="fc-desc">
+            Your admin requires two-factor authentication. Confirm a 6-digit code from Google Authenticator before running sensitive money-movement actions.
+          </p>
+
+          @if (needsTwoFaSetup()) {
+            <div class="crit-note">
+              <span class="material-symbols-outlined ci">warning</span>
+              <div class="crit-body">
+                <strong>Setup required</strong>
+                <p class="setup-msg">You haven't set up your authenticator yet — finish setup to keep access to <b>Refund</b>, <b>Mark as refund</b> and <b>Mark as dispute</b>.</p>
+              </div>
+            </div>
+          }
+
+          <div class="fc-actions">
+            @if (!twoFaEnabled()) {
+              <button class="btn btn-primary" (click)="startTwoFaSetup()">
+                <span class="material-symbols-outlined">qr_code_2</span>
+                Set up with Google Authenticator
+              </button>
+            } @else {
+              <button class="btn btn-danger" (click)="askDisableTwoFa()">
+                <span class="material-symbols-outlined">lock_open</span>
+                Turn off two-factor authentication
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+}
+
+<!-- API keys grid cell templates -->
+<ng-template #keyNameTpl let-row="row">
+  <div class="with-icon">
+    <div class="key-avi"><span class="material-symbols-outlined" style="font-size:16px">key</span></div>
+    <span class="cell-strong">{{ row.name }}</span>
+  </div>
+</ng-template>
+
+<ng-template #keyActionsTpl let-row="row">
+  <div class="row-actions">
+    <button class="row-btn del" (click)="askDeleteKey(row)" title="Revoke key">
+      <span class="material-symbols-outlined">delete</span>
+    </button>
+  </div>
+</ng-template>
+
+<!-- Webhook result cell: success/failure + HTTP status -->
+<ng-template #whResultTpl let-row="row">
+  @if (row.isSuccess) {
+    <span class="pill plain ok"><span class="dot"></span>{{ row.statusCode || 'OK' }}</span>
+  } @else {
+    <span class="pill plain bad"><span class="dot"></span>{{ row.statusCode || 'Failed' }}</span>
+  }
+</ng-template>
+
+<!-- Webhook actions cell: open full detail -->
+<ng-template #whActionsTpl let-row="row">
+  <div class="row-actions">
+    <button class="row-btn" (click)="openDetail(row)" title="View details">
+      <span class="material-symbols-outlined">visibility</span>
+    </button>
+  </div>
+</ng-template>
+
+<!-- Create API key modal -->
+@if (createKeyOpen()) {
+  <div class="overlay" (click)="closeCreateKey()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      @if (!createdKeyToken()) {
+        <div class="mh">
+          <span class="material-symbols-outlined brand-ic">vpn_key</span>
+          <h3>Create API key</h3>
+          <div class="spacer"></div>
+          <button class="icon-btn" (click)="closeCreateKey()" [disabled]="createKeySaving()" title="Close">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="mb">
+          <div class="field">
+            <label>Key name *</label>
+            <input class="input" [class.invalid]="newKeyTried && !newKeyName.trim()"
+                   [(ngModel)]="newKeyName" placeholder="e.g. Production server" [disabled]="createKeySaving()" />
+            @if (newKeyTried && !newKeyName.trim()) { <span class="err-hint">Name is required.</span> }
+          </div>
+        </div>
+        <div class="mf">
+          <div class="spacer"></div>
+          <button class="btn" (click)="closeCreateKey()" [disabled]="createKeySaving()">Cancel</button>
+          <button class="btn btn-primary" (click)="confirmCreateKey()" [disabled]="createKeySaving()">
+            <span class="material-symbols-outlined" [class.spin]="createKeySaving()">vpn_key</span>
+            {{ createKeySaving() ? 'Creating…' : 'Create key' }}
+          </button>
+        </div>
+      } @else {
+        <div class="mh">
+          <span class="material-symbols-outlined ok-ic">check_circle</span>
+          <h3>API key created</h3>
+          <div class="spacer"></div>
+          <button class="icon-btn" (click)="closeCreateKey()" title="Close">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="mb">
+          <p class="token-msg">Copy this key now — it won't be shown again.</p>
+          <div class="field">
+            <label>API key</label>
+            <div class="token-row">
+              <code class="token-val">{{ createdKeyToken() }}</code>
+              <button class="icon-btn" (click)="copyKeyToken()" title="Copy key">
+                <span class="material-symbols-outlined">content_copy</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="mf">
+          <div class="spacer"></div>
+          <button class="btn btn-primary" (click)="closeCreateKey()">Done</button>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- Revoke API key confirm -->
+@if (confirmDeleteKey(); as dk) {
+  <div class="overlay" (click)="cancelDeleteKey()">
+    <div class="modal sm" (click)="$event.stopPropagation()">
+      <div class="mh">
+        <span class="material-symbols-outlined warn-ic">warning</span>
+        <h3>Revoke API key</h3>
+        <div class="spacer"></div>
+        <button class="icon-btn" (click)="cancelDeleteKey()" [disabled]="deletingKey()" title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="mb">
+        <p class="conf-msg">
+          Revoke <strong>{{ dk.name }}</strong>? Any integration using this key will stop working immediately.
+        </p>
+      </div>
+      <div class="mf">
+        <div class="spacer"></div>
+        <button class="btn" (click)="cancelDeleteKey()" [disabled]="deletingKey()">Cancel</button>
+        <button class="btn btn-danger" (click)="doDeleteKey()" [disabled]="deletingKey()">
+          <span class="material-symbols-outlined" [class.spin]="deletingKey()">delete</span>
+          {{ deletingKey() ? 'Revoking…' : 'Revoke key' }}
+        </button>
+      </div>
+    </div>
+  </div>
 }
 
 <!-- ── DNS modal ──────────────────────────────────── -->
@@ -236,5 +549,104 @@
   </div>
 }
 
+<!-- Webhook delivery-attempt detail -->
+@if (detailRow(); as d) {
+  <div class="overlay" (click)="closeDetail()">
+    <div class="modal lg" (click)="$event.stopPropagation()">
+      <div class="mh">
+        <span class="material-symbols-outlined brand-ic">webhook</span>
+        <h3>Webhook delivery attempt</h3>
+        <div class="spacer"></div>
+        <button class="icon-btn" (click)="closeDetail()" title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="mb wh-detail">
+        <div class="wh-grid">
+          <div class="wh-field"><span class="k">Reference</span><span class="v mono">{{ d.referenceId || '—' }}</span></div>
+          <div class="wh-field"><span class="k">Payment ID</span><span class="v mono">{{ d.paymentId }}</span></div>
+          <div class="wh-field"><span class="k">Payment state</span><span class="v">{{ d.paymentState || '—' }}</span></div>
+          <div class="wh-field"><span class="k">Attempted</span><span class="v">{{ d.attemptedAt ? (d.attemptedAt | date: 'MMM d, y, HH:mm:ss') : '—' }}</span></div>
+          <div class="wh-field"><span class="k">Result</span><span class="v">
+            @if (d.isSuccess) {
+              <span class="pill plain ok"><span class="dot"></span>Success{{ d.statusCode ? ' · ' + d.statusCode : '' }}</span>
+            } @else {
+              <span class="pill plain bad"><span class="dot"></span>Failed{{ d.statusCode ? ' · ' + d.statusCode : '' }}</span>
+            }
+          </span></div>
+          <div class="wh-field"><span class="k">Retries</span><span class="v">{{ d.retryCount }}</span></div>
+          <div class="wh-field wide"><span class="k">Webhook URL</span><span class="v mono">{{ d.webhookUrl || '—' }}</span></div>
+        </div>
+
+        @if (d.error) {
+          <div class="wh-block">
+            <label class="wh-lbl err"><span class="material-symbols-outlined">error</span> Error</label>
+            <pre class="payload-view err">{{ d.error }}</pre>
+          </div>
+        }
+
+        <div class="wh-block">
+          <label class="wh-lbl">Payload</label>
+          <pre class="payload-view">{{ prettyPayload(d.payload) }}</pre>
+        </div>
+      </div>
+      <div class="mf">
+        <div class="spacer"></div>
+        <button class="btn btn-primary" (click)="closeDetail()">Done</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Two-factor authentication enrollment (scan QR → enter code) -->
+@if (enrollOpen()) {
+  <div class="overlay" (click)="closeEnroll()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="mh">
+        <span class="material-symbols-outlined brand-ic">encrypted</span>
+        <h3>Set up two-factor authentication</h3>
+        <div class="spacer"></div>
+        <button class="icon-btn" (click)="closeEnroll()" title="Close" [disabled]="activating()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="mb tfa-enroll">
+        <ol class="tfa-steps">
+          <li>Open Google Authenticator (or any TOTP app) and tap <b>＋</b> → <b>Scan a QR code</b>.</li>
+          <li>Scan the code below.</li>
+        </ol>
+
+        <div class="qr-wrap">
+          @if (qrLoading()) {
+            <div class="qr-box loading"><span class="material-symbols-outlined spin">progress_activity</span></div>
+          } @else if (qrCode()) {
+            <img class="qr-box" [src]="qrCode()" alt="Two-factor authentication QR code" />
+          } @else {
+            <div class="qr-box err"><span class="material-symbols-outlined">error</span></div>
+          }
+        </div>
+
+        <label class="tfa-otp-lbl" for="tfaOtp">Enter the 6-digit code from the app</label>
+        <input id="tfaOtp" class="tfa-otp" type="text" inputmode="numeric" autocomplete="one-time-code"
+               maxlength="6" placeholder="000000" [(ngModel)]="otpCode"
+               (keyup.enter)="verifyTwoFa()" [class.err]="otpError()" [disabled]="activating()" />
+        @if (otpError()) {
+          <div class="tfa-err">{{ otpError() }}</div>
+        }
+      </div>
+      <div class="mf">
+        <button class="btn" (click)="closeEnroll()" [disabled]="activating()">Cancel</button>
+        <div class="spacer"></div>
+        <button class="btn btn-primary" (click)="verifyTwoFa()" [disabled]="activating() || qrLoading() || !qrCode()">
+          <span class="material-symbols-outlined" [class.spin]="activating()">{{ activating() ? 'progress_activity' : 'check' }}</span>
+          {{ activating() ? 'Verifying…' : 'Verify & activate' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
 <!-- Single-field editor (pencil) used by the General tab -->
 <app-universal-edit-modal #editor />
+<app-confirm-modal #twoFaConfirm />
+<app-confirm-modal #hmacConfirm />

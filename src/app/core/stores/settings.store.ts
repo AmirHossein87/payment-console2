@@ -37,6 +37,42 @@ export class SettingsStore {
   readonly termsText = computed(() => this._settings()?.signinTermsAndCondition ?? null);
   readonly isSupportSignupProcess = computed(() => this._settings()?.isSupportSignupProcess ?? false);
 
+  // ── Two-factor authentication (from get/info) ─────────────────────────────
+  /** Does the app force every user to enable 2FA? (isAppForceActivate2Fa) */
+  readonly appForce2Fa = signal<boolean>(false);
+  /** Has THIS user set up their own 2FA? (is2faActivate) */
+  readonly user2faActivated = signal<boolean>(false);
+  /** True when the app forces 2FA but this user hasn't set theirs up yet —
+   *  drives the "action required" alarm on the My Profile menu item. */
+  readonly needsTwoFaSetup = computed(() => this.appForce2Fa() && !this.user2faActivated());
+
+  /** Single write path for the 2FA state (called from the Settings load and the layout). */
+  setTwoFaState(appForce: boolean, userActivated: boolean): void {
+    this.appForce2Fa.set(appForce);
+    this.user2faActivated.set(userActivated);
+  }
+
+  /**
+   * Loads the current app's per-app 2FA state (force switch + this user's activation)
+   * from users/current/apps so the avatar/menu alarm is correct on every page — 2FA
+   * is now per (user, app), so this refreshes whenever the active app changes.
+   */
+  async loadTwoFaForApp(appId: string | null | undefined): Promise<void> {
+    if (!appId) {
+      this.setTwoFaState(false, false);
+      return;
+    }
+    try {
+      const apps = await firstValueFrom(this.teamClient.getApps());
+      const app = (apps ?? []).find((a) => a.appId === appId);
+      if (app) {
+        this.setTwoFaState(app.isTwoFactorAuthenticationEnabled ?? false, app.is2faActivate ?? false);
+      }
+    } catch {
+      /* leave prior state on failure */
+    }
+  }
+
   constructor() {
     effect(() => {
       const dark = this.isDark();
