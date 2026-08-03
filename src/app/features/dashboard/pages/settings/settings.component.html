@@ -303,6 +303,26 @@
   <!-- ── API INTEGRATION ─────────────────────────────── -->
   @if (activeTab() === 'api') {
     <div class="set-pane wide">
+      @if (app(); as a) {
+        <div class="app-id-card">
+          <div class="aic-item">
+            <span class="aic-label">App ID</span>
+            <div class="aic-val">
+              <code>{{ a.appId }}</code>
+              <button class="icon-btn" (click)="copyAppId(a.appId)" title="Copy App ID">
+                <span class="material-symbols-outlined">content_copy</span>
+              </button>
+            </div>
+          </div>
+          <div class="aic-item">
+            <span class="aic-label">Environment</span>
+            <span class="pill plain" [ngClass]="a.isSandbox ? 'muted' : 'ok'">
+              <span class="dot"></span>{{ a.isSandbox ? 'Sandbox' : 'Live' }}
+            </span>
+          </div>
+        </div>
+      }
+
       <div class="pane-intro">
         <div>
           <h3><span class="material-symbols-outlined">vpn_key</span> API keys</h3>
@@ -461,7 +481,10 @@
           </button>
         </div>
         <div class="mb">
-          <p class="token-msg">Copy this key now — it won't be shown again.</p>
+          <div class="key-warning">
+            <span class="material-symbols-outlined">warning</span>
+            <div><strong>Copy this key now — it won't be shown again.</strong> This is the only time we'll display it, so store it somewhere safe.</div>
+          </div>
           <div class="field">
             <label>API key</label>
             <div class="token-row">

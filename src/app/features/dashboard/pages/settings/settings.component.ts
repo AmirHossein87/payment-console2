@@ -711,6 +711,13 @@ export class SettingsPageComponent implements OnInit {
     } catch { /* clipboard unavailable */ }
   }
 
+  async copyAppId(appId: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(appId);
+      this.notify.showSuccess('App ID copied to clipboard');
+    } catch { /* clipboard unavailable */ }
+  }
+
   askDeleteKey(row: ApiKeyRow): void {
     this.confirmDeleteKey.set(row);
   }

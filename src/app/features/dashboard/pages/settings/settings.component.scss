@@ -630,7 +630,39 @@
 .ok-ic { color: var(--ok); font-size: 20px; }
 .warn-ic { color: var(--warn); font-size: 20px; }
 
+// App ID + environment card (Developer Settings, above API keys)
+.app-id-card {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 28px;
+  padding: 14px 18px; margin-bottom: 16px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--r-md);
+
+  .aic-item { display: flex; flex-direction: column; gap: 5px; }
+  .aic-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
+    text-transform: uppercase; color: var(--text-3);
+  }
+  .aic-val {
+    display: flex; align-items: center; gap: 6px;
+    code {
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 13px; color: var(--text); word-break: break-all;
+    }
+  }
+}
+
 .token-msg { font-size: 13px; color: var(--text-2); margin-bottom: 12px; }
+// One-time key reveal — amber warning section (this is the only time it's shown).
+.key-warning {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px 14px; margin-bottom: 14px;
+  border-radius: var(--r-sm);
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  font-size: 13px; line-height: 1.5; color: var(--text-2);
+  .material-symbols-outlined { color: #f59e0b; font-size: 20px; flex-shrink: 0; }
+  strong { color: var(--text); }
+}
 .token-row {
   display: flex; align-items: center; gap: 8px;
   background: var(--surface-2); border: 1px solid var(--border);
