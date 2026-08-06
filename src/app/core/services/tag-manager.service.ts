@@ -44,13 +44,21 @@ export class TagManagerService {
   private static readonly AD_CLICK_PARAMS = ['gclid', 'gbraid', 'wbraid'];
 
   /**
-   * localStorage key holding the JSON array of user ids that have already
-   * reported their "first successful sign in" conversion. Persisted (and kept
-   * across signout via StorageService.PRESERVED_KEYS) so the conversion is sent
-   * to Google Ads at most ONCE per user — not on every sign in, and not on
-   * signout → signin again. Keep this string in sync with StorageService.
+   * localStorage key holding the JSON array of user ids that have already fired
+   * their FIRST `sign_in` (login) event. Persisted (kept across signout via
+   * StorageService.PRESERVED_KEYS) so login is reported at most ONCE per user —
+   * NOT on every sign in, and NOT again after signout → signin. This is what
+   * makes "log out / log back in many times a day" count only once.
+   * Keep this string in sync with StorageService.
    */
   static readonly FIRST_SIGNIN_KEY = 'gtm_first_signin_users';
+
+  /**
+   * localStorage key holding the JSON array of user ids that have already fired
+   * their `sign_up` (registration) event. Persisted across signout so registration
+   * is reported at most ONCE per user. Keep this string in sync with StorageService.
+   */
+  static readonly SIGNUP_KEY = 'gtm_signup_users';
 
   /**
    * Injects the GTM loader (gtm.js) for the current environment as high in the
@@ -142,42 +150,67 @@ export class TagManagerService {
   }
 
   /**
-   * Pushes a conversion event onto the dataLayer ONLY when the visitor arrived
-   * via a Google Ads click (a gclid/gbraid/wbraid was captured this session).
-   * No-op for organic, referral, and direct traffic — so we never report a
-   * conversion to Google Ads for a customer it didn't send us.
+   * Pushes an event onto the dataLayer for EVERY visitor — NOT gated by ad click.
+   *
+   * Attribution is handled downstream by GA4 + the Google Ads link: Ads only
+   * counts a conversion when GA4 has a matching ad click, so pushing the event
+   * for organic/direct/referral visitors never over-reports to Ads — it simply
+   * lets GA4 see the full picture (and makes GTM Preview debugging possible). The
+   * captured ad-click id, if any, rides along as an optional `gclid` param.
    */
   trackConversion(action: string, params: Record<string, unknown> = {}): void {
     if (!this.enabled) {
       return;
     }
-    if (!this.hasAdClickAttribution) {
-      this.log.info(`Skipping "${action}" conversion — visitor did not arrive from a Google Ads click.`);
-      return;
-    }
-    window.dataLayer.push({ event: action, ...params });
+    const gclid = this.adClickId;
+    window.dataLayer.push({ event: action, ...(gclid ? { gclid } : {}), ...params });
   }
 
   /**
-   * Reports the `sign_in` conversion the FIRST time a given user signs in on
-   * this browser, then never again for that user. This is the activation goal:
-   * we deliberately do NOT count sign-up (registration) or repeat sign-ins.
-   *
-   * Still gated by ad-click attribution (via trackConversion), so organic /
-   * direct sign-ins never report a conversion. The ad-attribution check runs
-   * BEFORE the marker is written, so a non-ad first sign in does not "use up"
-   * the once-per-user slot — a later ad-attributed sign in can still convert.
+   * Fires the GA4-standard `sign_up` event once per user, on registration. NOT
+   * gated by ad click. A second registration for the same account can't happen,
+   * but the marker keeps it to a single push defensively.
    */
-  trackFirstSignInConversion(userId: string, params: Record<string, unknown> = {}): void {
-    if (!this.enabled || !userId || !this.hasAdClickAttribution) {
+  trackSignUp(userId: string, params: Record<string, unknown> = {}): void {
+    this.trackOncePerUser('sign_up', TagManagerService.SIGNUP_KEY, userId, params);
+  }
+
+  /**
+   * Fires the GA4-standard `sign_in` (login) event the FIRST time a user signs in
+   * on this browser, then never again for that user — so logging out and back in
+   * many times a day is counted at most once. NOT gated by ad click.
+   */
+  trackFirstSignIn(userId: string, params: Record<string, unknown> = {}): void {
+    this.trackOncePerUser('sign_in', TagManagerService.FIRST_SIGNIN_KEY, userId, params);
+  }
+
+  /**
+   * Shared once-per-user push: no-op when GTM is off, the userId is missing, or
+   * this user already fired `event` on this browser. The marker is written before
+   * the push so a duplicate can never slip through. The captured ad-click id, if
+   * any, rides along as an optional `gclid` param (metadata, never a gate).
+   */
+  private trackOncePerUser(
+    event: string,
+    storageKey: string,
+    userId: string,
+    params: Record<string, unknown>,
+  ): void {
+    if (!this.enabled || !userId) {
       return;
     }
-    if (this.hasReportedSignIn(userId)) {
-      this.log.info('Skipping "sign_in" conversion — first sign in already reported for this user.');
+    if (this.hasReported(storageKey, userId)) {
+      this.log.info(`Skipping "${event}" — already reported once for this user.`);
       return;
     }
-    this.markSignInReported(userId);
-    this.trackConversion('sign_in', { user_id: userId, ...params });
+    this.markReported(storageKey, userId);
+    const gclid = this.adClickId;
+    window.dataLayer.push({
+      event,
+      user_id: userId,
+      ...(gclid ? { gclid } : {}),
+      ...params,
+    });
   }
 
   /** Whether GTM is actually active in this environment. */
@@ -185,12 +218,16 @@ export class TagManagerService {
     return this.enabled;
   }
 
-  /** Whether a Google Ads click id was captured for the current session. */
-  get hasAdClickAttribution(): boolean {
+  /**
+   * The Google Ads click id captured for the current session, or null. Attached
+   * to events as optional `gclid` metadata — never used to gate whether an event
+   * fires (GA4 + the Ads link decide attribution).
+   */
+  get adClickId(): string | null {
     try {
-      return !!window.sessionStorage.getItem(TagManagerService.AD_CLICK_KEY);
+      return window.sessionStorage.getItem(TagManagerService.AD_CLICK_KEY);
     } catch {
-      return false;
+      return null;
     }
   }
 
@@ -213,28 +250,28 @@ export class TagManagerService {
     }
   }
 
-  /** Whether this user has already reported their first-sign-in conversion. */
-  private hasReportedSignIn(userId: string): boolean {
-    return this.getReportedSignIns().includes(userId);
+  /** Whether this user has already fired the event tracked under `storageKey`. */
+  private hasReported(storageKey: string, userId: string): boolean {
+    return this.getReported(storageKey).includes(userId);
   }
 
-  /** Records that this user's first-sign-in conversion has now been reported. */
-  private markSignInReported(userId: string): void {
+  /** Records that this user has now fired the event tracked under `storageKey`. */
+  private markReported(storageKey: string, userId: string): void {
     try {
-      const users = this.getReportedSignIns();
+      const users = this.getReported(storageKey);
       if (!users.includes(userId)) {
         users.push(userId);
-        localStorage.setItem(TagManagerService.FIRST_SIGNIN_KEY, JSON.stringify(users));
+        localStorage.setItem(storageKey, JSON.stringify(users));
       }
     } catch {
-      // localStorage unavailable — fail open. A rare duplicate conversion is
-      // preferable to throwing inside the sign-in flow.
+      // localStorage unavailable — fail open. A rare duplicate event is
+      // preferable to throwing inside the auth flow.
     }
   }
 
-  private getReportedSignIns(): string[] {
+  private getReported(storageKey: string): string[] {
     try {
-      const raw = localStorage.getItem(TagManagerService.FIRST_SIGNIN_KEY);
+      const raw = localStorage.getItem(storageKey);
       if (!raw) return [];
       const parsed = JSON.parse(raw);
       return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];

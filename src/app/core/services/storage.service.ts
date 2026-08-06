@@ -9,10 +9,15 @@ export class StorageService {
     'login', 'register', 'app', 'licenses', 'rules', 'fraud'
   ]);
 
-  // 'gtm_first_signin_users' must survive signout so the first-sign-in Google
-  // Ads conversion is reported once per user, not again after every signout.
-  // Keep in sync with TagManagerService.FIRST_SIGNIN_KEY.
-  private static readonly PRESERVED_KEYS = ['app-theme', 'tc-theme', 'gtm_first_signin_users'];
+  // The GTM dedup markers must survive signout so `sign_up`/`sign_in` are each
+  // reported once per user, not again after every signout → signin. Keep in sync
+  // with TagManagerService.SIGNUP_KEY and FIRST_SIGNIN_KEY.
+  private static readonly PRESERVED_KEYS = [
+    'app-theme',
+    'tc-theme',
+    'gtm_first_signin_users',
+    'gtm_signup_users',
+  ];
 
   static isValidAppId(appId: any): boolean {
     if (typeof appId !== 'string') return false;

@@ -119,11 +119,11 @@ export class FirebaseAuthService {
     );
     this.authStore.setSession(result.accessToken.value, result.userId);
     this.startBackgroundTokenRefresh();
-    // Google Ads conversion signal — the activation goal. Fires only on the
-    // user's FIRST successful sign in (once per user), and only when the visitor
-    // arrived via an ad click. Repeat sign-ins and token refresh never convert
-    // (refresh bypasses this method via reconnect()).
-    this.tagManager.trackFirstSignInConversion(result.userId);
+    // GA4 `sign_in` (login) event. Fires on the user's FIRST successful login on
+    // this browser and never again — so logging out and back in many times a day
+    // is counted once. Fires for every user (attribution is GA4 + Ads' job, not
+    // ours). Token refresh bypasses this method via reconnect(), so it never fires.
+    this.tagManager.trackFirstSignIn(result.userId);
     return result;
   }
 
@@ -133,13 +133,10 @@ export class FirebaseAuthService {
     );
     this.authStore.setSession(result.accessToken.value, result.userId);
     this.startBackgroundTokenRefresh();
-    // Sign-up authenticates the user immediately (it returns an access token and
-    // sets the session above) — so registration IS the user's first successful
-    // sign in. Fire the same activation conversion as callSignIn. The
-    // once-per-user marker inside trackFirstSignInConversion guarantees a later
-    // real sign in won't double-count, and it's still gated by ad-click
-    // attribution, so organic/direct sign-ups never convert.
-    this.tagManager.trackFirstSignInConversion(result.userId);
+    // GA4 `sign_up` (registration) event — the distinct signup goal, fired once
+    // per user. Registration is a separate event from `sign_in`; the first real
+    // login later fires `sign_in` on its own. Fires for every user (organic or ad).
+    this.tagManager.trackSignUp(result.userId);
     return result;
   }
 
