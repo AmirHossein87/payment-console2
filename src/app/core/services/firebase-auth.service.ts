@@ -123,7 +123,8 @@ export class FirebaseAuthService {
     // this browser and never again — so logging out and back in many times a day
     // is counted once. Fires for every user (attribution is GA4 + Ads' job, not
     // ours). Token refresh bypasses this method via reconnect(), so it never fires.
-    this.tagManager.trackFirstSignIn(result.userId);
+    // Awaited so the post-auth redirect can't drop the hit (no-op when GTM is off).
+    await this.tagManager.trackFirstSignIn(result.userId);
     return result;
   }
 
@@ -136,7 +137,10 @@ export class FirebaseAuthService {
     // GA4 `sign_up` (registration) event — the distinct signup goal, fired once
     // per user. Registration is a separate event from `sign_in`; the first real
     // login later fires `sign_in` on its own. Fires for every user (organic or ad).
-    this.tagManager.trackSignUp(result.userId);
+    // Awaited so the redirect to verify-email / dashboard (and the hard redirect
+    // on the grant-access path) can't drop the hit — the #1 "conversion never
+    // arrives" cause. No-op / instant when GTM is off (localhost).
+    await this.tagManager.trackSignUp(result.userId);
     return result;
   }
 
