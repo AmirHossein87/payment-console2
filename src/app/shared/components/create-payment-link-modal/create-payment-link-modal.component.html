@@ -81,21 +81,24 @@
             }
           </div>
 
-          <!-- Customer picker (matches advanced filter style) -->
-          <div class="field">
-            <label>Customer *</label>
-            <div class="cust-field" [class.invalid]="customerInvalid" (click)="custModal.open()">
-              <span class="material-symbols-outlined">person_search</span>
-              <span class="cust-val" [class.placeholder]="!customerLabel">
-                {{ customerLabel || 'Search & select a customer…' }}
-              </span>
-              @if (customerLabel) {
-                <button class="icon-btn sm" type="button" (click)="$event.stopPropagation(); clearCustomer()">
-                  <span class="material-symbols-outlined">close</span>
-                </button>
-              }
+          <!-- Customer picker (matches advanced filter style). Hidden when the
+               modal is opened from a customer's own context (customer is fixed). -->
+          @if (!hideCustomer) {
+            <div class="field">
+              <label>Customer *</label>
+              <div class="cust-field" [class.invalid]="customerInvalid" (click)="custModal.open()">
+                <span class="material-symbols-outlined">person_search</span>
+                <span class="cust-val" [class.placeholder]="!customerLabel">
+                  {{ customerLabel || 'Search & select a customer…' }}
+                </span>
+                @if (customerLabel) {
+                  <button class="icon-btn sm" type="button" (click)="$event.stopPropagation(); clearCustomer()">
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
+                }
+              </div>
             </div>
-          </div>
+          }
 
           <div class="pl-acc" [class.open]="moreOpen()">
             <div class="pl-acc-head" (click)="toggleMore()">

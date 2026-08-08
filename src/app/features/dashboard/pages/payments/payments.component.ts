@@ -67,7 +67,10 @@ import {
           }
         </button>
         @if (canWrite()) {
-          <button class="btn btn-sm btn-primary" (click)="linkModal.open()">
+          <button
+            class="btn btn-sm btn-primary"
+            (click)="linkModal.open(embedded() ? { customerId: customerId(), hideCustomer: true } : undefined)"
+          >
             <span class="material-symbols-outlined">link</span>
             Payment link
           </button>

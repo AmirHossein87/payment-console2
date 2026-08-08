@@ -76,13 +76,27 @@ export class CreatePaymentLinkModalComponent {
   paymentProfileId: number | null = null;
   customerId: string | null = null;
   customerLabel = '';
+  /** When true, the customer is fixed by the context (e.g. opened from a customer's
+   *  detail page) so the picker is hidden entirely — there's nothing to choose. */
+  hideCustomer = false;
 
-  async open(customer?: Customer): Promise<void> {
+  async open(opts?: {
+    customer?: Customer;
+    customerId?: string | null;
+    customerLabel?: string;
+    hideCustomer?: boolean;
+  }): Promise<void> {
     this.reset();
+    this.hideCustomer = !!opts?.hideCustomer;
+    const customer = opts?.customer;
     if (customer) {
       this.customerId = customer.customerId;
       const name = `${customer.firstName ?? ''} ${customer.lastName ?? ''}`.trim();
       this.customerLabel = name || customer.customerId;
+    } else if (opts?.customerId) {
+      // Customer-scoped open (id only, no full record needed since it's hidden).
+      this.customerId = opts.customerId;
+      this.customerLabel = opts.customerLabel ?? '';
     }
     this.isOpen.set(true);
     await Promise.all([
@@ -331,6 +345,7 @@ export class CreatePaymentLinkModalComponent {
     this.paymentProfileId = null;
     this.customerId = null;
     this.customerLabel = '';
+    this.hideCustomer = false;
     this.gateways.set([]);
   }
 }
