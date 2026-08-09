@@ -195,7 +195,13 @@ export class AuthFlowOrchestratorService {
 
     try {
       this.authStore.startLoading('Preparing authorization...');
-      const licenseInfo = await this.licenseFlow.ensureLicenseToken(appId, returnUrl);
+      // Thread the route's licenseName query param (like returnUrl) into
+      // CreateLicense when a new license has to be provisioned here.
+      const gp = this.getQueryParams();
+      const licenseInfo = await this.licenseFlow.ensureLicenseToken(
+        returnUrl,
+        gp['licenseName'] ?? null
+      );
       this.authStore.stopLoading();
 
       const finalUrl = appendTokenParams(
@@ -220,15 +226,17 @@ export class AuthFlowOrchestratorService {
       this.authStore.startLoading('Securing license...');
       await this.settingsStore.load();
 
-      const appLicenses = await this.licenseStore.getBestLicense(false);
+      // best-license now returns a single license (its id + the apps under it).
+      const best = await this.licenseStore.getBestLicense();
+      const apps = best?.apps ?? [];
 
-      if (appLicenses && appLicenses.length > 0) {
-        // best-license returned records — open a workspace directly from them.
-        // Priority: an explicitly-requested appId the user actually owns →
-        // the sandbox app → the first (live) app.
-        const requested = appId ? appLicenses.find((al) => al.appId === appId) : null;
-        const sandbox = appLicenses.find((al) => al.isSandbox);
-        const target = requested ?? sandbox ?? appLicenses[0];
+      if (apps.length > 0) {
+        // Open a workspace directly from the license's apps. Priority: an
+        // explicitly-requested appId the user actually owns → the sandbox app →
+        // the first (live) app.
+        const requested = appId ? apps.find((a) => a.appId === appId) : null;
+        const sandbox = apps.find((a) => a.isSandbox);
+        const target = requested ?? sandbox ?? apps[0];
 
         this.log.info('Opening workspace from best-license:', target.appId, {
           isSandbox: !!target.isSandbox,
@@ -238,9 +246,11 @@ export class AuthFlowOrchestratorService {
         return;
       }
 
-      // No existing license/app — provision one, then route into it.
+      // No existing license/app — provision one, then route into it. Pass the
+      // route's licenseId / licenseName query params through to CreateLicense.
       this.log.info('No matching license. Creating new license.');
-      const newLicense = await this.licenseFlow.createLicense(appId, null);
+      const p = this.getQueryParams();
+      const newLicense = await this.licenseFlow.createLicense(null, p['licenseName'] ?? null);
       this.authStore.stopLoading();
       await this.navigateToDashboard(newLicense?.licenseId);
     } catch (err) {

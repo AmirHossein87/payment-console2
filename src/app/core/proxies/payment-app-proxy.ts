@@ -1723,10 +1723,8 @@ export class LicensesClient {
     this.baseUrl = baseUrl ?? "";
   }
 
-  createLicense(licenseId?: string | null | undefined, licenseName?: string | null | undefined, httpContext?: HttpContext): Observable<CreateLicenseResponse> {
+  createLicense(licenseName?: string | null | undefined, httpContext?: HttpContext): Observable<CreateLicenseResponse> {
     let url_ = this.baseUrl + "/api/licenses?";
-    if (licenseId !== undefined && licenseId !== null)
-      url_ += "licenseId=" + encodeURIComponent("" + licenseId) + "&";
     if (licenseName !== undefined && licenseName !== null)
       url_ += "licenseName=" + encodeURIComponent("" + licenseName) + "&";
     url_ = url_.replace(/[?&]$/, "");
@@ -1839,7 +1837,7 @@ export class LicensesClient {
     return _observableOf(null as any);
   }
 
-  getAppsLicense(licenseId: string, httpContext?: HttpContext): Observable<AppLicense[]> {
+  getAppsLicense(licenseId: string, httpContext?: HttpContext): Observable<AppAuthorization[]> {
     let url_ = this.baseUrl + "/api/licenses/{licenseId}";
     if (licenseId === undefined || licenseId === null)
       throw new globalThis.Error("The parameter 'licenseId' must be defined.");
@@ -1863,14 +1861,14 @@ export class LicensesClient {
         try {
           return this.processGetAppsLicense(response_ as any);
         } catch (e) {
-          return _observableThrow(e) as any as Observable<AppLicense[]>;
+          return _observableThrow(e) as any as Observable<AppAuthorization[]>;
         }
       } else
-        return _observableThrow(response_) as any as Observable<AppLicense[]>;
+        return _observableThrow(response_) as any as Observable<AppAuthorization[]>;
     }));
   }
 
-  protected processGetAppsLicense(response: HttpResponseBase): Observable<AppLicense[]> {
+  protected processGetAppsLicense(response: HttpResponseBase): Observable<AppAuthorization[]> {
     const status = response.status;
     const responseBlob =
       response instanceof HttpResponse ? response.body :
@@ -1884,7 +1882,7 @@ export class LicensesClient {
         if (Array.isArray(resultData200)) {
           result200 = [] as any;
           for (let item of resultData200)
-            result200!.push(AppLicense.fromJS(item));
+            result200!.push(AppAuthorization.fromJS(item));
         }
         else {
           result200 = null as any;
@@ -1899,10 +1897,62 @@ export class LicensesClient {
     return _observableOf(null as any);
   }
 
-  getBestLicense(generateBot?: boolean | null | undefined, httpContext?: HttpContext): Observable<AppLicense[]> {
-    let url_ = this.baseUrl + "/api/licenses/best-license?";
-    if (generateBot !== undefined && generateBot !== null)
-      url_ += "generateBot=" + encodeURIComponent("" + generateBot) + "&";
+  /** GET /api/licenses/{licenseId}/access — mint/fetch the authorization code for an existing license. */
+  getLicense(licenseId: string, httpContext?: HttpContext): Observable<CreateLicenseResponse> {
+    let url_ = this.baseUrl + "/api/licenses/{licenseId}/access";
+    if (licenseId === undefined || licenseId === null)
+      throw new globalThis.Error("The parameter 'licenseId' must be defined.");
+    url_ = url_.replace("{licenseId}", encodeURIComponent("" + licenseId));
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: any = {
+      observe: "response",
+      responseType: "blob",
+      withCredentials: false,
+      context: httpContext,
+      headers: new HttpHeaders({
+        "Accept": "application/json"
+      })
+    };
+
+    return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_: any) => {
+      return this.processGetLicense(response_);
+    })).pipe(_observableCatch((response_: any) => {
+      if (response_ instanceof HttpResponseBase) {
+        try {
+          return this.processGetLicense(response_ as any);
+        } catch (e) {
+          return _observableThrow(e) as any as Observable<CreateLicenseResponse>;
+        }
+      } else
+        return _observableThrow(response_) as any as Observable<CreateLicenseResponse>;
+    }));
+  }
+
+  protected processGetLicense(response: HttpResponseBase): Observable<CreateLicenseResponse> {
+    const status = response.status;
+    const responseBlob =
+      response instanceof HttpResponse ? response.body :
+        (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+    let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); } }
+    if (status === 200) {
+      return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+        let result200: any = null;
+        let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = CreateLicenseResponse.fromJS(resultData200);
+        return _observableOf(result200);
+      }));
+    } else if (status !== 200 && status !== 204) {
+      return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+        return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+      }));
+    }
+    return _observableOf(null as any);
+  }
+
+  getBestLicense(httpContext?: HttpContext): Observable<AppLicense> {
+    let url_ = this.baseUrl + "/api/licenses/best-license";
     url_ = url_.replace(/[?&]$/, "");
 
     let options_: any = {
@@ -1922,14 +1972,14 @@ export class LicensesClient {
         try {
           return this.processGetBestLicense(response_ as any);
         } catch (e) {
-          return _observableThrow(e) as any as Observable<AppLicense[]>;
+          return _observableThrow(e) as any as Observable<AppLicense>;
         }
       } else
-        return _observableThrow(response_) as any as Observable<AppLicense[]>;
+        return _observableThrow(response_) as any as Observable<AppLicense>;
     }));
   }
 
-  protected processGetBestLicense(response: HttpResponseBase): Observable<AppLicense[]> {
+  protected processGetBestLicense(response: HttpResponseBase): Observable<AppLicense> {
     const status = response.status;
     const responseBlob =
       response instanceof HttpResponse ? response.body :
@@ -1940,14 +1990,8 @@ export class LicensesClient {
       return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
         let result200: any = null;
         let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-        if (Array.isArray(resultData200)) {
-          result200 = [] as any;
-          for (let item of resultData200)
-            result200!.push(AppLicense.fromJS(item));
-        }
-        else {
-          result200 = null as any;
-        }
+        // best-license returns a single AppLicense, or null when the user has none.
+        result200 = resultData200 ? AppLicense.fromJS(resultData200) : null as any;
         return _observableOf(result200);
       }));
     } else if (status !== 200 && status !== 204) {
@@ -8852,11 +8896,102 @@ export interface ICreateLicenseResponse {
 }
 
 export class AppLicense implements IAppLicense {
+  licenseId!: string;
+  apps!: LicenseApp[];
+
+  constructor(data?: IAppLicense) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+    if (!data) {
+      this.apps = [];
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.licenseId = _data["licenseId"] !== undefined ? _data["licenseId"] : null as any;
+      if (Array.isArray(_data["apps"])) {
+        this.apps = [] as any;
+        for (let item of _data["apps"])
+          this.apps!.push(LicenseApp.fromJS(item));
+      }
+    }
+  }
+
+  static fromJS(data: any): AppLicense {
+    data = typeof data === 'object' ? data : {};
+    let result = new AppLicense();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === 'object' ? data : {};
+    data["licenseId"] = this.licenseId !== undefined ? this.licenseId : null as any;
+    if (Array.isArray(this.apps)) {
+      data["apps"] = [];
+      for (let item of this.apps)
+        data["apps"].push(item ? item.toJSON() : null as any);
+    }
+    return data;
+  }
+}
+
+export interface IAppLicense {
+  licenseId: string;
+  apps: LicenseApp[];
+}
+
+export class LicenseApp implements ILicenseApp {
+  isSandbox!: boolean;
+  appId!: string;
+
+  constructor(data?: ILicenseApp) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (this as any)[property] = (data as any)[property];
+      }
+    }
+  }
+
+  init(_data?: any) {
+    if (_data) {
+      this.isSandbox = _data["isSandbox"] !== undefined ? _data["isSandbox"] : null as any;
+      this.appId = _data["appId"] !== undefined ? _data["appId"] : null as any;
+    }
+  }
+
+  static fromJS(data: any): LicenseApp {
+    data = typeof data === 'object' ? data : {};
+    let result = new LicenseApp();
+    result.init(data);
+    return result;
+  }
+
+  toJSON(data?: any) {
+    data = typeof data === 'object' ? data : {};
+    data["isSandbox"] = this.isSandbox !== undefined ? this.isSandbox : null as any;
+    data["appId"] = this.appId !== undefined ? this.appId : null as any;
+    return data;
+  }
+}
+
+export interface ILicenseApp {
+  isSandbox: boolean;
+  appId: string;
+}
+
+export class AppAuthorization implements IAppAuthorization {
   isSandbox!: boolean;
   appId!: string;
   authorizationCode!: string;
 
-  constructor(data?: IAppLicense) {
+  constructor(data?: IAppAuthorization) {
     if (data) {
       for (var property in data) {
         if (data.hasOwnProperty(property))
@@ -8873,9 +9008,9 @@ export class AppLicense implements IAppLicense {
     }
   }
 
-  static fromJS(data: any): AppLicense {
+  static fromJS(data: any): AppAuthorization {
     data = typeof data === 'object' ? data : {};
-    let result = new AppLicense();
+    let result = new AppAuthorization();
     result.init(data);
     return result;
   }
@@ -8889,7 +9024,7 @@ export class AppLicense implements IAppLicense {
   }
 }
 
-export interface IAppLicense {
+export interface IAppAuthorization {
   isSandbox: boolean;
   appId: string;
   authorizationCode: string;

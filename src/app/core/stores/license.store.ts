@@ -1,6 +1,6 @@
 import { signal, computed, Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { TeamClient, LicensesClient, License, App, AppLicense, CreateLicenseResponse } from '@proxy/payment-app-proxy';
+import { TeamClient, LicensesClient, License, App, AppLicense, LicenseApp, CreateLicenseResponse } from '@proxy/payment-app-proxy';
 import { StorageService } from '../services/storage.service';
 import { extractBaseDomain } from '../utils/url.util';
 
@@ -17,7 +17,7 @@ export class LicenseStore {
   // Apps confirmed accessible by the best-license endpoint. The team
   // `getLicenses` list and `best-license` can diverge (different endpoints), so
   // we keep best-license results as an additional source of truth for the guard.
-  readonly bestLicenseApps = signal<AppLicense[]>([]);
+  readonly bestLicenseApps = signal<LicenseApp[]>([]);
 
   readonly permissibleApps = computed<App[]>(() => {
     const byId = new Map<string, App>();
@@ -99,28 +99,35 @@ export class LicenseStore {
     }
   }
 
-  async getBestLicense(generateBot?: boolean): Promise<AppLicense[] | null> {
+  async getBestLicense(): Promise<AppLicense | null> {
     try {
-      const result = await firstValueFrom(this.licensesClient.getBestLicense(generateBot));
-      // Cache so the route guard recognizes these apps even if the team
-      // licenses list is empty or out of sync.
-      this.bestLicenseApps.set(result ?? []);
-      return result;
+      // best-license now returns a SINGLE license (its id + the apps under it),
+      // or null when the user has none.
+      const result = await firstValueFrom(this.licensesClient.getBestLicense());
+      // Cache the license's apps so the route guard recognizes them even if the
+      // team licenses list is empty or out of sync.
+      this.bestLicenseApps.set(result?.apps ?? []);
+      return result ?? null;
     } catch (e) {
       console.error('Failed to get best license:', e);
       return null;
     }
   }
 
-  async createLicense(appId: string | null, returnUrl: string | null): Promise<CreateLicenseResponse> {
+  async createLicense(
+    returnUrl: string | null,
+    licenseName?: string | null
+  ): Promise<CreateLicenseResponse> {
     this.storage.remove('default-app');
     localStorage.removeItem('default-app');
 
-    const targetLicenseId = appId && appId !== 'null' ? appId : undefined;
-    const licenseName = extractBaseDomain(returnUrl);
+    // CreateLicense only takes a name now (the id is server-generated). Prefer the
+    // route's `licenseName` query param; fall back to the returnUrl domain.
+    const targetLicenseName =
+      licenseName && licenseName.trim() ? licenseName.trim() : extractBaseDomain(returnUrl);
 
     const license = await firstValueFrom(
-      this.licensesClient.createLicense(targetLicenseId, licenseName)
+      this.licensesClient.createLicense(targetLicenseName)
     );
 
     this.newlyCreatedLicenseId.set(license.licenseId);
@@ -128,25 +135,27 @@ export class LicenseStore {
   }
 
   async ensureLicenseToken(
-    appId: string | null,
-    returnUrl: string | null
+    returnUrl: string | null,
+    licenseName?: string | null
   ): Promise<{ licenseId: string; authorizationCode: string }> {
-    const bestLicenses = await this.getBestLicense();
-    if (bestLicenses && bestLicenses.length > 0) {
-      const targetId = this.storage.get('default-app');
-      let appLicense = targetId
-        ? bestLicenses.find((al) => al.appId === targetId)
-        : null;
-      if (!appLicense) {
-        appLicense = bestLicenses.find((al) => al.isSandbox) ?? bestLicenses[0];
+    // 1) Ask for the user's best license. It now returns the license id (+ its
+    //    apps), NOT an authorization code.
+    const best = await this.getBestLicense();
+
+    // 2) Has a license → fetch its authorization code via GetLicense(licenseId).
+    if (best?.licenseId) {
+      const access = await firstValueFrom(this.licensesClient.getLicense(best.licenseId));
+      if (!access?.authorizationCode) {
+        throw new Error('Failed to secure authorization code for the existing license.');
       }
       return {
-        licenseId: appLicense.appId,
-        authorizationCode: appLicense.authorizationCode,
+        licenseId: access.licenseId,
+        authorizationCode: access.authorizationCode,
       };
     }
 
-    const newLicense = await this.createLicense(appId, returnUrl);
+    // 3) No license yet → provision one (its response carries the code directly).
+    const newLicense = await this.createLicense(returnUrl, licenseName);
     if (!newLicense || !newLicense.authorizationCode) {
       throw new Error('Failed to secure authorization code from created license.');
     }
