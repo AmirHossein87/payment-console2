@@ -260,7 +260,8 @@ table.pdt.invoice-items-table {
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.45);
-  backdrop-filter: blur(2px);
+  // No backdrop-filter: it forces a GPU re-blur of the backdrop on every scroll
+  // frame, which made scrolling a large Raw-info payload very slow.
   display: flex;
   align-items: center;
   justify-content: center;
@@ -379,8 +380,68 @@ table.pdt.invoice-items-table {
   word-break: break-word;
   max-height: 60vh;
   overflow: auto;
+  // Isolate this large block's layout/paint so scrolling it doesn't repaint the
+  // rest of the modal.
+  contain: content;
 
   &.sm { padding: 6px 8px; max-height: 160px; font-size: 11px; }
+}
+
+// ── Credit-card visual (payment method) in the Provider card ────────────────
+.cc {
+  position: relative;
+  overflow: hidden;
+  max-width: 340px;
+  margin: 2px 0 12px;
+  padding: 18px 20px;
+  border-radius: 14px;
+  color: #fff;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 55%, #4f46e5 130%);
+  box-shadow: 0 10px 26px rgba(2, 6, 23, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(130% 90% at 100% 0%, rgba(255, 255, 255, 0.14), transparent 55%);
+    pointer-events: none;
+  }
+
+  .cc-top { display: flex; align-items: flex-start; justify-content: space-between; }
+
+  .cc-chip {
+    width: 36px;
+    height: 27px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #e9c46a, #f6d98a);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+  }
+
+  .cc-brandwrap { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .cc-brand { font-size: 15px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
+  .cc-type { font-size: 10px; opacity: 0.7; }
+
+  .cc-number {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 2px;
+  }
+
+  .cc-bottom { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+  .cc-r { text-align: right; }
+  .cc-lbl {
+    display: block;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin-bottom: 3px;
+  }
+  .cc-val { font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
 }
 
 /* ── Mobile ─────────────────────────────────────────────────

@@ -82,7 +82,7 @@
     <div class="info-card">
       <div class="h">
         <span class="material-symbols-outlined">smartphone</span> App
-        @if (p.redirectUrl) {
+        @if (p.redirectUrl && p.paymentState === PaymentState.Created) {
           <span class="right">
             <button class="btn btn-sm" (click)="payLinkModal.open(p.redirectUrl, 'Payment link')">
               <span class="material-symbols-outlined">link</span> Pay link
@@ -95,7 +95,7 @@
         <div class="row"><span class="k">Reference ID</span><span class="v cell-mono">{{ p.referenceId || '' }}</span></div>
         <div class="row"><span class="k">Webhook sent</span><span class="v">{{ webhook()?.sentTime ? (webhook()!.sentTime | date: 'MMM d, y, HH:mm') : '' }}</span></div>
         <div class="row"><span class="k">Customer ID</span><span class="v cell-mono">@if (p.customerOrder?.customer?.customerId || p.customerId; as cid) {<a class="idlink" [href]="customerUrl(cid)" target="_blank" rel="noopener">{{ cid }}</a>}</span></div>
-        <div class="row"><span class="k">Customer</span><span class="v">{{ customerName() || '' }}</span></div>
+        <div class="row"><span class="k">Customer</span><span class="v">{{ p.customerOrder?.customer?.email || customerName() || '' }}</span></div>
         <div class="row"><span class="k">Payer IP</span><span class="v cell-mono">{{ p.payerIp || '' }}</span></div>
         <div class="row"><span class="k">Auto pay</span><span class="v">{{ p.autoPayment || '' }}</span></div>
         <div class="row"><span class="k">State</span><span class="v"><span class="pill plain" [ngClass]="statePill(p.paymentState)"><span class="dot"></span>{{ p.paymentState }}</span></span></div>
@@ -114,6 +114,28 @@
         @if (p.payInfo?.paymentProfile?.paymentProvider; as prov) {
           <div class="provider-row">
             <app-provider-logo [provider]="prov" [showName]="true" [size]="64" />
+          </div>
+        }
+        @if (p.payInfo?.card?.cardNumber; as cardNum) {
+          <div class="cc">
+            <div class="cc-top">
+              <span class="cc-chip" aria-hidden="true"></span>
+              <span class="cc-brandwrap">
+                <span class="cc-brand">{{ p.payInfo?.card?.cardBrand || 'Card' }}</span>
+                @if (p.payInfo?.card?.cardType) { <span class="cc-type">{{ p.payInfo?.card?.cardType }}</span> }
+              </span>
+            </div>
+            <div class="cc-number">{{ formatCardNumber(cardNum) }}</div>
+            <div class="cc-bottom">
+              <div class="cc-field">
+                <span class="cc-lbl">Card holder</span>
+                <span class="cc-val">{{ cardHolder() || '—' }}</span>
+              </div>
+              <div class="cc-field cc-r">
+                <span class="cc-lbl">Expires</span>
+                <span class="cc-val">{{ cardExpiry(p.payInfo?.card?.cardExpiryMonth, p.payInfo?.card?.cardExpiryYear) || '—' }}</span>
+              </div>
+            </div>
           </div>
         }
         <div class="row"><span class="k">Amount</span><span class="v">{{ money(p.amount) }}</span></div>

@@ -7,6 +7,7 @@ import { PaymentsClient as BasePaymentsClient } from '@proxy/payment-proxy';
 import {
   PaymentsClient,
   Payment,
+  PaymentState,
   PaymentStateLog,
   PaymentWebhookItem,
   PaymentProviderPaymentLinkInfo,
@@ -43,6 +44,8 @@ interface InfoModel {
   styleUrls: ['./payment-detail.component.scss'],
 })
 export class PaymentDetailComponent implements OnInit, OnDestroy {
+  /** Exposed for template comparisons (e.g. the Pay link button's state gate). */
+  protected readonly PaymentState = PaymentState;
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly workspaceStore = inject(WorkspaceStore);
@@ -79,6 +82,25 @@ export class PaymentDetailComponent implements OnInit, OnDestroy {
   });
 
   readonly items = computed(() => this.payment()?.customerOrder?.items ?? []);
+
+  /** Name shown on the card visual — prefers the payer, then the customer. */
+  readonly cardHolder = computed(() => {
+    const payer = this.payment()?.payInfo?.payer;
+    const n = payer?.fullName || `${payer?.firstName ?? ''} ${payer?.lastName ?? ''}`.trim();
+    return n || this.customerName();
+  });
+
+  /** Groups a (masked) card number into 4s, showing bullets for masked digits. */
+  formatCardNumber(n: string | null | undefined): string {
+    if (!n) return '';
+    return n.replace(/\*/g, '•').replace(/(.{4})/g, '$1 ').trim();
+  }
+
+  /** MM/YY from the card expiry parts (blank if either is missing). */
+  cardExpiry(month?: number | null, year?: number | null): string {
+    if (!month || !year) return '';
+    return `${String(month).padStart(2, '0')}/${String(year).slice(-2)}`;
+  }
 
   /** Absolute URL to a customer's detail page — used as the Customer ID <a href>
       so the browser opens it in a new tab. */

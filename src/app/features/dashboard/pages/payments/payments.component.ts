@@ -86,13 +86,14 @@ import {
     />
 
     <ng-template #customerTemplate let-value let-row="row">
-      @if (value) {
+      @if (row.customerEmail || value) {
         <a
-          class="idlink cell-mono"
-          [href]="customerUrl(value)"
+          class="idlink"
+          [href]="customerUrl(row.customerId)"
           target="_blank"
           rel="noopener"
-          >{{ value }}</a
+          [title]="row.customerId"
+          >{{ row.customerEmail || value }}</a
         >
       } @else {
         <span class="cell-sub">—</span>

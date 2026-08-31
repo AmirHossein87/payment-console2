@@ -6630,6 +6630,7 @@ export class PaymentSummary implements IPaymentSummary {
   paymentState!: PaymentState;
   amount!: number;
   customerId!: string;
+  customerEmail?: string | null;
   redactedPayerPaymentMethodNumber?: string | null;
   autoPayment?: AutoPayment | null;
 
@@ -6652,6 +6653,7 @@ export class PaymentSummary implements IPaymentSummary {
       this.paymentState = _data["paymentState"] !== undefined ? _data["paymentState"] : null as any;
       this.amount = _data["amount"] !== undefined ? _data["amount"] : null as any;
       this.customerId = _data["customerId"] !== undefined ? _data["customerId"] : null as any;
+      this.customerEmail = _data["customerEmail"] !== undefined ? _data["customerEmail"] : null as any;
       this.redactedPayerPaymentMethodNumber = _data["redactedPayerPaymentMethodNumber"] !== undefined ? _data["redactedPayerPaymentMethodNumber"] : null as any;
       this.autoPayment = _data["autoPayment"] !== undefined ? _data["autoPayment"] : null as any;
     }
@@ -6674,6 +6676,7 @@ export class PaymentSummary implements IPaymentSummary {
     data["paymentState"] = this.paymentState !== undefined ? this.paymentState : null as any;
     data["amount"] = this.amount !== undefined ? this.amount : null as any;
     data["customerId"] = this.customerId !== undefined ? this.customerId : null as any;
+    data["customerEmail"] = this.customerEmail !== undefined ? this.customerEmail : null as any;
     data["redactedPayerPaymentMethodNumber"] = this.redactedPayerPaymentMethodNumber !== undefined ? this.redactedPayerPaymentMethodNumber : null as any;
     data["autoPayment"] = this.autoPayment !== undefined ? this.autoPayment : null as any;
     return data;
@@ -6689,6 +6692,7 @@ export interface IPaymentSummary {
   paymentState: PaymentState;
   amount: number;
   customerId: string;
+  customerEmail?: string | null;
   redactedPayerPaymentMethodNumber?: string | null;
   autoPayment?: AutoPayment | null;
 }
