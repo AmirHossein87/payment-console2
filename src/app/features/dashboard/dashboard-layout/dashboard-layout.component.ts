@@ -1,11 +1,10 @@
-import { Component, inject, signal, effect } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, NavigationEnd, RouterOutlet } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs/operators';
 import { LayoutStore } from '@core/stores/layout.store';
 import { WorkspaceStore } from '@core/stores/workspace.store';
-import { SettingsStore } from '@core/stores/settings.store';
 import { SidebarComponent } from '@features/dashboard/components/sidebar/sidebar.component';
 import { TopbarComponent } from '@features/dashboard/components/topbar/topbar.component';
 
@@ -19,7 +18,6 @@ import { TopbarComponent } from '@features/dashboard/components/topbar/topbar.co
 export class DashboardLayoutComponent {
   private readonly layoutStore = inject(LayoutStore);
   private readonly workspaceStore = inject(WorkspaceStore);
-  private readonly settingsStore = inject(SettingsStore);
   private readonly router = inject(Router);
   readonly sidebarOpen = this.layoutStore.sidebarOpen;
   readonly switching = this.workspaceStore.switching;
@@ -37,12 +35,6 @@ export class DashboardLayoutComponent {
         this.flush.set(this.isFlushRoute(e.urlAfterRedirects));
         this.workspaceStore.setSwitching(null);
       });
-
-    // 2FA is per (user, app): refresh the alarm state whenever the active app
-    // changes so the avatar dot / My Profile badge reflect the current app.
-    effect(() => {
-      this.settingsStore.loadTwoFaForApp(this.workspaceStore.currentAppId());
-    });
   }
 
   private isFlushRoute(url: string): boolean {

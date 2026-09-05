@@ -39,11 +39,15 @@ export class WorkspaceStore {
 
   constructor() {
     effect(() => {
+      // Persist the last app the user was in. We deliberately NEVER remove it when
+      // the context clears (signout, session loss, or an F5 in another tab sets
+      // currentAppId to null) — `default-app` must survive so a returning user
+      // lands back in the same app/environment (e.g. Live), not sandbox. Stale or
+      // cross-account pointers are validated at READ time (loadInitialAppId and the
+      // post-login target selection), so persisting a possibly-stale id is safe.
       const appId = this.currentAppId();
       if (appId && WorkspaceStore.isValidAppId(appId)) {
         this.storage.set('default-app', appId);
-      } else if (appId === null) {
-        this.storage.remove('default-app');
       }
     });
   }

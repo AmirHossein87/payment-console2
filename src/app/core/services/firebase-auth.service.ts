@@ -159,13 +159,10 @@ export class FirebaseAuthService {
       await signOut(this.auth);
     } catch {}
 
-    const defaultApp = this.storage.get('default-app');
     this.authStore.clearSession();
+    // 'default-app' is in StorageService.PRESERVED_KEYS, so clear() keeps it — a
+    // returning user lands back in their last app instead of defaulting to sandbox.
     this.storage.clear();
-
-    if (defaultApp) {
-      localStorage.setItem('default-app', defaultApp);
-    }
 
     if (this.backgroundRefreshInterval) {
       clearInterval(this.backgroundRefreshInterval);

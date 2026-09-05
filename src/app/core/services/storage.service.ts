@@ -9,14 +9,18 @@ export class StorageService {
     'login', 'register', 'app', 'licenses', 'rules', 'fraud'
   ]);
 
-  // The GTM dedup markers must survive signout so `sign_up`/`sign_in` are each
-  // reported once per user, not again after every signout → signin. Keep in sync
-  // with TagManagerService.SIGNUP_KEY and FIRST_SIGNIN_KEY.
+  // Keys that must survive signout / clear():
+  //  - theme prefs.
+  //  - GTM dedup markers (sign_up/sign_in reported once per user; keep in sync
+  //    with TagManagerService.SIGNUP_KEY and FIRST_SIGNIN_KEY).
+  //  - 'default-app': the last app the user was in, so a returning user lands back
+  //    in the same app/environment instead of defaulting to sandbox.
   private static readonly PRESERVED_KEYS = [
     'app-theme',
     'tc-theme',
     'gtm_first_signin_users',
     'gtm_signup_users',
+    'default-app',
   ];
 
   static isValidAppId(appId: any): boolean {

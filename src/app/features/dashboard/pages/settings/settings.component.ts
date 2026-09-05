@@ -277,12 +277,10 @@ export class SettingsPageComponent implements OnInit {
       // Timezone only — theme is the store's responsibility (fetched once at login).
       if (user?.timeZone) this.timezone = user.timeZone;
 
-      // The user's per-app 2FA activation (is2faActivate) is only needed on the
-      // My Profile page's 2FA tab — so only fetch users/current/apps there. In
-      // app/developer settings there's no 2FA tab, so we skip the extra call.
+      // The user's per-app 2FA activation comes straight from the scoped
+      // getSettings(app) above (app.is2faActivate) — no users/current/apps call.
       if (this.mode() === 'profile') {
-        const userApps = await firstValueFrom(this.teamClient.getApps()).catch(() => null);
-        const activated = (userApps ?? []).find((a) => a.appId === appId)?.is2faActivate ?? false;
+        const activated = app.is2faActivate ?? false;
         this.twoFaEnabled.set(activated);
         // Keep the app-wide alarm (avatar dot + profile menu badge) in sync.
         this.settingsStore.setTwoFaState(this.appTwoFaEnabled(), activated);

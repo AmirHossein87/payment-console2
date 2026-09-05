@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { AppsClient } from '@proxy/payment-app-proxy';
 import { WorkspaceStore } from '../stores/workspace.store';
 import { PermissionStore } from '../stores/permission.store';
+import { SettingsStore } from '../stores/settings.store';
 import { Logger } from '../services/logger.service';
 
 /**
@@ -24,6 +25,7 @@ export const licenseGuard: CanActivateFn = async (route) => {
   const appsClient = inject(AppsClient);
   const workspaceStore = inject(WorkspaceStore);
   const permissionStore = inject(PermissionStore);
+  const settingsStore = inject(SettingsStore);
   const router = inject(Router);
   const log = Logger.create('LicenseGuard');
 
@@ -47,6 +49,12 @@ export const licenseGuard: CanActivateFn = async (route) => {
     const app = await firstValueFrom(appsClient.getSettings(appId));
     workspaceStore.setAppId(appId);
     workspaceStore.setSelectedApp(app);
+    // Feed the per-(user, app) 2FA state straight from this scoped getSettings —
+    // no need to fetch users/current/apps (all apps) just to read one app's flags.
+    settingsStore.setTwoFaState(
+      app.isTwoFactorAuthenticationEnabled ?? false,
+      app.is2faActivate ?? false
+    );
     await permsReady;
     return true;
   } catch (err: any) {

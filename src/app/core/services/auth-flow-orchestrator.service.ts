@@ -232,11 +232,15 @@ export class AuthFlowOrchestratorService {
 
       if (apps.length > 0) {
         // Open a workspace directly from the license's apps. Priority: an
-        // explicitly-requested appId the user actually owns → the sandbox app →
-        // the first (live) app.
+        // explicitly-requested appId the user actually owns → the LAST app the
+        // user was in (default-app, preserved across signout) → the sandbox app →
+        // the first (live) app. Consulting default-app returns a returning user to
+        // the same environment (e.g. Live) instead of always defaulting to sandbox.
         const requested = appId ? apps.find((a) => a.appId === appId) : null;
+        const storedAppId = this.storage.get('default-app');
+        const lastUsed = storedAppId ? apps.find((a) => a.appId === storedAppId) : null;
         const sandbox = apps.find((a) => a.isSandbox);
-        const target = requested ?? sandbox ?? apps[0];
+        const target = requested ?? lastUsed ?? sandbox ?? apps[0];
 
         this.log.info('Opening workspace from best-license:', target.appId, {
           isSandbox: !!target.isSandbox,

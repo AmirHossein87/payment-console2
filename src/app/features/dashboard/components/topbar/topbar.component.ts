@@ -157,10 +157,14 @@ export class TopbarComponent implements OnInit {
       confirmLabel: `Switch to ${envName}`,
       icon: 'swap_horiz',
       confirm: async () => {
-        this.workspaceStore.setSwitching(envName);
+        // Point default-app at the target first (the workspace effect persists
+        // currentAppId), then HARD-navigate. A soft router.navigate reuses the
+        // dashboard/page components across the app-id change — their ngOnInit never
+        // re-runs, so every screen keeps showing the OLD environment's data and the
+        // switch appears to do nothing. A full reload re-bootstraps the app for the
+        // new environment: guards re-run and each page loads the new app's data.
         this.workspaceStore.setAppId(app.appId);
-        this.workspaceStore.setSelectedApp(app);
-        this.router.navigate(['/', app.appId]);
+        window.location.href = `${location.origin}/${app.appId}/overview`;
       },
     });
   }
