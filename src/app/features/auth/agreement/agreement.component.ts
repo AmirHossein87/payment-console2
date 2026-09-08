@@ -17,6 +17,9 @@ import { NotificationService } from '@core/services/notification.service';
   styleUrls: ['./agreement.component.scss'],
 })
 export class AgreementComponent implements OnInit, OnDestroy {
+  /** Keep in step with the minimum length set in the Firebase password policy. */
+  private static readonly MIN_PASSWORD_LENGTH = 8;
+
   private readonly destroy$ = new Subject<void>();
   private readonly firebaseAuth = inject(FirebaseAuthService);
   private readonly orchestrator = inject(AuthFlowOrchestratorService);
@@ -56,8 +59,50 @@ export class AgreementComponent implements OnInit, OnDestroy {
     }
     const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[A-Za-z]{2,}$/;
     if (!emailPattern.test(this.email)) return false;
-    if (this.password.length < 6 || this.password !== this.confirmPassword) return false;
+    if (this.getPolicyError()) return false;
+    if (this.password !== this.confirmPassword) return false;
     return true;
+  }
+
+  /**
+   * Password policy, in one place so the disabled-button rule and the visible
+   * error message can never drift apart.
+   *
+   * The identifier checks matter as much as the length one: an email address is
+   * public data (directories, breach dumps, the "From" line of every message the
+   * user has ever sent), so a password equal to it — or to its local-part — is a
+   * secret that the attacker already holds. This is the client's only chance to
+   * catch that: the plaintext password goes straight from the browser to Firebase
+   * and never reaches our backend, and Firebase's own password policy can enforce
+   * length and character classes but has no notion of "must differ from the
+   * email". Keep the Firebase console policy tightened as the server-side floor
+   * (it also covers the hosted password-reset page, which this form does not).
+   *
+   * MIN_PASSWORD_LENGTH is 8 — the floor NIST SP 800-63B §5.1.1.2 sets for
+   * user-chosen secrets, the same section that mandates these context-specific
+   * comparisons. PCI DSS v4.0 §8.3.6 asks for 12; if that ever becomes binding
+   * here, raise this constant and the Firebase policy in the same change.
+   */
+  private getPolicyError(): string | null {
+    const password = this.password;
+    if (password.length < AgreementComponent.MIN_PASSWORD_LENGTH) {
+      return `Password must be at least ${AgreementComponent.MIN_PASSWORD_LENGTH} characters long.`;
+    }
+
+    const normalisedPassword = password.trim().toLowerCase();
+    const normalisedEmail = this.email.trim().toLowerCase();
+    if (!normalisedEmail) return null;
+
+    if (normalisedPassword === normalisedEmail) {
+      return 'For security reasons, your password cannot be the same as your email address.';
+    }
+
+    const localPart = normalisedEmail.split('@')[0];
+    if (localPart && normalisedPassword === localPart) {
+      return 'For security reasons, your password cannot be the same as your email name.';
+    }
+
+    return null;
   }
 
   /** Email error — shown only after a submit attempt so the field isn't red early. */
@@ -71,8 +116,9 @@ export class AgreementComponent implements OnInit, OnDestroy {
 
   getPasswordError(): string | null {
     if (this.tried && !this.password) return 'Password is required.';
-    if (this.password && this.password.length < 6) {
-      return 'Password must be at least 6 characters long';
+    if (this.password) {
+      const policyError = this.getPolicyError();
+      if (policyError) return policyError;
     }
     if (this.tried && this.password && !this.confirmPassword) {
       return 'Please confirm your password.';
@@ -229,7 +275,7 @@ export class AgreementComponent implements OnInit, OnDestroy {
       switch (error.code) {
         case 'auth/invalid-email': return 'Invalid email address format.';
         case 'auth/email-already-in-use': return 'Email address is already in use.';
-        case 'auth/weak-password': return 'Password should be at least 6 characters.';
+        case 'auth/weak-password': return 'That password is too weak. Please choose a longer, less predictable one.';
         case 'auth/operation-not-allowed': return 'Email/password accounts are not enabled.';
         case 'auth/network-request-failed': return 'Network error — we couldn\'t reach the sign-up service. Check your connection (and any ad blocker or VPN), then try again.';
         case 'auth/too-many-requests': return 'Too many attempts. Please wait a moment and try again.';
