@@ -32,6 +32,10 @@ interface ConfigField {
   label: string;
   type: "text" | "password" | "number" | "select";
   options?: { label: string; value: any }[];
+  /** New metadata form: a field flagged `optional: true` isn't required and can
+   *  be left blank (its placeholder shows "Optional"). */
+  optional?: boolean;
+  placeholder?: string;
 }
 
 @Component({
@@ -262,7 +266,8 @@ export class GatewaysComponent implements OnInit {
     const invalid = new Set<string>();
     if (!this.wCurrency) invalid.add("__currency__");
     this.providerConfigFields().forEach((f) => {
-      if (!this.wConfigFields[f.name]?.trim()) invalid.add(f.name);
+      // Optional fields may be left blank.
+      if (!f.optional && !this.wConfigFields[f.name]?.trim()) invalid.add(f.name);
     });
     if (invalid.size > 0) {
       this.invalidFields.set(invalid);
@@ -376,7 +381,8 @@ export class GatewaysComponent implements OnInit {
           type: isSecret(f.name ?? "") ? "password" : ("text" as const),
         }));
       }
-      // Plain object — value type determines field type
+      // Plain object — each value is either a bare type string ("string") or the
+      // new metadata form { type, example?, optional? }.
       return Object.keys(parsed)
         .filter((k) => k.toLowerCase() !== "currency")
         .flatMap((key): ConfigField[] => {
@@ -387,16 +393,23 @@ export class GatewaysComponent implements OnInit {
             .replace(/([A-Z])/g, " $1")
             .trim()
             .replace(/^./, (s) => s.toUpperCase());
-          if (
-            typeof val === "object" &&
-            val.type === "Selection" &&
-            Array.isArray(val.options)
-          ) {
+
+          const isObj = typeof val === "object" && !Array.isArray(val);
+          const optional = isObj && val.optional === true;
+          const typeHint = isObj && typeof val.type === "string" ? val.type : "";
+          const example = isObj && typeof val.example === "string" ? val.example : "";
+          // Use the metadata `example` as the placeholder; if there's none, an
+          // optional field shows "Optional"; else the template falls back to label.
+          const placeholder = example || (optional ? "Optional" : undefined);
+
+          if (typeHint === "Selection" && Array.isArray(val.options)) {
             return [
               {
                 name: key,
                 label,
                 type: "select" as const,
+                optional,
+                placeholder,
                 options: val.options.map((o: any) => ({
                   label: o.Name ?? String(o),
                   value: o.Country ?? o,
@@ -404,12 +417,18 @@ export class GatewaysComponent implements OnInit {
               },
             ];
           }
-          if (key.toLowerCase() === "port" || typeof val === "number") {
-            return [{ name: key, label, type: "number" as const }];
+
+          let type: ConfigField["type"];
+          if (
+            key.toLowerCase() === "port" ||
+            typeHint.toLowerCase() === "number" ||
+            typeof val === "number"
+          ) {
+            type = "number";
+          } else {
+            type = isSecret(key) ? "password" : "text";
           }
-          return [
-            { name: key, label, type: isSecret(key) ? "password" : ("text" as const) },
-          ];
+          return [{ name: key, label, type, optional, placeholder }];
         });
     } catch {
       return [];

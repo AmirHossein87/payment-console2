@@ -21,6 +21,7 @@ import { NotificationService } from "@core/services/notification.service";
 import { DataGridComponent } from "@shared/components/data-grid/data-grid.component";
 import { GridColumn } from "@shared/components/data-grid/data-grid.interface";
 import { CreatePaymentLinkModalComponent } from "@shared/components/create-payment-link-modal/create-payment-link-modal.component";
+import { PaymentDetailComponent } from "@features/dashboard/pages/payment-detail/payment-detail.component";
 import {
   PaymentsFilterModalComponent,
   PaymentsFilter,
@@ -35,6 +36,7 @@ import {
     DataGridComponent,
     CreatePaymentLinkModalComponent,
     PaymentsFilterModalComponent,
+    PaymentDetailComponent,
   ],
   template: `
     <app-data-grid
@@ -84,6 +86,21 @@ import {
       #filterModal
       (applied)="onFilterApplied($event)"
     />
+
+    <!-- Payment detail in a modal (plain click). Ctrl/Cmd/middle-click still opens
+         the full route in a new tab via the cell's native <a href>. -->
+    @if (detailModalId(); as pid) {
+      <div class="pd-overlay" (click)="closeDetailModal()">
+        <div class="pd-modal" (click)="$event.stopPropagation()">
+          <button class="pd-close" type="button" (click)="closeDetailModal()" title="Close">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+          <div class="pd-modal-body">
+            <app-payment-detail [paymentIdInput]="pid" [inModal]="true" />
+          </div>
+        </div>
+      </div>
+    }
 
     <ng-template #customerTemplate let-value let-row="row">
       @if (row.customerEmail || value) {
@@ -151,6 +168,56 @@ import {
           margin-top: 3px;
         }
       }
+
+      /* Payment-detail modal host */
+      .pd-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        background: rgba(15, 23, 42, 0.5);
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 32px 16px;
+        overflow-y: auto;
+      }
+      .pd-modal {
+        position: relative;
+        width: 100%;
+        max-width: 1040px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg, 16px);
+        box-shadow: 0 24px 60px rgba(2, 6, 23, 0.35);
+        max-height: calc(100vh - 64px);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .pd-close {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 2;
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        background: var(--surface);
+        color: var(--text-2);
+        cursor: pointer;
+      }
+      .pd-close:hover {
+        background: var(--surface-2);
+        color: var(--text);
+      }
+      /* The detail page renders inside here; let it scroll within the modal. */
+      .pd-modal-body {
+        overflow-y: auto;
+        padding: 8px 20px 20px;
+      }
     `,
   ],
 })
@@ -178,6 +245,9 @@ export class PaymentsComponent implements OnInit {
   readonly loading = signal(false);
   readonly hasMore = signal(true);
   gridColumns: GridColumn[] = [];
+
+  /** paymentId shown in the in-page detail modal (null = closed). */
+  readonly detailModalId = signal<number | null>(null);
 
   // Server-side global search term (matched against all records, not just the
   // loaded batches). Public so the grid can seed its search box from a shared URL.
@@ -440,18 +510,16 @@ export class PaymentsComponent implements OnInit {
   }
 
   onLinkClicked(event: { column: GridColumn; row: any; value: any }): void {
-    const appId = this.workspaceStore.currentAppId();
-    if (!appId) return;
-    if (this.embedded()) {
-      // Embedded in the customer-detail Payments tab — a plain click must not
-      // navigate away from that page, so open the payment detail in a new tab
-      // instead (Ctrl/Cmd/middle-click already does this natively via <a href>).
-      window.open(this.paymentUrl(event.value), '_blank', 'noopener');
-      return;
-    }
-    // Standalone /payments page — plain left-click navigates in the current tab.
-    // Ctrl/Cmd/middle-click is handled natively by the <a href> and never reaches here.
-    this.router.navigate(['/', appId, 'payments', String(event.value)]);
+    // Plain left-click → open the payment detail in an in-page modal (keeps the
+    // grid state and works the same standalone or embedded in the customer tab).
+    // Ctrl/Cmd/middle-click never reaches here — the cell's native <a href> opens
+    // the full /payments/:id route in a new tab, exactly as before.
+    const id = Number(event.value);
+    if (id) this.detailModalId.set(id);
+  }
+
+  closeDetailModal(): void {
+    this.detailModalId.set(null);
   }
 
   // Absolute URL for a payment detail row, used as the <a href> so the browser

@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal, OnInit, OnDestroy } from '@angular/core';
+import { Component, computed, effect, inject, input, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -72,6 +72,12 @@ export class PaymentDetailComponent implements OnInit, OnDestroy {
   private appId = '';
   private paymentId = 0;
 
+  /** When hosted inside a modal (e.g. from the Payments grid), the paymentId is
+   *  passed as an input instead of read from the route, and the topbar breadcrumb
+   *  is left untouched. */
+  readonly paymentIdInput = input<number | null>(null);
+  readonly inModal = input<boolean>(false);
+
   readonly appBase = this.workspaceStore.currentAppId;
 
   readonly customerName = computed(() => {
@@ -115,8 +121,10 @@ export class PaymentDetailComponent implements OnInit, OnDestroy {
   readonly paymentLabel = computed(() => String(this.payment()?.paymentId ?? this.paymentId ?? ''));
 
   constructor() {
-    // Topbar breadcrumb: Payments → Detail 41811 - Marshall Carroll (b20b…)
+    // Topbar breadcrumb: Payments → Detail 41811 - Marshall Carroll (b20b…).
+    // Skipped when hosted in a modal — the underlying page owns the breadcrumb.
     effect(() => {
+      if (this.inModal()) return;
       const appId = this.appBase();
       const id = this.paymentLabel();
       const name = this.customerName();
@@ -132,12 +140,15 @@ export class PaymentDetailComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.breadcrumbStore.clear();
+    // In modal mode we never set the breadcrumb, so don't wipe the page's.
+    if (!this.inModal()) this.breadcrumbStore.clear();
   }
 
   ngOnInit(): void {
     this.appId = this.workspaceStore.currentAppId() ?? '';
-    this.paymentId = Number(this.route.snapshot.paramMap.get('paymentId'));
+    // Prefer the input (modal host); fall back to the route param (standalone page).
+    this.paymentId =
+      this.paymentIdInput() ?? Number(this.route.snapshot.paramMap.get('paymentId'));
     if (!this.appId || !this.paymentId) {
       this.loading.set(false);
       this.loadingStateLogs.set(false);

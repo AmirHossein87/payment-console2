@@ -27,6 +27,9 @@ interface ConfigField {
   label: string;
   type: "text" | "password" | "number" | "select";
   options?: { label: string; value: any }[];
+  /** New metadata form: `optional: true` fields aren't required and can be blank. */
+  optional?: boolean;
+  placeholder?: string;
 }
 
 @Component({
@@ -224,6 +227,8 @@ export class GatewayDetailComponent implements OnInit, OnDestroy {
             ? "password"
             : field.type,
       value: currentValue,
+      // Optional metadata fields can be saved blank; others stay mandatory.
+      required: !field.optional,
       ...(field.options ? { options: field.options } : {}),
       save: async (v: any) => {
         const req = {
@@ -322,7 +327,8 @@ export class GatewayDetailComponent implements OnInit, OnDestroy {
           type: isSecret(f.name ?? "") ? "password" : ("text" as const),
         }));
       }
-      // Plain object — value type determines field type
+      // Plain object — each value is either a bare type string ("string") or the
+      // new metadata form { type, example?, optional? }.
       return Object.keys(parsed)
         .filter((k) => k.toLowerCase() !== "currency")
         .flatMap((key): ConfigField[] => {
@@ -333,16 +339,21 @@ export class GatewayDetailComponent implements OnInit, OnDestroy {
             .replace(/([A-Z])/g, " $1")
             .trim()
             .replace(/^./, (s) => s.toUpperCase());
-          if (
-            typeof val === "object" &&
-            val.type === "Selection" &&
-            Array.isArray(val.options)
-          ) {
+
+          const isObj = typeof val === "object" && !Array.isArray(val);
+          const optional = isObj && val.optional === true;
+          const typeHint = isObj && typeof val.type === "string" ? val.type : "";
+          const example = isObj && typeof val.example === "string" ? val.example : "";
+          const placeholder = example || (optional ? "Optional" : undefined);
+
+          if (typeHint === "Selection" && Array.isArray(val.options)) {
             return [
               {
                 name: key,
                 label,
                 type: "select" as const,
+                optional,
+                placeholder,
                 options: val.options.map((o: any) => ({
                   label: o.Name ?? String(o),
                   value: o.Country ?? o,
@@ -350,16 +361,18 @@ export class GatewayDetailComponent implements OnInit, OnDestroy {
               },
             ];
           }
-          if (key.toLowerCase() === "port" || typeof val === "number") {
-            return [{ name: key, label, type: "number" as const }];
+
+          let type: ConfigField["type"];
+          if (
+            key.toLowerCase() === "port" ||
+            typeHint.toLowerCase() === "number" ||
+            typeof val === "number"
+          ) {
+            type = "number";
+          } else {
+            type = isSecret(key) ? "password" : "text";
           }
-          return [
-            {
-              name: key,
-              label,
-              type: isSecret(key) ? "password" : ("text" as const),
-            },
-          ];
+          return [{ name: key, label, type, optional, placeholder }];
         });
     } catch {
       return [];

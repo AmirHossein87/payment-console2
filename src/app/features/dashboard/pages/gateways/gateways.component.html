@@ -142,7 +142,13 @@
 
           @for (field of providerConfigFields(); track field.name) {
             <div class="field">
-              <label>{{ field.label }} <span class="req">*</span></label>
+              <label>{{ field.label }}
+                @if (field.optional) {
+                  <span class="opt-hint">(optional)</span>
+                } @else {
+                  <span class="req">*</span>
+                }
+              </label>
               @if (field.type === 'select') {
                 <div class="select">
                   <select
@@ -165,7 +171,7 @@
                   [type]="field.type === 'password' ? 'password' : (field.type === 'number' ? 'number' : 'text')"
                   [value]="wConfigFields[field.name] ?? ''"
                   (input)="updateConfigField(field.name, $event)"
-                  [placeholder]="field.label"
+                  [placeholder]="field.placeholder || field.label"
                   [disabled]="wizardSaving()"
                 />
               }

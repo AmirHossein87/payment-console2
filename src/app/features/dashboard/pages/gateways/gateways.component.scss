@@ -278,6 +278,9 @@
   }
 
   .req { color: var(--bad); }
+  // NB: not ".opt" — that class already exists (provider option rows) with
+  // display:flex + padding, which made this hint render as a box.
+  .opt-hint { color: var(--text-3); font-weight: 400; font-size: 11px; }
 }
 
 .step-hint {
