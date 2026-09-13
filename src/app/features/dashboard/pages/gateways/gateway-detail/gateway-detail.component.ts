@@ -14,6 +14,7 @@ import {
   PaymentProfilesClient,
   PaymentProfile,
   PaymentProfileUpdateRequest,
+  AppsClient,
 } from "@proxy/payment-app-proxy";
 import { WorkspaceStore } from "@core/stores/workspace.store";
 import { BreadcrumbStore } from "@core/stores/breadcrumb.store";
@@ -48,6 +49,7 @@ export class GatewayDetailComponent implements OnInit, OnDestroy {
   private readonly breadcrumbStore = inject(BreadcrumbStore);
   private readonly notify = inject(NotificationService);
   private readonly profilesClient = inject(PaymentProfilesClient);
+  private readonly appsClient = inject(AppsClient);
 
   private appId = "";
   private profileId = 0;
@@ -96,9 +98,12 @@ export class GatewayDetailComponent implements OnInit, OnDestroy {
           { label: "Gateways", link: ["/", this.appId, "gateways"] },
           { label: found.paymentProfileName ?? "Gateway #" + found.paymentProfileId },
         ]);
-        this.configFields.set(
-          this.parseConfigFields(found.paymentProvider?.providerConfigFormat),
-        );
+        // Resolve the field schema from the LIVE provider metadata, not the
+        // format embedded on the profile — the embedded copy can be stale and
+        // miss fields added later (e.g. new optional ones), so gateways created
+        // before a field existed would never show it here to be filled in.
+        const format = await this.resolveConfigFormat(found);
+        this.configFields.set(this.parseConfigFields(format));
         this.loadConfigCredential();
       }
     } catch (err: any) {
@@ -242,6 +247,31 @@ export class GatewayDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * The provider config schema (which fields to render) comes from the live
+   * provider metadata rather than the format embedded on the profile: the
+   * embedded copy is a point-in-time snapshot, so a gateway created before an
+   * optional field was added would otherwise never surface that field for the
+   * merchant to fill in. Falls back to the embedded format if metadata can't be
+   * loaded or the provider isn't in the list.
+   */
+  private async resolveConfigFormat(
+    profile: PaymentProfile,
+  ): Promise<string | null | undefined> {
+    const embedded = profile.paymentProvider?.providerConfigFormat;
+    const providerType = profile.paymentProvider?.provider;
+    if (!providerType) return embedded;
+    try {
+      const metadata = await firstValueFrom(
+        this.appsClient.getPaymentProvidersMetadata(this.appId),
+      );
+      const match = (metadata ?? []).find((m) => m.provider === providerType);
+      return match?.providerConfigFormat ?? embedded;
+    } catch {
+      return embedded;
+    }
+  }
+
   async loadConfigCredential(): Promise<void> {
     this.configLoading.set(true);
     try {
@@ -256,10 +286,19 @@ export class GatewayDetailComponent implements OnInit, OnDestroy {
         typeof parsed === "object" && parsed !== null ? parsed : {};
       this.configCredential.set(cred);
 
-      // If providerConfigFormat yielded no fields, derive them from the
-      // credential keys so the card always shows what the API actually returned.
       if (this.configFields().length === 0) {
+        // No schema at all → derive the whole list from what was saved.
         this.configFields.set(this.fieldsFromCredential(cred));
+      } else {
+        // Schema present → also surface any saved keys the schema doesn't
+        // mention, so nothing already stored is hidden from the merchant.
+        this.configFields.update((fields) => {
+          const known = new Set(fields.map((f) => f.name));
+          const extra = this.fieldsFromCredential(cred).filter(
+            (f) => !known.has(f.name),
+          );
+          return extra.length ? [...fields, ...extra] : fields;
+        });
       }
     } catch {
       this.configCredential.set({});
