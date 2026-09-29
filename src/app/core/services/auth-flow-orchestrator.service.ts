@@ -14,7 +14,7 @@ import { WorkspaceStore } from '../stores/workspace.store';
 import { NotificationService } from './notification.service';
 import { StorageService } from './storage.service';
 import { Logger } from './logger.service';
-import { appendTokenParams } from '../utils/url.util';
+import { appendTokenParams, safeReturnUrl } from '../utils/url.util';
 
 @Injectable({ providedIn: 'root' })
 export class AuthFlowOrchestratorService {
@@ -186,10 +186,19 @@ export class AuthFlowOrchestratorService {
       return;
     }
 
+    // Scheme guard (defence in depth): only ever navigate to an http(s) URL, never
+    // a javascript:/data: payload. Domain-level validation (returnUrl must belong to
+    // this license's registered callback) is the backend's job — see safeReturnUrl.
+    const safeUrl = safeReturnUrl(returnUrl);
+    if (!safeUrl) {
+      this.log.warn('Rejected unsafe returnUrl. Navigating to signin.');
+      this.router.navigate(['/auth/signin']);
+      return;
+    }
+
     if (!isGranted) {
       this.log.info('Access denied. Redirecting to returnUrl without token.');
-      const fullReturnUrl = returnUrl.startsWith('http') ? returnUrl : `https://${returnUrl}`;
-      window.location.href = fullReturnUrl;
+      window.location.href = safeUrl;
       return;
     }
 
@@ -199,13 +208,13 @@ export class AuthFlowOrchestratorService {
       // CreateLicense when a new license has to be provisioned here.
       const gp = this.getQueryParams();
       const licenseInfo = await this.licenseFlow.ensureLicenseToken(
-        returnUrl,
+        safeUrl,
         gp['licenseName'] ?? null
       );
       this.authStore.stopLoading();
 
       const finalUrl = appendTokenParams(
-        returnUrl,
+        safeUrl,
         licenseInfo.licenseId,
         licenseInfo.authorizationCode
       );

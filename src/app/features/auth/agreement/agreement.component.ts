@@ -8,6 +8,11 @@ import { SettingsStore } from '@core/stores/settings.store';
 import { AuthFlowOrchestratorService } from '@core/services/auth-flow-orchestrator.service';
 import { FirebaseAuthService } from '@core/services/firebase-auth.service';
 import { NotificationService } from '@core/services/notification.service';
+import {
+  PASSWORD_RULES,
+  PasswordRule,
+  passwordPolicyError,
+} from '@core/utils/password-policy.util';
 
 @Component({
   selector: 'app-agreement',
@@ -17,8 +22,10 @@ import { NotificationService } from '@core/services/notification.service';
   styleUrls: ['./agreement.component.scss'],
 })
 export class AgreementComponent implements OnInit, OnDestroy {
-  /** Keep in step with the minimum length set in the Firebase password policy. */
-  private static readonly MIN_PASSWORD_LENGTH = 8;
+  /** Policy rules for the live checklist under the password field. Sourced from
+   *  the shared util so the UI, the submit-time validation, and the Firebase
+   *  console policy all stay in step. */
+  readonly passwordRules = PASSWORD_RULES;
 
   private readonly destroy$ = new Subject<void>();
   private readonly firebaseAuth = inject(FirebaseAuthService);
@@ -64,34 +71,38 @@ export class AgreementComponent implements OnInit, OnDestroy {
     return true;
   }
 
+  /** True when `rule` is satisfied by the current password — drives each row's
+   *  tick in the live checklist. */
+  isRuleMet(rule: PasswordRule): boolean {
+    return !!this.password && rule.test(this.password);
+  }
+
   /**
-   * Password policy, in one place so the disabled-button rule and the visible
-   * error message can never drift apart.
-   *
-   * The identifier checks matter as much as the length one: an email address is
-   * public data (directories, breach dumps, the "From" line of every message the
-   * user has ever sent), so a password equal to it — or to its local-part — is a
-   * secret that the attacker already holds. This is the client's only chance to
-   * catch that: the plaintext password goes straight from the browser to Firebase
-   * and never reaches our backend, and Firebase's own password policy can enforce
-   * length and character classes but has no notion of "must differ from the
-   * email". Keep the Firebase console policy tightened as the server-side floor
-   * (it also covers the hosted password-reset page, which this form does not).
-   *
-   * MIN_PASSWORD_LENGTH is 8 — the floor NIST SP 800-63B §5.1.1.2 sets for
-   * user-chosen secrets, the same section that mandates these context-specific
-   * comparisons. PCI DSS v4.0 §8.3.6 asks for 12; if that ever becomes binding
-   * here, raise this constant and the Firebase policy in the same change.
+   * The full blocking check for the sign-up button: the shared strength policy
+   * (length + character classes, mirrored from the Firebase console policy) and
+   * then the identifier rule below.
    */
   private getPolicyError(): string | null {
-    const password = this.password;
-    if (password.length < AgreementComponent.MIN_PASSWORD_LENGTH) {
-      return `Password must be at least ${AgreementComponent.MIN_PASSWORD_LENGTH} characters long.`;
-    }
+    return passwordPolicyError(this.password) ?? this.getIdentifierError();
+  }
 
-    const normalisedPassword = password.trim().toLowerCase();
+  /**
+   * "Your password can't be your email" — kept separate from the strength rules
+   * because it depends on the email field (so it isn't in the live checklist) and
+   * is shown as an inline error instead.
+   *
+   * It matters as much as length: an email address is public data (directories,
+   * breach dumps, the "From" line of every message the user has sent), so a
+   * password equal to it — or its local-part — is a secret the attacker already
+   * holds. This is the client's only chance to catch it: the plaintext password
+   * goes straight from the browser to Firebase and never reaches our backend, and
+   * Firebase's own policy enforces length/character-classes but has no notion of
+   * "must differ from the email".
+   */
+  private getIdentifierError(): string | null {
+    const normalisedPassword = this.password.trim().toLowerCase();
     const normalisedEmail = this.email.trim().toLowerCase();
-    if (!normalisedEmail) return null;
+    if (!normalisedPassword || !normalisedEmail) return null;
 
     if (normalisedPassword === normalisedEmail) {
       return 'For security reasons, your password cannot be the same as your email address.';
@@ -116,9 +127,12 @@ export class AgreementComponent implements OnInit, OnDestroy {
 
   getPasswordError(): string | null {
     if (this.tried && !this.password) return 'Password is required.';
+    // Strength rules (length / lowercase / number) are shown live in the checklist,
+    // so only surface the identifier rule ("must differ from your email") here — no
+    // point saying the same thing in two places.
     if (this.password) {
-      const policyError = this.getPolicyError();
-      if (policyError) return policyError;
+      const idError = this.getIdentifierError();
+      if (idError) return idError;
     }
     if (this.tried && this.password && !this.confirmPassword) {
       return 'Please confirm your password.';

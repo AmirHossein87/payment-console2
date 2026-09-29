@@ -6,6 +6,7 @@ import { AuthStore } from '@core/stores/auth.store';
 import { SettingsStore } from '@core/stores/settings.store';
 import { FirebaseAuthService } from '@core/services/firebase-auth.service';
 import { NotificationService } from '@core/services/notification.service';
+import { passwordPolicySummary } from '@core/utils/password-policy.util';
 
 @Component({
   selector: 'app-forget-password',
@@ -25,6 +26,9 @@ export class ForgetPasswordComponent implements OnInit {
   email = '';
   /** Set on submit so the email error appears — no silent dead button. */
   tried = false;
+  /** Human summary of the password policy — the new password is chosen on
+   *  Firebase's hosted reset page, so we can only tell the user the rules here. */
+  readonly passwordHint = passwordPolicySummary();
 
   ngOnInit(): void {
     // Pre-fill from ?email= — e.g. when arriving from the sign-up page's

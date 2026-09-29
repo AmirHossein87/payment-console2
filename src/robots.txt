@@ -1,0 +1,6 @@
+# The merchant console is a private, authenticated app — it should never appear
+# in search results (avoids user confusion and shrinks the phishing / path-
+# enumeration surface). Disallow all crawling; the noindex meta in index.html is
+# the primary control, this is defence in depth.
+User-agent: *
+Disallow: /

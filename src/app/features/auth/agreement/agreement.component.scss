@@ -192,6 +192,42 @@ input:focus {
   font-weight: 500;
 }
 
+/* Live password-policy checklist — each row turns from muted to green as its
+   rule is satisfied, mirroring the Firebase (Require-enforcement) policy. */
+.pw-rules {
+  list-style: none;
+  margin: -4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: var(--text-3);
+    transition: color 0.15s ease;
+  }
+
+  .pw-rules-ic {
+    width: 14px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.78rem;
+    flex-shrink: 0;
+  }
+
+  li.met {
+    color: var(--ok);
+
+    .pw-rules-ic {
+      color: var(--ok);
+    }
+  }
+}
+
 .checkbox-stack {
   margin-top: 4px;
 }

@@ -76,6 +76,17 @@
     placeholder="At least 8 characters"
   />
 
+  @if (password) {
+    <ul class="pw-rules" aria-label="Password requirements">
+      @for (rule of passwordRules; track rule.id) {
+        <li [class.met]="isRuleMet(rule)">
+          <span class="pw-rules-ic" aria-hidden="true">{{ isRuleMet(rule) ? '✓' : '○' }}</span>
+          {{ rule.label }}
+        </li>
+      }
+    </ul>
+  }
+
   <label for="confirm-password">Confirm password</label>
   <input
     id="confirm-password"
