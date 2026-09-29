@@ -125,6 +125,13 @@ export class TagManagerService {
    * Pushes a single-page-app page view onto the dataLayer. No-op when GTM is
    * disabled. Wire a GA4 event tag in the GTM UI to the `page_view` event to
    * forward these to Analytics.
+   *
+   * The path and URL are redacted first: console routes embed the merchant's app
+   * id (a GUID) and customer / payment ids (e.g. /{appId}/customers/12451636).
+   * Those are tenant data / PII and must never leave the browser for Analytics —
+   * so every dynamic segment is replaced with a stable placeholder before the push
+   * (page_view counts still group correctly, no id ever ships). `document.title`
+   * is a static string here, so it carries nothing to redact.
    */
   trackPageView(path: string, title?: string): void {
     if (!this.enabled) {
@@ -132,10 +139,27 @@ export class TagManagerService {
     }
     window.dataLayer.push({
       event: 'page_view',
-      page_path: path,
-      page_location: window.location.href,
+      page_path: TagManagerService.redactPath(path),
+      page_location: TagManagerService.redactPath(window.location.href),
       page_title: title ?? document.title,
     });
+  }
+
+  /**
+   * Replaces identifiers in a route path or URL with placeholders so they can be
+   * sent to Analytics without leaking tenant data / PII. Handles the ids that
+   * appear in console routes: the app-id GUID, an email (e.g. in a team-user
+   * path), and the numeric customer / payment / profile ids that form a whole
+   * path segment (so `/2checkout` is left alone but `/payments/1338` is not).
+   */
+  private static redactPath(value: string): string {
+    return value
+      .replace(
+        /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
+        '{appId}',
+      )
+      .replace(/[^/?#@\s]+@[^/?#@\s]+\.[^/?#@\s]+/g, '{email}')
+      .replace(/\/\d+(?=\/|\?|#|$)/g, '/{id}');
   }
 
   /**
