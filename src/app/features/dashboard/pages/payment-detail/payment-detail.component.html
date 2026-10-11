@@ -206,6 +206,103 @@
     </div>
   </div>
 
+  <!-- Webhooks: every notification we send to the merchant's server about this payment -->
+  @if (webhookEventsState() !== 'hidden') {
+  <div class="datacard pd-card">
+    <div class="dc-toolbar">
+      <div class="dc-title"><span class="material-symbols-outlined ti">webhook</span> Webhooks</div>
+      <div class="spacer"></div>
+      <button class="btn btn-sm" [disabled]="webhookEventsState() === 'loading'" (click)="loadWebhookEvents()">
+        <span class="material-symbols-outlined">refresh</span> Refresh
+      </button>
+    </div>
+
+    <p class="wh-intro">
+      Messages we send to your server when something happens to this payment.
+      @if (webhookSummary(); as summary) { <b>{{ summary }}</b> }
+    </p>
+
+    @switch (webhookEventsState()) {
+      @case ('loading') {
+        <div class="wh-skel">
+          @for (r of [1,2]; track r) { <span class="sk sk-row-line"></span> }
+        </div>
+      }
+      @case ('error') {
+        <div class="wh-empty">
+          <p>We could not load the webhooks of this payment.</p>
+          <button class="btn btn-sm" (click)="loadWebhookEvents()">Try again</button>
+        </div>
+      }
+      @case ('notfound') {
+        <div class="wh-empty"><p>The webhooks of this payment could not be found.</p></div>
+      }
+      @default {
+        @if (webhookRows().length === 0) {
+          <div class="wh-empty">
+            <p>No webhooks for this payment.</p>
+            <p class="wh-empty-sub">This happens when the app has no webhook address set, or when nothing has been queued yet.</p>
+          </div>
+        } @else {
+          <ul class="wh-list">
+            @for (row of webhookRows(); track row.event.webhookQueueItemId) {
+              <li class="wh-item">
+                <div class="wh-head">
+                  <span class="pill wh-badge" [ngClass]="row.view.tone">
+                    <span class="material-symbols-outlined wh-ic" aria-hidden="true">{{ row.view.icon }}</span>{{ row.view.label }}
+                  </span>
+                  <div class="wh-text">
+                    <div class="wh-headline">{{ row.view.headline }}</div>
+                    @if (row.view.hint) { <div class="wh-hint">{{ row.view.hint }}</div> }
+                    <div class="wh-times">
+                      <span [title]="row.event.createdTime">Queued {{ row.event.createdTime | date: 'MMM d, y, HH:mm' }}</span>
+                      @if (row.event.lastAttemptTime) {
+                        <span [title]="row.event.lastAttemptTime">Last tried {{ row.event.lastAttemptTime | date: 'MMM d, y, HH:mm' }}</span>
+                      }
+                      @if (row.event.deliveredTime) {
+                        <span [title]="row.event.deliveredTime">Delivered {{ row.event.deliveredTime | date: 'MMM d, y, HH:mm' }}</span>
+                      }
+                      @if (row.event.nextRetryTime && (row.event.status === 'Pending' || row.event.status === 'Retrying')) {
+                        <span [title]="row.event.nextRetryTime">Next attempt {{ row.event.nextRetryTime | date: 'MMM d, y, HH:mm' }}</span>
+                      }
+                    </div>
+                  </div>
+                  <button class="btn btn-sm wh-toggle" type="button"
+                          [attr.aria-expanded]="isWebhookOpen(row.event.webhookQueueItemId)"
+                          (click)="toggleWebhook(row.event.webhookQueueItemId)">
+                    {{ isWebhookOpen(row.event.webhookQueueItemId) ? 'Hide details' : 'Details' }}
+                  </button>
+                </div>
+
+                @if (isWebhookOpen(row.event.webhookQueueItemId)) {
+                  <div class="wh-details">
+                    <div class="kv">
+                      <div class="row"><span class="k">Sent to</span><span class="v cell-mono">{{ row.event.webhookUrl }}</span></div>
+                      <div class="row"><span class="k">Server answer</span><span class="v">{{ row.event.status === 'Pending' ? 'Not sent yet' : httpStatusText(row.event.lastStatusCode) }}</span></div>
+                      <div class="row"><span class="k">Failed attempts</span><span class="v">{{ row.event.retryCount }}</span></div>
+                      @if (row.event.error) {
+                        <div class="row"><span class="k">Error</span><span class="v cell-mono">{{ row.event.error }}</span></div>
+                      }
+                      <div class="row"><span class="k">Event ID</span><span class="v cell-mono">{{ row.event.webhookQueueItemId }}</span></div>
+                    </div>
+                    <div class="wh-payload-h">
+                      <span>What we send (payload)</span>
+                      <button class="btn btn-sm" type="button" (click)="copyWebhookPayload(row.event.payload)">
+                        <span class="material-symbols-outlined">content_copy</span> Copy
+                      </button>
+                    </div>
+                    <pre class="json">{{ prettyPayload(row.event.payload) }}</pre>
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+        }
+      }
+    }
+  </div>
+  }
+
   <!-- Invoice items -->
   <div class="datacard pd-card">
     <div class="dc-toolbar">

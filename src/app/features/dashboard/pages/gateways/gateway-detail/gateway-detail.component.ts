@@ -22,6 +22,12 @@ import { NotificationService } from "@core/services/notification.service";
 import { UniversalEditModalComponent } from "@shared/components/universal-edit-modal/universal-edit-modal.component";
 import { ProviderLogoComponent } from "@shared/components/provider-logo/provider-logo.component";
 import { patchOf } from "@core/utils/patch.util";
+import {
+  StripeConnectService,
+  StripeConnectStatus,
+  STRIPE_CONNECT_CLOSED,
+  describeConnectError,
+} from "@core/services/stripe-connect.service";
 
 interface ConfigField {
   name: string;
@@ -50,6 +56,7 @@ export class GatewayDetailComponent implements OnInit, OnDestroy {
   private readonly notify = inject(NotificationService);
   private readonly profilesClient = inject(PaymentProfilesClient);
   private readonly appsClient = inject(AppsClient);
+  private readonly stripeConnect = inject(StripeConnectService);
 
   private appId = "";
   private profileId = 0;
@@ -59,6 +66,16 @@ export class GatewayDetailComponent implements OnInit, OnDestroy {
   readonly configFields = signal<ConfigField[]>([]);
   readonly configCredential = signal<Record<string, any> | null>(null);
   readonly configLoading = signal(true);
+
+  /** "Connect with Stripe" state; only used for the plain Stripe provider (not Stripe Alipay). */
+  readonly stripeStatus = signal<StripeConnectStatus | null>(null);
+  readonly stripeBusy = signal(false);
+  readonly isStripe = computed(() => (this.profile()?.paymentProvider?.provider as string) === "Stripe");
+  /** The connection card is shown when the server offers Connect, or when the gateway is already connected through it. */
+  readonly showStripeConnection = computed(() => {
+    const status = this.stripeStatus();
+    return this.isStripe() && !!status && (status.isAvailable || status.authMode === "OAuth");
+  });
 
   private readonly providerLabels: Record<string, string> = {
     AuthorizeNet: "Authorize.Net",
@@ -105,6 +122,7 @@ export class GatewayDetailComponent implements OnInit, OnDestroy {
         const format = await this.resolveConfigFormat(found);
         this.configFields.set(this.parseConfigFields(format));
         this.loadConfigCredential();
+        this.loadStripeStatus();
       }
     } catch (err: any) {
       this.notify.showError(this.extractError(err, "Failed to load gateway."));
@@ -115,6 +133,42 @@ export class GatewayDetailComponent implements OnInit, OnDestroy {
 
   goBack(): void {
     this.router.navigate(["/", this.appId, "gateways"]);
+  }
+
+  /** Quietly leaves the card hidden when the status cannot be read: the manual key form keeps working either way. */
+  async loadStripeStatus(): Promise<void> {
+    if (!this.isStripe()) {
+      this.stripeStatus.set(null);
+      return;
+    }
+    try {
+      this.stripeStatus.set(await this.stripeConnect.getStatus(this.appId, this.profileId));
+    } catch {
+      this.stripeStatus.set(null);
+    }
+  }
+
+  async connectStripe(): Promise<void> {
+    if (this.stripeBusy()) return;
+    this.stripeBusy.set(true);
+    try {
+      const result = await this.stripeConnect.connect(this.appId, this.profileId);
+      if (result.success) {
+        this.notify.showSuccess("Stripe is connected.");
+      } else if (result.error !== STRIPE_CONNECT_CLOSED) {
+        this.notify.showError(describeConnectError(result.error, result.detail));
+      }
+      // The credentials may have changed even when the window was just closed; show what is really stored.
+      await Promise.all([this.loadConfigCredential(), this.loadStripeStatus()]);
+    } catch (err: any) {
+      this.notify.showError(this.extractError(err, "Could not start the Stripe connection."));
+    } finally {
+      this.stripeBusy.set(false);
+    }
+  }
+
+  stripeExpiryDisplay(iso: string | null | undefined): string {
+    return iso ? new Date(iso).toLocaleString() : "—";
   }
 
   copyProfileId(): void {

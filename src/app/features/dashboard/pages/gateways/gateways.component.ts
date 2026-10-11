@@ -23,6 +23,11 @@ import { WorkspaceStore } from "@core/stores/workspace.store";
 import { PermissionStore } from "@core/stores/permission.store";
 import { NotificationService } from "@core/services/notification.service";
 import { TagManagerService } from "@core/services/tag-manager.service";
+import {
+  StripeConnectService,
+  STRIPE_CONNECT_CLOSED,
+  describeConnectError,
+} from "@core/services/stripe-connect.service";
 import { DataGridComponent } from "@shared/components/data-grid/data-grid.component";
 import { GridColumn } from "@shared/components/data-grid/data-grid.interface";
 import { ProviderLogoComponent } from "@shared/components/provider-logo/provider-logo.component";
@@ -53,6 +58,7 @@ export class GatewaysComponent implements OnInit {
   private readonly notify = inject(NotificationService);
   private readonly router = inject(Router);
   private readonly tagManager = inject(TagManagerService);
+  private readonly stripeConnect = inject(StripeConnectService);
 
   /** True when the current user holds PaymentProfileWrite — controls gateway creation. */
   readonly canWrite = computed(() => this.permissionStore.hasPermission('PaymentProfileWrite'));
@@ -69,6 +75,34 @@ export class GatewaysComponent implements OnInit {
   readonly availableProviders = signal<PaymentProvider[]>([]);
   readonly providersLoading = signal(false);
   readonly wizardProvider = signal<PaymentProvider | null>(null);
+  readonly wizardIsStripe = computed(() => (this.wizardProvider()?.provider as string) === "Stripe");
+  /**
+   * The currencies the merchant can still add for the selected provider: a gateway already exists for the others, and a second
+   * one in the same currency is not allowed, so offering them only leads to an error (or, for Stripe, to reconnecting the old one).
+   */
+  readonly wizardCurrencies = computed(() => {
+    const provider = this.wizardProvider();
+    if (!provider) return [] as string[];
+    const used = new Set(
+      this.gateways()
+        .filter((g) => (g.paymentProvider?.provider as string) === (provider.provider as string))
+        .map((g) => g.currency as string),
+    );
+    return ((provider.currencies ?? []) as string[]).filter((c) => !used.has(c));
+  });
+  readonly wizardNoFreeCurrency = computed(() => !!this.wizardProvider() && this.wizardCurrencies().length === 0);
+  /** "Connect with Stripe" is on for this app. Stays false (block hidden, manual form only) until the server says otherwise. */
+  readonly stripeConnectAvailable = signal(false);
+  /** The Stripe popup is open: the wizard cannot be closed or stepped while we wait for its result. */
+  readonly wizardConnecting = signal(false);
+  /** Stripe has sent the merchant back and our server is finishing the connection: the form is blurred and the button says so. */
+  readonly wizardFinishing = signal(false);
+  /**
+   * The Stripe window was closed without finishing. The usual cause is a Stripe account that already has the app installed
+   * (Stripe then shows "already installed" and never sends the merchant back), so the wizard says what to do instead of staying silent.
+   */
+  readonly wizardConnectHint = signal(false);
+  readonly showStripeConnect = computed(() => this.wizardIsStripe() && this.stripeConnectAvailable());
 
   /** Step-1 provider search box. */
   readonly providerSearch = signal('');
@@ -220,6 +254,10 @@ export class GatewaysComponent implements OnInit {
     this.wizardOpen.set(true);
     this.wizardStep.set(1);
     this.wizardProvider.set(null);
+    this.stripeConnectAvailable.set(false);
+    this.wizardConnecting.set(false);
+    this.wizardFinishing.set(false);
+    this.wizardConnectHint.set(false);
     this.providerConfigFields.set([]);
     this.wCurrency = "";
     this.wConfigFields = {};
@@ -251,9 +289,71 @@ export class GatewaysComponent implements OnInit {
 
   selectProvider(p: PaymentProvider): void {
     this.wizardProvider.set(p);
-    this.wCurrency = (p.currencies?.[0] ?? "") as string;
+    this.wCurrency = this.wizardCurrencies()[0] ?? "";
     this.providerConfigFields.set(this.parseConfigFields(p.providerConfigFormat));
     this.wConfigFields = {};
+    void this.loadStripeConnectAvailability(p);
+  }
+
+  /** Asked once per Stripe selection. Any failure means "not available": the manual form is always the fallback. */
+  private async loadStripeConnectAvailability(p: PaymentProvider): Promise<void> {
+    this.stripeConnectAvailable.set(false);
+    const appId = this.workspaceStore.currentAppId();
+    if (!appId || (p.provider as string) !== "Stripe") return;
+    try {
+      const available = await this.stripeConnect.getAvailability(appId);
+      // The merchant may have picked another provider (or closed the wizard) while this was in flight.
+      if (this.wizardProvider() === p) this.stripeConnectAvailable.set(available);
+    } catch {
+      // keep false
+    }
+  }
+
+  /**
+   * "Connect with Stripe" from step 2. Called straight from the click so the popup is not blocked. The server creates the
+   * gateway when the merchant finishes on Stripe (or reconnects the app's existing Stripe gateway in this currency).
+   */
+  async connectStripeNew(): Promise<void> {
+    const appId = this.workspaceStore.currentAppId();
+    const provider = this.wizardProvider();
+    if (!appId || !provider || !this.wCurrency || this.wizardConnecting()) return;
+
+    this.wizardConnecting.set(true);
+    this.wizardError.set("");
+    this.wizardConnectHint.set(false);
+    try {
+      const result = await this.stripeConnect.connectNew(appId, this.wCurrency, null, () => this.wizardFinishing.set(true));
+      if (result.success) {
+        this.tagManager.trackConversion("create_gateway", { app_id: appId, provider: provider.provider });
+        this.wizardOpen.set(false);
+        this.notify.showSuccess("Stripe is connected.");
+        await this.loadGateways();
+        if (result.paymentProfileId != null) {
+          await this.router.navigate(["/", appId, "gateways", result.paymentProfileId]);
+        }
+      } else {
+        // Whatever happened, the connection may have succeeded on Stripe's side: refresh the list.
+        await this.loadGateways();
+        if (result.error === STRIPE_CONNECT_CLOSED) {
+          this.wizardConnectHint.set(true);
+        } else {
+          this.wizardError.set(describeConnectError(result.error, result.detail));
+        }
+      }
+    } catch (err: any) {
+      // 409: the gateway for this currency was created in the meantime (another tab, or a connection finishing late).
+      const exists = err?.status === 409 || err?.response?.status === 409;
+      this.wizardError.set(
+        exists
+          ? "A Stripe gateway for this currency already exists."
+          : this.extractError(err, "Could not start the Stripe connection."),
+      );
+      // The gateway may exist even though the call failed.
+      await this.loadGateways();
+    } finally {
+      this.wizardConnecting.set(false);
+      this.wizardFinishing.set(false);
+    }
   }
 
   proceedToStep2(): void {

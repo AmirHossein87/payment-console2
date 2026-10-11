@@ -249,6 +249,111 @@ table.pdt.invoice-items-table {
   thead th:nth-child(7) { width: 24%; }
 }
 
+/* ── Webhooks block ─────────────────────────────────────── */
+.wh-intro {
+  margin: 0;
+  padding: 12px 18px;
+  font-size: 13px;
+  color: var(--text-2);
+  border-bottom: 1px solid var(--border);
+
+  b { color: var(--text); font-weight: 600; margin-inline-start: 4px; }
+}
+
+.wh-skel {
+  padding: 16px 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.wh-empty {
+  padding: 26px 18px;
+  text-align: center;
+  color: var(--text-3);
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+
+  p { margin: 0; }
+  .wh-empty-sub { font-size: 12.5px; max-width: 52ch; }
+}
+
+.wh-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.wh-item {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+
+  &:last-child { border-bottom: none; }
+}
+
+.wh-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+/* Fixed-width badge so every row's text starts at the same place. */
+.wh-badge {
+  flex: 0 0 118px;
+  justify-content: center;
+  white-space: nowrap;
+
+  .wh-ic { font-size: 16px; }
+}
+
+.wh-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.wh-headline { color: var(--text); font-weight: 600; font-size: 13.5px; }
+.wh-hint { color: var(--text-2); font-size: 13px; margin-top: 2px; }
+
+.wh-times {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 6px;
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+.wh-toggle { flex: 0 0 auto; }
+
+.wh-details {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  display: grid;
+  gap: 10px;
+
+  .kv { padding: 0; }
+}
+
+.wh-payload-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+@media (max-width: 700px) {
+  .wh-head { flex-wrap: wrap; }
+  .wh-badge { flex-basis: auto; }
+  .wh-text { flex-basis: 100%; order: 3; }
+  .wh-toggle { margin-inline-start: auto; }
+}
+
 .pd-empty {
   text-align: center;
   color: var(--text-3);

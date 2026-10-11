@@ -36,9 +36,14 @@
       <!-- Header -->
       <div class="mh">
         <span class="material-symbols-outlined brand-ic">hub</span>
-        <h3>New gateway</h3>
+        <h3>
+          New gateway
+          @if (wizardProvider(); as selected) {
+            <span class="mh-prov">· {{ providerLabel(selected.provider) }}</span>
+          }
+        </h3>
         <div class="spacer"></div>
-        <button class="icon-btn" (click)="closeWizard()" [disabled]="wizardSaving()">
+        <button class="icon-btn" (click)="closeWizard()" [disabled]="wizardSaving() || wizardConnecting()">
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
@@ -124,7 +129,7 @@
 
       <!-- ── STEP 2 : API key ── -->
       @if (wizardStep() === 2) {
-        <div class="mb">
+        <div class="mb" [class.finishing]="wizardFinishing()" [attr.aria-busy]="wizardFinishing()">
           <div class="field">
             <label>Currency <span class="req">*</span></label>
             <div class="select">
@@ -132,13 +137,45 @@
                       [class.err]="invalidFields().has('__currency__')"
                       (ngModelChange)="clearInvalid('__currency__')">
                 <option value="">— Select currency —</option>
-                @for (c of wizardProvider()!.currencies ?? []; track c) {
+                @for (c of wizardCurrencies(); track c) {
                   <option [value]="c">{{ c }}</option>
                 }
               </select>
               <span class="material-symbols-outlined">expand_more</span>
             </div>
+            @if (wizardNoFreeCurrency()) {
+              <p class="gw-or">Every currency this provider supports already has a gateway in this app.</p>
+            }
           </div>
+
+          @if (showStripeConnect()) {
+            <div class="gw-connect">
+              <div class="gw-connect-txt">
+                <b>Connect with Stripe</b>
+                <span>No keys to copy: log in to Stripe and accept. The gateway is created for you.</span>
+              </div>
+              <button class="btn btn-primary btn-sm" type="button"
+                      [disabled]="!wCurrency || wizardConnecting() || wizardSaving()"
+                      (click)="connectStripeNew()">
+                @if (wizardFinishing()) {
+                  <span class="material-symbols-outlined spin">progress_activity</span> Connecting…
+                } @else {
+                  {{ wizardConnecting() ? "Waiting for Stripe…" : "Connect with Stripe" }}
+                }
+              </button>
+            </div>
+            @if (wizardConnectHint()) {
+              <div class="gw-hint" role="status">
+                <b>The Stripe window closed before finishing.</b>
+                <span>If Stripe said the app is <i>already installed</i>, it will not ask again. Either:</span>
+                <ul>
+                  <li>open <a href="https://dashboard.stripe.com/settings/apps" target="_blank" rel="noopener noreferrer">Stripe → Settings → Installed apps</a>, uninstall the app and press Connect again (this also disconnects other gateways connected through the same install), or</li>
+                  <li>enter your Stripe keys below. Nothing else is needed.</li>
+                </ul>
+              </div>
+            }
+            <p class="gw-or">or enter your keys below</p>
+          }
 
           @for (field of providerConfigFields(); track field.name) {
             <div class="field">
@@ -178,14 +215,20 @@
             </div>
           }
 
+          @if (wizardError()) {
+            <div class="wizard-err">
+              <span class="material-symbols-outlined">error</span>
+              {{ wizardError() }}
+            </div>
+          }
         </div>
         <div class="mf">
-          <button class="btn" (click)="backToStep(1)" [disabled]="wizardSaving()">
+          <button class="btn" (click)="backToStep(1)" [disabled]="wizardSaving() || wizardConnecting()">
             <span class="material-symbols-outlined">arrow_back</span> Back
           </button>
           <div class="spacer"></div>
-          <button class="btn" (click)="closeWizard()" [disabled]="wizardSaving()">Cancel</button>
-          <button class="btn btn-primary" (click)="proceedToStep3()" [disabled]="wizardSaving()">
+          <button class="btn" (click)="closeWizard()" [disabled]="wizardSaving() || wizardConnecting()">Cancel</button>
+          <button class="btn btn-primary" (click)="proceedToStep3()" [disabled]="wizardSaving() || wizardConnecting()">
             Next
           </button>
         </div>

@@ -16,6 +16,14 @@ import {
 import { WorkspaceStore } from '@core/stores/workspace.store';
 import { BreadcrumbStore } from '@core/stores/breadcrumb.store';
 import { NotificationService } from '@core/services/notification.service';
+import {
+  PaymentWebhookEvent,
+  PaymentWebhooksService,
+  describeHttpStatus,
+  describeWebhookEvent,
+  prettyWebhookPayload,
+  summarizeWebhookEvents,
+} from '@core/services/payment-webhooks.service';
 import { PaymentLinkModalComponent } from '@shared/components/payment-link-modal/payment-link-modal.component';
 import { ProviderLogoComponent } from '@shared/components/provider-logo/provider-logo.component';
 
@@ -26,6 +34,9 @@ interface ConfirmModel {
   needsReason?: boolean;
   run: (reason: string) => Promise<void>;
 }
+
+/** Loading state of the "Webhooks" block. `hidden` = the user may not see webhooks, so the block is not shown at all. */
+type WebhookEventsState = 'loading' | 'ready' | 'error' | 'notfound' | 'hidden';
 
 interface InfoModel {
   title: string;
@@ -53,6 +64,7 @@ export class PaymentDetailComponent implements OnInit, OnDestroy {
   private readonly notify = inject(NotificationService);
   private readonly baseClient = inject(BasePaymentsClient); // payment-proxy
   private readonly appClient = inject(PaymentsClient); // payment-app-proxy
+  private readonly webhooksApi = inject(PaymentWebhooksService);
 
   readonly payment = signal<Payment | null>(null);
   readonly stateLogs = signal<PaymentStateLog[]>([]);
@@ -63,6 +75,16 @@ export class PaymentDetailComponent implements OnInit, OnDestroy {
   // logs" empty state (stateLogs() still []) before the real rows arrive.
   readonly loadingStateLogs = signal<boolean>(true);
   readonly busy = signal<boolean>(false);
+
+  // "Webhooks" block: every webhook event of this payment (the `webhook` signal above only holds the newest one).
+  readonly webhookEvents = signal<PaymentWebhookEvent[]>([]);
+  readonly webhookEventsState = signal<WebhookEventsState>('loading');
+  /** Ids of the events whose technical details are open. */
+  readonly openWebhookIds = signal<ReadonlySet<number>>(new Set());
+  readonly webhookRows = computed(() =>
+    this.webhookEvents().map((event) => ({ event, view: describeWebhookEvent(event) }))
+  );
+  readonly webhookSummary = computed(() => summarizeWebhookEvents(this.webhookEvents()));
 
   readonly confirm = signal<ConfirmModel | null>(null);
   readonly info = signal<InfoModel | null>(null);
@@ -161,6 +183,8 @@ export class PaymentDetailComponent implements OnInit, OnDestroy {
     await this.loadPayment();
     this.loadStateLogs();
     this.loadWebhook();
+    // No payment (not found / failed to load) means no webhooks block to fill.
+    if (this.payment()) this.loadWebhookEvents();
   }
 
   // Standard API-call structure (matches PaymentsComponent.loadPayments):
@@ -210,6 +234,58 @@ export class PaymentDetailComponent implements OnInit, OnDestroy {
     } catch {
       // Optional data — a payment may simply have no webhook yet.
       this.webhook.set(null);
+    }
+  }
+
+  /** Every webhook event of the payment. Reloaded on its own by the block's Refresh button. */
+  async loadWebhookEvents(): Promise<void> {
+    const appId = this.workspaceStore.currentAppId();
+    if (!appId) return;
+
+    this.webhookEventsState.set('loading');
+    try {
+      const events = await this.webhooksApi.getForPayment(appId, this.paymentId);
+      this.webhookEvents.set(events ?? []);
+      this.webhookEventsState.set('ready');
+    } catch (err: any) {
+      this.webhookEvents.set([]);
+      // 401 is handled app-wide (the interceptor signs out and the call ends empty); 403 means no permission: hide the block.
+      if (err?.name === 'EmptyError' || err?.status === 401 || err?.status === 403) {
+        this.webhookEventsState.set('hidden');
+      } else if (err?.status === 404) {
+        this.webhookEventsState.set('notfound');
+      } else {
+        this.webhookEventsState.set('error');
+      }
+    }
+  }
+
+  toggleWebhook(id: number): void {
+    this.openWebhookIds.update((open) => {
+      const next = new Set(open);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
+  }
+
+  isWebhookOpen(id: number): boolean {
+    return this.openWebhookIds().has(id);
+  }
+
+  httpStatusText(code: number | null | undefined): string {
+    return describeHttpStatus(code);
+  }
+
+  prettyPayload(payload: string | null | undefined): string {
+    return prettyWebhookPayload(payload);
+  }
+
+  async copyWebhookPayload(payload: string | null | undefined): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(prettyWebhookPayload(payload));
+      this.notify.showSuccess('Payload copied');
+    } catch {
+      /* clipboard unavailable */
     }
   }
 

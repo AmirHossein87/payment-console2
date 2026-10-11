@@ -159,6 +159,59 @@
     </div>
   </div>
 
+  <!-- ── Stripe connection card (Connect with Stripe) ───────────────────── -->
+  @if (showStripeConnection() ? stripeStatus() : null; as s) {
+  <div class="info-card">
+    <div class="card-head">
+      <span class="material-symbols-outlined">link</span>
+      Stripe connection
+    </div>
+    <div class="kv-list">
+
+      <div class="kv-row">
+        <span class="kv-key">Connected by</span>
+        <span class="pill" [ngClass]="s.authMode === 'OAuth' ? (s.isExpired ? 'pill-bad' : 'pill-ok') : 'pill-bad'">
+          <span class="dot"></span>
+          {{ s.authMode === 'OAuth' ? (s.isExpired ? 'Stripe (expired)' : 'Stripe') : 'API keys' }}
+        </span>
+      </div>
+
+      @if (s.account) {
+      <div class="kv-row">
+        <span class="kv-key">Stripe account</span>
+        <span class="kv-val mono">{{ s.account }}</span>
+      </div>
+      }
+
+      @if (s.authMode === 'OAuth') {
+      <div class="kv-row">
+        <span class="kv-key">Access renews by</span>
+        <span class="kv-val">{{ stripeExpiryDisplay(s.tokenExpirationTime) }}</span>
+      </div>
+      }
+
+      @if (s.isExpired) {
+      <div class="cred-warn">
+        <span class="material-symbols-outlined">warning</span>
+        The Stripe access has expired and payments on this gateway are failing. Reconnect to fix it.
+      </div>
+      }
+
+      <div class="connect-actions">
+        <button class="btn btn-primary btn-sm" type="button" [disabled]="stripeBusy()" (click)="connectStripe()">
+          <span class="material-symbols-outlined">link</span>
+          {{ stripeBusy() ? 'Waiting for Stripe…' : (s.authMode === 'OAuth' ? 'Reconnect with Stripe' : 'Connect with Stripe') }}
+        </button>
+      </div>
+
+      <div class="cred-warn">
+        <span class="material-symbols-outlined">info</span>
+        Connecting replaces the keys saved below. Typing a secret key by hand switches this gateway back to API keys.
+      </div>
+    </div>
+  </div>
+  }
+
   <!-- ── Provider API key card ─────────────────────────────────────────── -->
   @if (configLoading()) {
   <div class="info-card">

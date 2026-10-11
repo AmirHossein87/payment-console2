@@ -340,6 +340,16 @@
   .material-symbols-outlined { font-size: 15px; margin-top: 1px; }
 }
 
+.connect-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px 4px;
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; }
+  .material-symbols-outlined { font-size: 16px; }
+}
+
 // ── Icon button (small) ───────────────────────────────────────────────────────
 
 .icon-btn.sm {
