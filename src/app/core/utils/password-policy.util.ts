@@ -1,5 +1,5 @@
 /**
- * PaymentHood password policy — the single source of truth for the console UI.
+ * Payment System password policy — the single source of truth for the console UI.
  *
  * Keep this in step with the Firebase (Identity Platform) password policy set in
  * the Firebase console → Authentication → Settings → Password policy:
