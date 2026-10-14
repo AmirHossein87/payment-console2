@@ -35,6 +35,7 @@ import { UniversalEditModalComponent } from '@shared/components/universal-edit-m
 import { ConfirmModalComponent } from '@shared/components/confirm-modal/confirm-modal.component';
 import { DataGridComponent } from '@shared/components/data-grid/data-grid.component';
 import { GridColumn } from '@shared/components/data-grid/data-grid.interface';
+import { environment } from '@environments/environment';
 
 type Tab = 'general' | 'personalize' | 'checkout' | 'twofa' | 'api' | 'webhook';
 /** Which page this instance renders — the SAME component backs all three routes. */
@@ -98,6 +99,8 @@ export class SettingsPageComponent implements OnInit {
   readonly uploadingLogo = signal(false);
   readonly dnsOpen = signal(false);
   readonly activeTab = signal<Tab>('general');
+  /** Developer documentation URL: per environment, not hard-coded in the template. */
+  readonly docsUrl = environment.docsUrl;
   readonly isSupportCustomizeCheckout = signal(false);
   /** 'app' → regular Settings; 'developer' → Developer Settings (route-driven). */
   readonly mode = signal<SettingsMode>('app');
