@@ -8,6 +8,7 @@ export const environment = {
   baseUrl: "https://api.paymenthood.com/api/v1",
   base_Url: "https://api.paymenthood.com",
   appBaseUrl: "https://appapi.paymenthood.com",
+  docsUrl: "https://docs.paymenthood.com/",
   CHECK__BUILD__TIME: 1000 * 60 * 60,
   Client_id:
     "296089566598-p2f8857qtgip7d49cpfvdi09268dff0s.apps.googleusercontent.com",
